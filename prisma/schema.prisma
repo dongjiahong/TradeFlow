@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model SetupOption {
+  id   String @id @default(uuid())
+  name String @unique
+}
+
+model ErrorOption {
+  id   String @id @default(uuid())
+  name String @unique
+}
+
+model ExitOption {
+  id   String @id @default(uuid())
+  name String @unique
+}
+
+model SymbolOption {
+  id   String @id @default(uuid())
+  name String @unique
+}
+
+model Trade {
+  id           String   @id @default(uuid())
+  date         DateTime
+  setup        String
+  type         String
+  exitReason   String
+  direction    String   // "Long" or "Short"
+  positionSize Float
+  entryPrice   Float
+  exitPrice1   Float
+  exitPrice2   Float?
+  pnl          Float
+  status       String   // "win", "lose", "BE"
+  remarks      String?
+  notes        String?
+  errorReason  String?
+  symbol       String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  screenshots  TradeScreenshot[]
+}
+
+model TradeScreenshot {
+  id        String   @id @default(uuid())
+  tradeId   String
+  filename  String
+  path      String
+  createdAt DateTime @default(now())
+  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+}
+
+model DiaryEntry {
+  id            String   @id @default(uuid())
+  date          DateTime @unique
+  ruleExecuted  Boolean  // "限"
+  emotionStable Boolean  // "隐"
+  recordKept    Boolean  // "记"
+  prepared      Boolean  // "离"
+  noFomo        Boolean  // "止"
+  pnl           Float
+  remarks       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
