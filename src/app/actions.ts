@@ -191,78 +191,6 @@ export async function deleteTrade(id: string) {
   }
 }
 
-// --- DIARY ACTIONS ---
-
-export async function getDiaryEntries() {
-  try {
-    return await prisma.diaryEntry.findMany({
-      orderBy: { date: "asc" },
-    });
-  } catch (error) {
-    console.error("Error fetching diary entries:", error);
-    return [];
-  }
-}
-
-export async function upsertDiaryEntry(data: {
-  date: string;
-  ruleExecuted: boolean;
-  emotionStable: boolean;
-  recordKept: boolean;
-  prepared: boolean;
-  noFomo: boolean;
-  pnl: number;
-  remarks?: string;
-}) {
-  try {
-    const targetDate = new Date(data.date);
-    // Clear time part for day matching
-    targetDate.setHours(0, 0, 0, 0);
-
-    const entry = await prisma.diaryEntry.upsert({
-      where: { date: targetDate },
-      update: {
-        ruleExecuted: data.ruleExecuted,
-        emotionStable: data.emotionStable,
-        recordKept: data.recordKept,
-        prepared: data.prepared,
-        noFomo: data.noFomo,
-        pnl: data.pnl,
-        remarks: data.remarks || null,
-      },
-      create: {
-        date: targetDate,
-        ruleExecuted: data.ruleExecuted,
-        emotionStable: data.emotionStable,
-        recordKept: data.recordKept,
-        prepared: data.prepared,
-        noFomo: data.noFomo,
-        pnl: data.pnl,
-        remarks: data.remarks || null,
-      },
-    });
-
-    revalidatePath("/");
-    return { success: true, entry };
-  } catch (error: any) {
-    console.error("Error upserting diary entry:", error);
-    return { success: false, error: error.message };
-  }
-}
-
-export async function deleteDiaryEntry(id: string) {
-  try {
-    await prisma.diaryEntry.delete({
-      where: { id },
-    });
-    revalidatePath("/");
-    return { success: true };
-  } catch (error: any) {
-    console.error("Error deleting diary entry:", error);
-    return { success: false, error: error.message };
-  }
-}
-
 // --- CONFIG OPTIONS ACTIONS ---
 
 export async function getConfigOptions() {
@@ -446,56 +374,6 @@ export async function importExcelData(base64Data: string) {
       });
     }
 
-    // 2. Process "别瞎搞日记本" sheet (Diary Entries)
-    const diarySheet = workbook.Sheets["别瞎搞日记本"];
-    const diaryEntriesToInsert: any[] = [];
-    if (diarySheet) {
-      const diaryJson: any[] = XLSX.utils.sheet_to_json(diarySheet, { header: 1 });
-      // Row 1 is header, data starts from Row 2 (index 1)
-      for (let i = 1; i < diaryJson.length; i++) {
-        const row = diaryJson[i];
-        if (!row || row.length === 0) continue;
-
-        const dateVal = row[0]; // A
-        if (!dateVal) continue;
-
-        let parsedDate = new Date();
-        if (dateVal instanceof Date) {
-          parsedDate = dateVal;
-        } else {
-          const d = Date.parse(String(dateVal));
-          if (!isNaN(d)) {
-            parsedDate = new Date(d);
-          } else {
-            continue;
-          }
-        }
-        parsedDate.setHours(0, 0, 0, 0);
-
-        // Check columns (✅/❌ mapping to boolean)
-        const checkVal = (val: any) => String(val).trim() === "✅";
-
-        const ruleExecuted = checkVal(row[1]); // B
-        const emotionStable = checkVal(row[2]); // C
-        const recordKept = checkVal(row[3]); // D
-        const prepared = checkVal(row[4]); // E
-        const noFomo = checkVal(row[5]); // F
-        const pnl = parseFloat(row[6]) || 0; // G
-        const remarks = row[7] ? String(row[7]) : ""; // H
-
-        diaryEntriesToInsert.push({
-          date: parsedDate,
-          ruleExecuted,
-          emotionStable,
-          recordKept,
-          prepared,
-          noFomo,
-          pnl,
-          remarks,
-        });
-      }
-    }
-
     // Execute import in a database transaction
     await prisma.$transaction(async (tx) => {
       // 1. Save new setup options if imported setups are not in DB
@@ -516,23 +394,12 @@ export async function importExcelData(base64Data: string) {
         });
       }
 
-      // 2. Delete existing trades and diary logs (clear for new import)
-      // Alternatively, we could append, but a full sync is typically preferred when importing a template
+      // 2. Delete existing trades (clear for new import)
       await tx.trade.deleteMany({});
-      await tx.diaryEntry.deleteMany({});
 
       // 3. Insert trades
       for (const trade of tradesToInsert) {
         await tx.trade.create({ data: trade });
-      }
-
-      // 4. Insert diary entries
-      for (const entry of diaryEntriesToInsert) {
-        await tx.diaryEntry.upsert({
-          where: { date: entry.date },
-          update: entry,
-          create: entry,
-        });
       }
     });
 
@@ -540,7 +407,7 @@ export async function importExcelData(base64Data: string) {
     return {
       success: true,
       tradesCount: tradesToInsert.length,
-      diaryCount: diaryEntriesToInsert.length,
+      diaryCount: 0,
     };
   } catch (error: any) {
     console.error("Excel import failed:", error);

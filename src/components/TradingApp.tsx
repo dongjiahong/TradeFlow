@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import {
   TrendingUp,
   BookOpen,
-  Award,
   Settings,
   Plus,
   Trash,
@@ -14,7 +13,6 @@ import {
   Upload,
   Download,
   AlertTriangle,
-  Calendar,
   DollarSign,
   PieChart,
   Moon,
@@ -44,8 +42,6 @@ import {
   createTrade,
   updateTrade,
   deleteTrade,
-  upsertDiaryEntry,
-  deleteDiaryEntry,
   addSetupOption,
   deleteSetupOption,
   addErrorOption,
@@ -78,18 +74,6 @@ interface Trade {
   screenshots?: { id: string; filename: string }[];
 }
 
-interface DiaryEntry {
-  id: string;
-  date: Date | string;
-  ruleExecuted: boolean;
-  emotionStable: boolean;
-  recordKept: boolean;
-  prepared: boolean;
-  noFomo: boolean;
-  pnl: number;
-  remarks: string | null;
-}
-
 interface OptionItem {
   id: string;
   name: string;
@@ -97,7 +81,6 @@ interface OptionItem {
 
 interface TradingAppProps {
   initialTrades: Trade[];
-  initialDiaryEntries: DiaryEntry[];
   initialSetups: OptionItem[];
   initialErrors: OptionItem[];
   initialExits: OptionItem[];
@@ -106,7 +89,6 @@ interface TradingAppProps {
 
 export default function TradingApp({
   initialTrades,
-  initialDiaryEntries,
   initialSetups,
   initialErrors,
   initialExits,
@@ -115,7 +97,7 @@ export default function TradingApp({
   const [mounted, setMounted] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
   const [analysisReady, setAnalysisReady] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "diary" | "settings" | "analysis">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "settings" | "analysis">("dashboard");
   const [darkMode, setDarkMode] = useState(false);
   // Analysis date filter
   const [quickRange, setQuickRange] = useState<"today" | "week" | "month" | "all">("all");
@@ -126,7 +108,6 @@ export default function TradingApp({
 
   // Core data states
   const [trades, setTrades] = useState<Trade[]>(initialTrades);
-  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>(initialDiaryEntries);
   const [setups, setSetups] = useState<OptionItem[]>(initialSetups);
   const [errors, setErrors] = useState<OptionItem[]>(initialErrors);
   const [exits, setExits] = useState<OptionItem[]>(initialExits);
@@ -163,18 +144,6 @@ export default function TradingApp({
     rr: "",
     errorReason: "",
     symbol: ""
-  });
-
-  // Diary form states
-  const [selectedDiaryDate, setSelectedDiaryDate] = useState(new Date().toISOString().split("T")[0]);
-  const [diaryForm, setDiaryForm] = useState({
-    ruleExecuted: true,
-    emotionStable: true,
-    recordKept: true,
-    prepared: true,
-    noFomo: true,
-    pnl: 0,
-    remarks: ""
   });
 
   // Settings custom items
@@ -250,36 +219,6 @@ export default function TradingApp({
     return () => document.removeEventListener("paste", handlePaste);
   }, [inlineEditingId]);
 
-  // Sync diary form on date change
-  useEffect(() => {
-    const matched = diaryEntries.find(d => {
-      const entryD = new Date(d.date).toISOString().split("T")[0];
-      return entryD === selectedDiaryDate;
-    });
-
-    if (matched) {
-      setDiaryForm({
-        ruleExecuted: matched.ruleExecuted,
-        emotionStable: matched.emotionStable,
-        recordKept: matched.recordKept,
-        prepared: matched.prepared,
-        noFomo: matched.noFomo,
-        pnl: matched.pnl,
-        remarks: matched.remarks || ""
-      });
-    } else {
-      setDiaryForm({
-        ruleExecuted: true,
-        emotionStable: true,
-        recordKept: true,
-        prepared: true,
-        noFomo: true,
-        pnl: 0,
-        remarks: ""
-      });
-    }
-  }, [selectedDiaryDate, diaryEntries]);
-
   if (!mounted) return null;
 
   // --- STATS CALCULATIONS ---
@@ -305,17 +244,7 @@ export default function TradingApp({
   const avgLoss = loseTrades.length > 0 ? totalLossesAmount / loseTrades.length : 0;
   const pnlRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
 
-  // Diary Stats
-  const completedDiaryDays = diaryEntries.length;
-  const ruleFollowCount = diaryEntries.filter(d => d.ruleExecuted).length;
-  const emotionalStableCount = diaryEntries.filter(d => d.emotionStable).length;
-  const diaryRecordCount = diaryEntries.filter(d => d.recordKept).length;
-  const diaryPreparedCount = diaryEntries.filter(d => d.prepared).length;
-  const diaryNoFomoCount = diaryEntries.filter(d => d.noFomo).length;
-
-  const overallComplianceRate = completedDiaryDays > 0
-    ? ((ruleFollowCount + emotionalStableCount + diaryRecordCount + diaryPreparedCount + diaryNoFomoCount) / (completedDiaryDays * 5)) * 100
-    : 0;
+  const overallComplianceRate = 0;
 
   // --- CHART DATA GENERATION ---
 
@@ -606,10 +535,10 @@ export default function TradingApp({
             onChange={(e) => setTradeForm(prev => ({ ...prev, type: e.target.value }))}
             className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 py-1"
           >
-            <option value="趋势延续（Continuation）">趋势延续 (Continuation)</option>
-            <option value="反转（Reversal）">反转 (Reversal)</option>
-            <option value="突破（BO）">突破 (BO)</option>
-            <option value="假突破（fBO）">假突破 (fBO)</option>
+            <option value="趋势延续（Continuation）">趋势延续</option>
+            <option value="反转（Reversal）">反转</option>
+            <option value="突破（BO）">突破</option>
+            <option value="假突破（fBO）">假突破</option>
           </select>
         </td>
         {/* 仓位 */}
@@ -620,7 +549,7 @@ export default function TradingApp({
             required
             value={tradeForm.positionSize}
             onChange={(e) => setTradeForm(prev => ({ ...prev, positionSize: parseFloat(e.target.value) || 0 }))}
-            className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 font-mono py-1"
+            className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 font-mono py-1.5 w-full min-w-[100px]"
           />
         </td>
         {/* 入场/离场价格 */}
@@ -768,36 +697,6 @@ export default function TradingApp({
     }
   };
 
-  const handleSaveDiary = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      date: selectedDiaryDate,
-      ruleExecuted: diaryForm.ruleExecuted,
-      emotionStable: diaryForm.emotionStable,
-      recordKept: diaryForm.recordKept,
-      prepared: diaryForm.prepared,
-      noFomo: diaryForm.noFomo,
-      pnl: Number(diaryForm.pnl),
-      remarks: diaryForm.remarks
-    };
-
-    const res = await upsertDiaryEntry(payload);
-    if (res.success && res.entry) {
-      setDiaryEntries(prev => {
-        const entryDateStr = new Date(res.entry!.date).toISOString().split("T")[0];
-        const exists = prev.some(d => new Date(d.date).toISOString().split("T")[0] === entryDateStr);
-        if (exists) {
-          return prev.map(d => new Date(d.date).toISOString().split("T")[0] === entryDateStr ? (res.entry as unknown as DiaryEntry) : d);
-        } else {
-          return [...prev, res.entry as unknown as DiaryEntry].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        }
-      });
-      alert("日志记录保存成功！");
-    } else {
-      alert("保存失败: " + res.error);
-    }
-  };
-
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -813,7 +712,7 @@ export default function TradingApp({
         
         const res = await importExcelData(base64Data);
         if (res.success) {
-          setImportStatus(`导入成功！共导入了 ${res.tradesCount} 笔交易，和 ${res.diaryCount} 篇自律日记！`);
+          setImportStatus(`导入成功！共导入了 ${res.tradesCount} 笔交易！`);
           // Reload page data by querying the server actions again
           window.location.reload();
         } else {
@@ -953,7 +852,7 @@ export default function TradingApp({
       )}
 
       {/* Top Header / Bar */}
-      <header className="flex h-16 items-center justify-between border-b px-6 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors duration-200">
+      <header className="flex h-16 items-center justify-between border-b px-6 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors duration-200 fixed top-0 left-0 right-0 z-40">
         <div className="flex items-center gap-3">
           <div className="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2 rounded-xl text-white shadow-md shadow-emerald-500/20">
             <TrendingUp size={20} className="animate-pulse" />
@@ -985,10 +884,10 @@ export default function TradingApp({
       </header>
 
       {/* Main Workspace Layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden pt-16">
         
         {/* Navigation Sidebar */}
-        <aside className="w-64 border-r bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 flex flex-col justify-between py-6 px-4 shrink-0 transition-colors duration-200">
+        <aside className="w-64 border-r bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 flex flex-col justify-between py-6 px-4 shrink-0 transition-colors duration-200 fixed top-16 left-0 bottom-0 z-30">
           <nav className="flex flex-col gap-2">
             <button
               onClick={() => setActiveTab("dashboard")}
@@ -1011,17 +910,6 @@ export default function TradingApp({
             >
               <BookOpen size={18} className="transition-transform group-hover:scale-110" />
               交易日志
-            </button>
-            <button
-              onClick={() => setActiveTab("diary")}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group ${
-                activeTab === "diary"
-                  ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                  : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/80"
-              }`}
-            >
-              <Award size={18} className="transition-transform group-hover:scale-110" />
-              别瞎搞日记本
             </button>
             <button
               onClick={() => setActiveTab("analysis")}
@@ -1064,7 +952,7 @@ export default function TradingApp({
         </aside>
 
         {/* Content Workspace */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 ml-64">
           
           {/* TAB 1: DASHBOARD */}
           {activeTab === "dashboard" && (
@@ -1445,10 +1333,10 @@ export default function TradingApp({
                   className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-xs focus:outline-none"
                 >
                   <option value="all">所有交易类型</option>
-                  <option value="趋势延续（Continuation）">趋势延续 (Continuation)</option>
-                  <option value="反转（Reversal）">反转 (Reversal)</option>
-                  <option value="突破（BO）">突破 (BO)</option>
-                  <option value="假突破（fBO）">假突破 (fBO)</option>
+                  <option value="趋势延续（Continuation）">趋势延续</option>
+                  <option value="反转（Reversal）">反转</option>
+                  <option value="突破（BO）">突破</option>
+                  <option value="假突破（fBO）">假突破</option>
                 </select>
 
                 {/* Clear filters */}
@@ -1814,257 +1702,6 @@ export default function TradingApp({
                     </tbody>
                   </table>
                 </div>
-              </div>
-
-            </div>
-          )}
-
-          {/* TAB 3: DISCIPLINE DIARY */}
-          {activeTab === "diary" && (
-            <div className="flex flex-col gap-6 animate-fade-in">
-              
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">别瞎搞日记本</h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">每天记录你的行为合规性与心态状况</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar size={16} className="text-emerald-500" />
-                  <input
-                    type="date"
-                    value={selectedDiaryDate}
-                    onChange={(e) => setSelectedDiaryDate(e.target.value)}
-                    className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold focus:outline-none shadow-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* Checkin checklist Form */}
-                <div className="lg:col-span-2 p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-6">
-                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-100 border-b pb-3 border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                    <span>每日规则打卡 ({selectedDiaryDate})</span>
-                    <span className="text-xxs px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-500">
-                      {diaryEntries.some(d => new Date(d.date).toISOString().split("T")[0] === selectedDiaryDate) ? "已打卡" : "未记录"}
-                    </span>
-                  </h3>
-
-                  <form onSubmit={handleSaveDiary} className="flex flex-col gap-5">
-                    
-                    {/* The 5 Compliance Rules */}
-                    <div className="flex flex-col gap-3">
-                      
-                      {/* Rule 1: Limiting Rules (限) */}
-                      <label className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${
-                        diaryForm.ruleExecuted 
-                          ? "bg-emerald-500/5 border-emerald-500/35 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/5"
-                          : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-xl font-black text-xs flex items-center justify-center ${diaryForm.ruleExecuted ? "bg-emerald-500 text-white" : "bg-zinc-100 dark:bg-zinc-800"}`}>
-                            限
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold">是否执行规则？</p>
-                            <p className="text-xxs text-zinc-400 mt-0.5">限制不合理的入场与冲动下单</p>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={diaryForm.ruleExecuted}
-                          onChange={(e) => setDiaryForm(prev => ({ ...prev, ruleExecuted: e.target.checked }))}
-                          className="h-5 w-5 rounded-md text-emerald-500 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500 focus:ring-offset-0"
-                        />
-                      </label>
-
-                      {/* Rule 2: Emotion Stable (隐) */}
-                      <label className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${
-                        diaryForm.emotionStable 
-                          ? "bg-emerald-500/5 border-emerald-500/35 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/5"
-                          : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-xl font-black text-xs flex items-center justify-center ${diaryForm.emotionStable ? "bg-emerald-500 text-white" : "bg-zinc-100 dark:bg-zinc-800"}`}>
-                            隐
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold">是否情绪稳定？</p>
-                            <p className="text-xxs text-zinc-400 mt-0.5">保持心如止水，不让亏损或盈利影响决策</p>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={diaryForm.emotionStable}
-                          onChange={(e) => setDiaryForm(prev => ({ ...prev, emotionStable: e.target.checked }))}
-                          className="h-5 w-5 rounded-md text-emerald-500 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500 focus:ring-offset-0"
-                        />
-                      </label>
-
-                      {/* Rule 3: Record Kept (记) */}
-                      <label className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${
-                        diaryForm.recordKept 
-                          ? "bg-emerald-500/5 border-emerald-500/35 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/5"
-                          : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-xl font-black text-xs flex items-center justify-center ${diaryForm.recordKept ? "bg-emerald-500 text-white" : "bg-zinc-100 dark:bg-zinc-800"}`}>
-                            记
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold">是否做记录？</p>
-                            <p className="text-xxs text-zinc-400 mt-0.5">每笔单子都有截图、有理由、有分析记录</p>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={diaryForm.recordKept}
-                          onChange={(e) => setDiaryForm(prev => ({ ...prev, recordKept: e.target.checked }))}
-                          className="h-5 w-5 rounded-md text-emerald-500 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500 focus:ring-offset-0"
-                        />
-                      </label>
-
-                      {/* Rule 4: Prepared (离) */}
-                      <label className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${
-                        diaryForm.prepared 
-                          ? "bg-emerald-500/5 border-emerald-500/35 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/5"
-                          : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-xl font-black text-xs flex items-center justify-center ${diaryForm.prepared ? "bg-emerald-500 text-white" : "bg-zinc-100 dark:bg-zinc-800"}`}>
-                            离
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold">是否提前准备？</p>
-                            <p className="text-xxs text-zinc-400 mt-0.5">入场前已想好离场方案和防守策略</p>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={diaryForm.prepared}
-                          onChange={(e) => setDiaryForm(prev => ({ ...prev, prepared: e.target.checked }))}
-                          className="h-5 w-5 rounded-md text-emerald-500 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500 focus:ring-offset-0"
-                        />
-                      </label>
-
-                      {/* Rule 5: No FOMO (止) */}
-                      <label className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${
-                        diaryForm.noFomo 
-                          ? "bg-emerald-500/5 border-emerald-500/35 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/5"
-                          : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
-                      }`}>
-                        <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-xl font-black text-xs flex items-center justify-center ${diaryForm.noFomo ? "bg-emerald-500 text-white" : "bg-zinc-100 dark:bg-zinc-800"}`}>
-                            止
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold">没有 FOMO？</p>
-                            <p className="text-xxs text-zinc-400 mt-0.5">克制踏空焦虑，不盲目追涨杀跌，耐心等待</p>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={diaryForm.noFomo}
-                          onChange={(e) => setDiaryForm(prev => ({ ...prev, noFomo: e.target.checked }))}
-                          className="h-5 w-5 rounded-md text-emerald-500 border-zinc-300 dark:border-zinc-700 focus:ring-emerald-500 focus:ring-offset-0"
-                        />
-                      </label>
-
-                    </div>
-
-                    {/* Daily PnL & Remarks */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-zinc-500">今日总盈亏</label>
-                        <input
-                          type="number"
-                          value={diaryForm.pnl || ""}
-                          onChange={(e) => setDiaryForm(prev => ({ ...prev, pnl: parseFloat(e.target.value) || 0 }))}
-                          className="px-3 py-2 border rounded-xl dark:bg-zinc-800 dark:border-zinc-700 text-sm focus:outline-none"
-                          placeholder="填入数字盈亏，可为负"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-zinc-500">备注（感悟/盘后分析）</label>
-                        <input
-                          type="text"
-                          value={diaryForm.remarks}
-                          onChange={(e) => setDiaryForm(prev => ({ ...prev, remarks: e.target.value }))}
-                          className="px-3 py-2 border rounded-xl dark:bg-zinc-800 dark:border-zinc-700 text-sm focus:outline-none"
-                          placeholder="例如：今天克制得很好，无FOMO"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="mt-2 w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-emerald-500/20 transition-all duration-200"
-                    >
-                      保存今日打卡状态
-                    </button>
-                  </form>
-                </div>
-
-                {/* Diary History List */}
-                <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
-                  <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-100 border-b pb-3 border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                    <span>打卡历史记录</span>
-                    <span className="text-xxs text-zinc-400 font-mono">共 {diaryEntries.length} 天</span>
-                  </h3>
-
-                  <div className="flex flex-col gap-3 overflow-y-auto max-h-[480px] pr-2">
-                    {diaryEntries.length > 0 ? (
-                      diaryEntries.slice().reverse().map(entry => {
-                        const dateStr = new Date(entry.date).toISOString().split("T")[0];
-                        const checkedCount = [entry.ruleExecuted, entry.emotionStable, entry.recordKept, entry.prepared, entry.noFomo].filter(Boolean).length;
-                        
-                        return (
-                          <div 
-                            key={entry.id} 
-                            onClick={() => setSelectedDiaryDate(dateStr)}
-                            className={`p-3 rounded-2xl border cursor-pointer hover:scale-[1.01] transition-all duration-200 ${
-                              selectedDiaryDate === dateStr 
-                                ? "bg-emerald-500/5 border-emerald-500/30 shadow-sm" 
-                                : "border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/40"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-mono font-bold text-zinc-800 dark:text-zinc-200">{dateStr}</span>
-                              <span className={`text-xs font-mono font-bold ${entry.pnl >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                                {entry.pnl >= 0 ? "+" : ""}{entry.pnl}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center gap-1.5 mt-2">
-                              {["限", "隐", "记", "离", "止"].map((label, idx) => {
-                                const checked = [entry.ruleExecuted, entry.emotionStable, entry.recordKept, entry.prepared, entry.noFomo][idx];
-                                return (
-                                  <span 
-                                    key={idx}
-                                    className={`text-xxs px-1.5 py-0.5 rounded font-black ${
-                                      checked 
-                                        ? "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400" 
-                                        : "bg-rose-500/10 text-rose-500 dark:text-rose-400"
-                                    }`}
-                                  >
-                                    {label}
-                                  </span>
-                                );
-                              })}
-                              
-                              <span className="text-xxs text-zinc-400 ml-auto font-bold">{checkedCount}/5 达标</span>
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-center text-zinc-400 py-10 text-xs">
-                        尚无打卡数据，赶快选择日期打卡第一天吧！
-                      </div>
-                    )}
-                  </div>
-                </div>
-
               </div>
 
             </div>

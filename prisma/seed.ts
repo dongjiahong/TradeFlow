@@ -34,15 +34,15 @@ const setups = [
 ];
 
 const errors = [
-  "逆势交易（Fading a strong trend）",
-  "盈利单但是提前离场(Letting a winning trade turn to losing)",
-  "突破/反转判断错误（BW/OL）",
-  "错误的信号k线（Wrong Signal bar）",
-  "限价单入场（limit entry）",
-  "k线未收线就入场（Entry mid-bar）",
-  "在阻力位买入，在支撑位卖出（buy into resist, sell into support）",
-  "浮亏加仓（scaling into a losing position）.",
-  "市场背景理解错误（bad structure reading）"
+  "逆势交易",
+  "盈利单但是提前离场",
+  "突破/反转判断错误",
+  "错误的信号k线",
+  "限价单入场",
+  "k线未收线就入场",
+  "在阻力位买入，在支撑位卖出",
+  "浮亏加仓",
+  "市场背景理解错误"
 ];
 
 const exits = [
@@ -51,7 +51,7 @@ const exits = [
   "推保本",
   "EMA20",
   "移动止盈",
-  "止损触发（Stop out）",
+  "止损触发",
   "觉得有逆势压提前止盈",
   "1倍MM",
   "2倍MM",

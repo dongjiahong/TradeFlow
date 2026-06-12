@@ -61,17 +61,3 @@ model TradeScreenshot {
   createdAt DateTime @default(now())
   trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
 }
-
-model DiaryEntry {
-  id            String   @id @default(uuid())
-  date          DateTime @unique
-  ruleExecuted  Boolean  // "限"
-  emotionStable Boolean  // "隐"
-  recordKept    Boolean  // "记"
-  prepared      Boolean  // "离"
-  noFomo        Boolean  // "止"
-  pnl           Float
-  remarks       String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}

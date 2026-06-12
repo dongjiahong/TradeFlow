@@ -14,7 +14,6 @@ export async function GET() {
   try {
     // 1. Fetch data from DB
     const trades = await prisma.trade.findMany({ orderBy: { date: "asc" } });
-    const diaryEntries = await prisma.diaryEntry.findMany({ orderBy: { date: "asc" } });
     const configSetups = await prisma.setupOption.findMany({ orderBy: { name: "asc" } });
     const configErrors = await prisma.errorOption.findMany({ orderBy: { name: "asc" } });
     const configExits = await prisma.exitOption.findMany({ orderBy: { name: "asc" } });
@@ -245,35 +244,6 @@ export async function GET() {
 
     const errorsSheet = XLSX.utils.aoa_to_sheet(errorsData);
     XLSX.utils.book_append_sheet(wb, errorsSheet, "错误类型");
-
-    // --- SHEET 3: 别瞎搞日记本 ---
-    const diaryData: any[][] = [];
-    diaryData.push([
-      "日期",
-      "是否执行规则？",
-      "是否情绪稳定？",
-      "是否做记录？",
-      "是否提前准备？",
-      "没有 FOMO？",
-      "总盈亏",
-      "备注"
-    ]);
-
-    for (const entry of diaryEntries) {
-      diaryData.push([
-        formatDate(entry.date),
-        entry.ruleExecuted ? "✅" : "❌",
-        entry.emotionStable ? "✅" : "❌",
-        entry.recordKept ? "✅" : "❌",
-        entry.prepared ? "✅" : "❌",
-        entry.noFomo ? "✅" : "❌",
-        entry.pnl,
-        entry.remarks || ""
-      ]);
-    }
-
-    const diarySheet = XLSX.utils.aoa_to_sheet(diaryData);
-    XLSX.utils.book_append_sheet(wb, diarySheet, "别瞎搞日记本");
 
     // 3. Write workbook to buffer
     const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
