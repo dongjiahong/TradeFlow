@@ -39,6 +39,8 @@ model Trade {
   direction    String   // "Long" or "Short"
   positionSize Float
   entryPrice   Float
+  stopLoss     Float?
+  takeProfit   Float?
   exitPrice1   Float
   exitPrice2   Float?
   pnl          Float

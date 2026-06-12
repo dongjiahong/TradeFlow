@@ -1,7 +1,6 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
-// Point to the correct SQLite database file in the project root
 const adapter = new PrismaBetterSqlite3({
   url: "file:./dev.db"
 });
@@ -51,7 +50,7 @@ const exits = [
   "推保本",
   "EMA20",
   "移动止盈",
-  "止损触发",
+  "止损触发（Stop out）",
   "觉得有逆势压提前止盈",
   "1倍MM",
   "2倍MM",
@@ -59,11 +58,11 @@ const exits = [
 ];
 
 const symbols = [
-  "BTC",
-  "ETH",
-  "SOL",
-  "EURUSD",
-  "GOLD"
+  "BTCUSDT",
+  "XAUUSD",
+  "SPY",
+  "QQQ",
+  "ES1"
 ];
 
 async function main() {

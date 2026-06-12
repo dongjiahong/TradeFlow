@@ -42,6 +42,31 @@ const getTradeStatus = (pnl: number): "win" | "lose" | "BE" => {
   return "BE";
 };
 
+// Helper: Calculate Risk-Reward Ratio
+// RR = Reward / Risk based on entry, stop loss, and take profit prices
+const calculateRR = (
+  direction: string,
+  entryPrice: number,
+  stopLoss: number | null | undefined,
+  takeProfit: number | null | undefined
+): number | null => {
+  if (!stopLoss || !takeProfit || !entryPrice) return null;
+
+  let risk: number, reward: number;
+
+  if (direction === "Long") {
+    risk = entryPrice - stopLoss;
+    reward = takeProfit - entryPrice;
+  } else {
+    // Short
+    risk = stopLoss - entryPrice;
+    reward = entryPrice - takeProfit;
+  }
+
+  if (risk <= 0 || reward <= 0) return null;
+  return parseFloat((reward / risk).toFixed(2));
+};
+
 // --- TRADES ACTIONS ---
 
 export async function getTrades() {
@@ -64,13 +89,14 @@ export async function createTrade(data: {
   direction: string;
   positionSize: number;
   entryPrice: number;
+  stopLoss?: number | null;
+  takeProfit?: number | null;
   exitPrice1: number;
   exitPrice2?: number | null;
   remarks?: string;
   notes?: string;
   errorReason?: string;
   symbol?: string;
-  rr?: number | null;
 }) {
   try {
     const pnl = calculateTradePnl(
@@ -81,6 +107,7 @@ export async function createTrade(data: {
       data.exitPrice2
     );
     const status = getTradeStatus(pnl);
+    const rr = calculateRR(data.direction, data.entryPrice, data.stopLoss, data.takeProfit);
 
     const trade = await prisma.trade.create({
       data: {
@@ -91,10 +118,12 @@ export async function createTrade(data: {
         direction: data.direction,
         positionSize: data.positionSize,
         entryPrice: data.entryPrice,
+        stopLoss: data.stopLoss ?? null,
+        takeProfit: data.takeProfit ?? null,
         exitPrice1: data.exitPrice1,
         exitPrice2: data.exitPrice2 || null,
         pnl,
-        rr: data.rr ?? null,
+        rr,
         status,
         remarks: data.remarks || null,
         notes: data.notes || null,
@@ -121,13 +150,14 @@ export async function updateTrade(
     direction: string;
     positionSize: number;
     entryPrice: number;
+    stopLoss?: number | null;
+    takeProfit?: number | null;
     exitPrice1: number;
     exitPrice2?: number | null;
     remarks?: string;
     notes?: string;
     errorReason?: string;
     symbol?: string;
-    rr?: number | null;
   }
 ) {
   try {
@@ -139,6 +169,7 @@ export async function updateTrade(
       data.exitPrice2
     );
     const status = getTradeStatus(pnl);
+    const rr = calculateRR(data.direction, data.entryPrice, data.stopLoss, data.takeProfit);
 
     const trade = await prisma.trade.update({
       where: { id },
@@ -150,10 +181,12 @@ export async function updateTrade(
         direction: data.direction,
         positionSize: data.positionSize,
         entryPrice: data.entryPrice,
+        stopLoss: data.stopLoss ?? null,
+        takeProfit: data.takeProfit ?? null,
         exitPrice1: data.exitPrice1,
         exitPrice2: data.exitPrice2 || null,
         pnl,
-        rr: data.rr ?? null,
+        rr,
         status,
         remarks: data.remarks || null,
         notes: data.notes || null,

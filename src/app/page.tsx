@@ -20,6 +20,8 @@ export default async function Home() {
     positionSize: t.positionSize,
     direction: t.direction,
     entryPrice: t.entryPrice,
+    stopLoss: t.stopLoss,
+    takeProfit: t.takeProfit,
     exitPrice1: t.exitPrice1,
     exitPrice2: t.exitPrice2,
     pnl: t.pnl,

@@ -22,24 +22,27 @@ html {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #09090b;
+    --foreground: #e4e4e7;
   }
+}
+
+/* Custom trading palette — replaces Tailwind default emerald/rose with professional trading colors */
+:root {
+  --trade-green: #059669;
+  --trade-green-muted: #d1fae5;
+  --trade-red: #dc2626;
+  --trade-red-muted: #fee2e2;
+}
+.dark {
+  --trade-green-muted: #064e3b;
+  --trade-red-muted: #450a0a;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-
-/* Inline editing row pulse */
-@keyframes inline-row-glow {
-  0%, 100% { box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.3); }
-  50% { box-shadow: inset 0 0 0 2px rgba(16, 185, 129, 0.5); }
-}
-.inline-edit-row {
-  animation: inline-row-glow 2s ease-in-out infinite;
 }
 
 /* Screenshot grid */

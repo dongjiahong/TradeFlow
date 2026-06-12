@@ -188,7 +188,7 @@ export async function GET() {
 
       // Sidebar Row 35 to 38: Trade type statistics
       if (rIdx === 35) {
-        row[17] = "趋势延续（Continuation）"; // R
+        row[17] = "趋势延续"; // R
         row[18] = { t: "n", f: `SUMIF(D$3:D$${maxRows},R35,L$3:L$${maxRows})` }; // S
         row[19] = { t: "n", f: `IFERROR(COUNTIFS(D$3:D$${maxRows},R35,M$3:M$${maxRows},"win")/COUNTIF(D$3:D$${maxRows},R35),0)` }; // T
         row[20] = { t: "n", f: `COUNTIF(D$3:D$${maxRows},R35)` }; // U

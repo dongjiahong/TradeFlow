@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TradeFlow Pro - 交易复盘与自律系统",
   description: "基于交易日志与别瞎搞自律打卡设计的个人交易分析系统",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
