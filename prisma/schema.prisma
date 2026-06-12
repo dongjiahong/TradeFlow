@@ -42,6 +42,7 @@ model Trade {
   exitPrice1   Float
   exitPrice2   Float?
   pnl          Float
+  rr           Float?
   status       String   // "win", "lose", "BE"
   remarks      String?
   notes        String?

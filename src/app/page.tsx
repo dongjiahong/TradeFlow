@@ -24,6 +24,7 @@ export default async function Home() {
     exitPrice1: t.exitPrice1,
     exitPrice2: t.exitPrice2,
     pnl: t.pnl,
+    rr: t.rr,
     status: t.status,
     symbol: t.symbol,
     errorReason: t.errorReason,

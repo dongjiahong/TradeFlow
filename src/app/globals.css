@@ -12,6 +12,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-size-xxs: 0.75rem;
+}
+
+/* Scale up UI proportionally */
+html {
+  font-size: 18px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -88,7 +94,7 @@ body {
   width: 100%;
   min-width: 0;
   padding: 4px 6px;
-  font-size: 11px;
+  font-size: 0.65rem;
   border-radius: 6px;
   border: 1px solid;
   outline: none;

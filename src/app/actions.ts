@@ -70,6 +70,7 @@ export async function createTrade(data: {
   notes?: string;
   errorReason?: string;
   symbol?: string;
+  rr?: number | null;
 }) {
   try {
     const pnl = calculateTradePnl(
@@ -93,6 +94,7 @@ export async function createTrade(data: {
         exitPrice1: data.exitPrice1,
         exitPrice2: data.exitPrice2 || null,
         pnl,
+        rr: data.rr ?? null,
         status,
         remarks: data.remarks || null,
         notes: data.notes || null,
@@ -125,6 +127,7 @@ export async function updateTrade(
     notes?: string;
     errorReason?: string;
     symbol?: string;
+    rr?: number | null;
   }
 ) {
   try {
@@ -150,6 +153,7 @@ export async function updateTrade(
         exitPrice1: data.exitPrice1,
         exitPrice2: data.exitPrice2 || null,
         pnl,
+        rr: data.rr ?? null,
         status,
         remarks: data.remarks || null,
         notes: data.notes || null,

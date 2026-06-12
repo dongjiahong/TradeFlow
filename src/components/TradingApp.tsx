@@ -23,7 +23,8 @@ import {
   Filter,
   RefreshCw,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  BarChart3
 } from "lucide-react";
 import {
   AreaChart,
@@ -70,6 +71,7 @@ interface Trade {
   exitPrice1: number;
   exitPrice2: number | null;
   pnl: number;
+  rr: number | null;
   status: string;
   symbol: string;
   errorReason: string | null;
@@ -112,8 +114,15 @@ export default function TradingApp({
 }: TradingAppProps) {
   const [mounted, setMounted] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "diary" | "settings">("dashboard");
+  const [analysisReady, setAnalysisReady] = useState(false);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "diary" | "settings" | "analysis">("dashboard");
   const [darkMode, setDarkMode] = useState(false);
+  // Analysis date filter
+  const [quickRange, setQuickRange] = useState<"today" | "week" | "month" | "all">("all");
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: "",
+    end: ""
+  });
 
   // Core data states
   const [trades, setTrades] = useState<Trade[]>(initialTrades);
@@ -151,6 +160,7 @@ export default function TradingApp({
     entryPrice: 0,
     exitPrice1: 0,
     exitPrice2: "",
+    rr: "",
     errorReason: "",
     symbol: ""
   });
@@ -193,11 +203,15 @@ export default function TradingApp({
     }
   }, [initialSetups, initialExits, initialSymbols]);
 
-  // Reset chart ready state when switching to dashboard tab
+  // Reset chart ready state when switching to dashboard or analysis tab
   useEffect(() => {
     if (activeTab === "dashboard") {
       setDashboardReady(false);
       requestAnimationFrame(() => setDashboardReady(true));
+    }
+    if (activeTab === "analysis") {
+      setAnalysisReady(false);
+      requestAnimationFrame(() => setAnalysisReady(true));
     }
   }, [activeTab]);
 
@@ -426,7 +440,8 @@ export default function TradingApp({
 
   const handleSaveTrade = async () => {
     const parsedExit2 = tradeForm.exitPrice2 ? parseFloat(tradeForm.exitPrice2) : null;
-    
+    const parsedRr = tradeForm.rr ? parseFloat(tradeForm.rr) : null;
+
     const payload = {
       date: tradeForm.date,
       remarks: tradeForm.remarks,
@@ -439,6 +454,7 @@ export default function TradingApp({
       entryPrice: Number(tradeForm.entryPrice),
       exitPrice1: Number(tradeForm.exitPrice1),
       exitPrice2: parsedExit2,
+      rr: parsedRr,
       symbol: tradeForm.symbol,
       errorReason: tradeForm.errorReason || undefined
     };
@@ -639,6 +655,17 @@ export default function TradingApp({
                 step="any"
                 value={tradeForm.exitPrice2}
                 onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice2: e.target.value }))}
+                placeholder="选填"
+                className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 font-mono py-0.5"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-zinc-400 w-8 shrink-0">RR:</span>
+              <input
+                type="number"
+                step="any"
+                value={tradeForm.rr}
+                onChange={(e) => setTradeForm(prev => ({ ...prev, rr: e.target.value }))}
                 placeholder="选填"
                 className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 font-mono py-0.5"
               />
@@ -997,6 +1024,17 @@ export default function TradingApp({
               别瞎搞日记本
             </button>
             <button
+              onClick={() => setActiveTab("analysis")}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group ${
+                activeTab === "analysis"
+                  ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                  : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/80"
+              }`}
+            >
+              <BarChart3 size={18} className="transition-transform group-hover:scale-110" />
+              行为分析
+            </button>
+            <button
               onClick={() => setActiveTab("settings")}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group ${
                 activeTab === "settings"
@@ -1329,6 +1367,7 @@ export default function TradingApp({
                       exitPrice1: 0,
                       exitPrice2: "",
                       errorReason: "",
+                      rr: "",
                       symbol: symbols[0]?.name || ""
                     });
                   }}
@@ -1674,6 +1713,7 @@ export default function TradingApp({
                                           exitPrice1: trade.exitPrice1,
                                           exitPrice2: trade.exitPrice2 !== null ? String(trade.exitPrice2) : "",
                                           errorReason: trade.errorReason || "",
+                                          rr: trade.rr !== null ? String(trade.rr) : "",
                                           symbol: trade.symbol
                                         });
                                       }}
@@ -2267,6 +2307,500 @@ export default function TradingApp({
                 </div>
 
               </div>
+
+            </div>
+          )}
+
+          {/* TAB 5: BEHAVIOR ANALYSIS */}
+          {activeTab === "analysis" && (
+            <div className="flex flex-col gap-6 animate-fade-in">
+
+              {/* Page Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">行为分析</h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">多维度统计分析，发现你的交易模式</p>
+                </div>
+              </div>
+
+              {/* Date Filter Bar */}
+              {(() => {
+                const presetRanges = [
+                  { key: "today", label: "今天" },
+                  { key: "week", label: "本周" },
+                  { key: "month", label: "本月" },
+                  { key: "all", label: "全部" }
+                ] as const;
+                const setPreset = (key: typeof quickRange) => {
+                  const today = new Date();
+                  const toStr = (d: Date) => d.toISOString().split("T")[0];
+                  setQuickRange(key);
+                  switch (key) {
+                    case "today": setDateRange({ start: toStr(today), end: toStr(today) }); break;
+                    case "week": {
+                      const ws = new Date(today); ws.setDate(today.getDate() - today.getDay());
+                      setDateRange({ start: toStr(ws), end: toStr(today) }); break;
+                    }
+                    case "month": {
+                      const ms = new Date(today.getFullYear(), today.getMonth(), 1);
+                      setDateRange({ start: toStr(ms), end: toStr(today) }); break;
+                    }
+                    case "all": setDateRange({ start: "", end: "" }); break;
+                  }
+                };
+                return (
+                  <div className="p-4 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center gap-3">
+                    <Filter size={14} className="text-zinc-400 shrink-0" />
+                    {presetRanges.map(p => (
+                      <button
+                        key={p.key}
+                        onClick={() => setPreset(p.key)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          quickRange === p.key
+                            ? "bg-emerald-500 text-white shadow-sm"
+                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                    <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                    <input
+                      type="date"
+                      value={dateRange.start}
+                      onChange={e => { setDateRange(prev => ({ ...prev, start: e.target.value })); setQuickRange("all"); }}
+                      className="px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-xs"
+                    />
+                    <span className="text-xs text-zinc-400">~</span>
+                    <input
+                      type="date"
+                      value={dateRange.end}
+                      onChange={e => { setDateRange(prev => ({ ...prev, end: e.target.value })); setQuickRange("all"); }}
+                      className="px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-xs"
+                    />
+                  </div>
+                );
+              })()}
+
+              {/* Filter Summary */}
+              {(() => {
+                const filtered = trades.filter(t => {
+                  if (!dateRange.start && !dateRange.end) return true;
+                  const d = new Date(t.date).toISOString().split("T")[0];
+                  return d >= dateRange.start && d <= dateRange.end;
+                });
+                return (
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    当前筛选范围内共 <span className="font-bold text-zinc-800 dark:text-zinc-200">{filtered.length}</span> 笔交易
+                  </p>
+                );
+              })()}
+
+              {/* Helper: filtered trades */}
+              {(() => {
+                const filtered = trades.filter(t => {
+                  if (!dateRange.start && !dateRange.end) return true;
+                  const d = new Date(t.date).toISOString().split("T")[0];
+                  return d >= dateRange.start && d <= dateRange.end;
+                });
+
+                /* ── 1. 入场理由分析 ── */
+                const setupMap = new Map<string, { count: number; wins: number; totalPnl: number; dirLong: number; dirShort: number; totalRr: number; rrCount: number }>();
+                filtered.forEach(t => {
+                  const s = setupMap.get(t.setup) || { count: 0, wins: 0, totalPnl: 0, dirLong: 0, dirShort: 0, totalRr: 0, rrCount: 0 };
+                  s.count++; s.totalPnl += t.pnl;
+                  if (t.status === "win") s.wins++;
+                  if (t.direction === "Long") s.dirLong++; else s.dirShort++;
+                  if (t.rr !== null && t.rr > 0) { s.totalRr += t.rr; s.rrCount++; }
+                  setupMap.set(t.setup, s);
+                });
+                const setupStats = Array.from(setupMap.entries()).map(([name, s]) => ({
+                  name, count: s.count, totalPnl: parseFloat(s.totalPnl.toFixed(2)),
+                  winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
+                  avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
+                  avgRr: s.rrCount > 0 ? parseFloat((s.totalRr / s.rrCount).toFixed(2)) : 0,
+                  wins: s.wins, losses: s.count - s.wins,
+                  dirLong: s.dirLong, dirShort: s.dirShort
+                })).sort((a, b) => b.count - a.count);
+
+                /* ── 2. 做错原因分析 ── */
+                const errorMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+                filtered.forEach(t => {
+                  if (!t.errorReason) return;
+                  const s = errorMap.get(t.errorReason) || { count: 0, wins: 0, totalPnl: 0 };
+                  s.count++; s.totalPnl += t.pnl;
+                  if (t.status === "win") s.wins++;
+                  errorMap.set(t.errorReason, s);
+                });
+                const errorStats = Array.from(errorMap.entries()).map(([name, s]) => ({
+                  name, count: s.count,
+                  winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
+                  avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
+                  totalPnl: parseFloat(s.totalPnl.toFixed(2))
+                })).sort((a, b) => b.count - a.count);
+
+                /* ── 3. 离场理由分析 ── */
+                const exitMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+                filtered.forEach(t => {
+                  const s = exitMap.get(t.exitReason) || { count: 0, wins: 0, totalPnl: 0 };
+                  s.count++; s.totalPnl += t.pnl;
+                  if (t.status === "win") s.wins++;
+                  exitMap.set(t.exitReason, s);
+                });
+                const exitStats = Array.from(exitMap.entries()).map(([name, s]) => ({
+                  name, count: s.count,
+                  winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
+                  avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
+                  totalPnl: parseFloat(s.totalPnl.toFixed(2))
+                })).sort((a, b) => b.count - a.count);
+
+                /* ── 4. 交易类型分析 ── */
+                const typeMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+                filtered.forEach(t => {
+                  const s = typeMap.get(t.type) || { count: 0, wins: 0, totalPnl: 0 };
+                  s.count++; s.totalPnl += t.pnl;
+                  if (t.status === "win") s.wins++;
+                  typeMap.set(t.type, s);
+                });
+                const typeStats = Array.from(typeMap.entries()).map(([name, s]) => ({
+                  name, count: s.count,
+                  winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
+                  avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
+                  totalPnl: parseFloat(s.totalPnl.toFixed(2))
+                })).sort((a, b) => b.count - a.count);
+
+                /* ── 5. 品类分析 ── */
+                const symbolMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+                filtered.forEach(t => {
+                  const s = symbolMap.get(t.symbol) || { count: 0, wins: 0, totalPnl: 0 };
+                  s.count++; s.totalPnl += t.pnl;
+                  if (t.status === "win") s.wins++;
+                  symbolMap.set(t.symbol, s);
+                });
+                const symbolStats = Array.from(symbolMap.entries()).map(([name, s]) => ({
+                  name, count: s.count,
+                  winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
+                  avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
+                  totalPnl: parseFloat(s.totalPnl.toFixed(2))
+                })).sort((a, b) => b.count - a.count);
+
+                /* ── 6. 方向分析 ── */
+                const dirMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+                filtered.forEach(t => {
+                  const s = dirMap.get(t.direction) || { count: 0, wins: 0, totalPnl: 0 };
+                  s.count++; s.totalPnl += t.pnl;
+                  if (t.status === "win") s.wins++;
+                  dirMap.set(t.direction, s);
+                });
+                const dirStats = Array.from(dirMap.entries()).map(([name, s]) => ({
+                  name, count: s.count,
+                  winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
+                  avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
+                  totalPnl: parseFloat(s.totalPnl.toFixed(2))
+                }));
+
+                const COLORS = ["#10b981", "#f43f5e", "#fb923c", "#38bdf8", "#818cf8", "#c084fc", "#facc15", "#a7f3d0"];
+
+                /* Helper to render a dimension table */
+                const renderStatTable = (data: { name: string; count: number; totalPnl: number; winRate: number; avgPnl: number }[]) => (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400">
+                          <th className="text-left py-2 pr-4 font-semibold">维度</th>
+                          <th className="text-right py-2 px-3 font-semibold">次数</th>
+                          <th className="text-right py-2 px-3 font-semibold">总盈亏</th>
+                          <th className="text-right py-2 px-3 font-semibold">胜率</th>
+                          <th className="text-right py-2 px-3 font-semibold">均盈亏</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.map((row, i) => (
+                          <tr key={i} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
+                            <td className="py-2 pr-4 font-semibold text-zinc-800 dark:text-zinc-200 truncate max-w-[140px]">{row.name}</td>
+                            <td className="text-right py-2 px-3 font-mono text-zinc-600 dark:text-zinc-400">{row.count}</td>
+                            <td className={`text-right py-2 px-3 font-mono font-bold ${row.totalPnl > 0 ? "text-emerald-500" : row.totalPnl < 0 ? "text-rose-500" : "text-zinc-500"}`}>
+                              {row.totalPnl > 0 ? "+" : ""}{row.totalPnl.toFixed(2)}
+                            </td>
+                            <td className="text-right py-2 px-3 font-mono font-bold text-zinc-700 dark:text-zinc-300">{row.winRate}%</td>
+                            <td className={`text-right py-2 px-3 font-mono font-bold ${row.avgPnl > 0 ? "text-emerald-500" : row.avgPnl < 0 ? "text-rose-500" : "text-zinc-500"}`}>
+                              {row.avgPnl > 0 ? "+" : ""}{row.avgPnl.toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+
+                return (
+                  <>{/* Container for all dimension blocks — inline rendering via array */}
+
+                    {/* 1. 入场理由分析 */}
+                    <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm">
+                      <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
+                        <TrendingUp size={18} className="text-emerald-500" />
+                        入场理由分析
+                      </h3>
+                      {setupStats.length > 0 ? (
+                        <div className="flex flex-col lg:flex-row gap-6">
+                          <div className="flex-1 min-w-0">
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400">
+                                    <th className="text-left py-2 pr-4 font-semibold">入场理由</th>
+                                    <th className="text-right py-2 px-3 font-semibold">次数</th>
+                                    <th className="text-right py-2 px-3 font-semibold">总盈亏</th>
+                                    <th className="text-right py-2 px-3 font-semibold">胜率</th>
+                                    <th className="text-right py-2 px-3 font-semibold">均盈亏</th>
+                                    <th className="text-right py-2 px-3 font-semibold">平均 RR</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {setupStats.map((row, i) => (
+                                    <tr key={i} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
+                                      <td className="py-2 pr-4 font-semibold text-zinc-800 dark:text-zinc-200 truncate max-w-[140px]">{row.name}</td>
+                                      <td className="text-right py-2 px-3 font-mono text-zinc-600 dark:text-zinc-400">{row.count}</td>
+                                      <td className={`text-right py-2 px-3 font-mono font-bold ${row.totalPnl > 0 ? "text-emerald-500" : row.totalPnl < 0 ? "text-rose-500" : "text-zinc-500"}`}>
+                                        {row.totalPnl > 0 ? "+" : ""}{row.totalPnl.toFixed(2)}
+                                      </td>
+                                      <td className="text-right py-2 px-3 font-mono font-bold text-zinc-700 dark:text-zinc-300">{row.winRate}%</td>
+                                      <td className={`text-right py-2 px-3 font-mono font-bold ${row.avgPnl > 0 ? "text-emerald-500" : row.avgPnl < 0 ? "text-rose-500" : "text-zinc-500"}`}>
+                                        {row.avgPnl > 0 ? "+" : ""}{row.avgPnl.toFixed(2)}
+                                      </td>
+                                      <td className="text-right py-2 px-3 font-mono font-bold text-zinc-700 dark:text-zinc-300">
+                                        {row.avgRr > 0 ? row.avgRr.toFixed(2) : "-"}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                          {analysisReady && (
+                            <div className="h-60 w-full lg:w-72 shrink-0">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={setupStats.slice(0, 8)} layout="vertical">
+                                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
+                                  <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
+                                  <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={90}
+                                    tickFormatter={(v: string) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
+                                  <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
+                                  <Bar dataKey="totalPnl" name="总盈亏">
+                                    {setupStats.map((entry, idx) => (
+                                      <Cell key={idx} fill={entry.totalPnl >= 0 ? "#10b981" : "#f43f5e"} />
+                                    ))}
+                                  </Bar>
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-400">暂无数据</p>
+                      )}
+                    </div>
+
+                    {/* 2. 做错原因分析 */}
+                    <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm">
+                      <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
+                        <AlertTriangle size={18} className="text-rose-500" />
+                        做错原因分析
+                      </h3>
+                      {errorStats.length > 0 ? (
+                        <div className="flex flex-col lg:flex-row gap-6 items-start">
+                          {analysisReady && (
+                            <div className="h-56 w-56 shrink-0">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <RePieChart>
+                                  <Pie data={errorStats} cx="50%" cy="50%" innerRadius={55} outerRadius={75} paddingAngle={3} dataKey="count">
+                                    {errorStats.map((_, idx) => (
+                                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
+                                </RePieChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400">
+                                    <th className="text-left py-2 pr-4 font-semibold">错误原因</th>
+                                    <th className="text-right py-2 px-3 font-semibold">次数</th>
+                                    <th className="text-right py-2 px-3 font-semibold">该错误胜率</th>
+                                    <th className="text-right py-2 px-3 font-semibold">均盈亏</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {errorStats.map((row, i) => (
+                                    <tr key={i} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
+                                      <td className="py-2 pr-4 font-semibold text-zinc-800 dark:text-zinc-200 truncate max-w-[160px]">{row.name}</td>
+                                      <td className="text-right py-2 px-3 font-mono text-zinc-600 dark:text-zinc-400">{row.count}</td>
+                                      <td className="text-right py-2 px-3 font-mono font-bold text-zinc-700 dark:text-zinc-300">{row.winRate}%</td>
+                                      <td className={`text-right py-2 px-3 font-mono font-bold ${row.avgPnl > 0 ? "text-emerald-500" : row.avgPnl < 0 ? "text-rose-500" : "text-zinc-500"}`}>
+                                        {row.avgPnl > 0 ? "+" : ""}{row.avgPnl.toFixed(2)}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-400">没有错误记录，继续保持！</p>
+                      )}
+                    </div>
+
+                    {/* 3. 离场理由分析 */}
+                    <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm">
+                      <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
+                        <ChevronRight size={18} className="text-emerald-500" />
+                        离场理由分析
+                      </h3>
+                      {exitStats.length > 0 ? (
+                        <div className="flex flex-col lg:flex-row gap-6">
+                          <div className="flex-1 min-w-0">{renderStatTable(exitStats)}</div>
+                          {analysisReady && (
+                            <div className="h-60 w-full lg:w-72 shrink-0">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={exitStats.slice(0, 8)} layout="vertical">
+                                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
+                                  <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
+                                  <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={90}
+                                    tickFormatter={(v: string) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
+                                  <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
+                                  <Bar dataKey="count" name="次数" fill="#38bdf8" />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-400">暂无数据</p>
+                      )}
+                    </div>
+
+                    {/* 4. 交易类型分析 */}
+                    <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm">
+                      <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
+                        <BarChart3 size={18} className="text-emerald-500" />
+                        交易类型分析
+                      </h3>
+                      {typeStats.length > 0 ? (
+                        <div className="flex flex-col lg:flex-row gap-6">
+                          <div className="flex-1 min-w-0">{renderStatTable(typeStats)}</div>
+                          {analysisReady && (
+                            <div className="h-60 w-full lg:w-72 shrink-0">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={typeStats} layout="vertical">
+                                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
+                                  <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
+                                  <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={100}
+                                    tickFormatter={(v: string) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
+                                  <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
+                                  <Bar dataKey="totalPnl" name="总盈亏">
+                                    {typeStats.map((entry, idx) => (
+                                      <Cell key={idx} fill={entry.totalPnl >= 0 ? "#10b981" : "#f43f5e"} />
+                                    ))}
+                                  </Bar>
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-400">暂无数据</p>
+                      )}
+                    </div>
+
+                    {/* 5. 品类分析 */}
+                    <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm">
+                      <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
+                        <DollarSign size={18} className="text-emerald-500" />
+                        品类分析
+                      </h3>
+                      {symbolStats.length > 0 ? (
+                        <div className="flex flex-col lg:flex-row gap-6">
+                          <div className="flex-1 min-w-0">{renderStatTable(symbolStats)}</div>
+                          {analysisReady && (
+                            <div className="h-60 w-full lg:w-72 shrink-0">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={symbolStats.slice(0, 8)} layout="vertical">
+                                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
+                                  <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
+                                  <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={60} />
+                                  <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
+                                  <Bar dataKey="totalPnl" name="总盈亏">
+                                    {symbolStats.map((entry, idx) => (
+                                      <Cell key={idx} fill={entry.totalPnl >= 0 ? "#10b981" : "#f43f5e"} />
+                                    ))}
+                                  </Bar>
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-400">暂无数据</p>
+                      )}
+                    </div>
+
+                    {/* 6. 方向分析 */}
+                    <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm">
+                      <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
+                        <TrendingUp size={18} className="text-emerald-500" />
+                        方向分析
+                      </h3>
+                      {dirStats.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {dirStats.map(dir => (
+                            <div key={dir.name} className={`p-5 rounded-2xl border shadow-sm ${
+                              dir.name === "Long"
+                                ? "bg-emerald-500/5 border-emerald-200 dark:border-emerald-800"
+                                : "bg-rose-500/5 border-rose-200 dark:border-rose-800"
+                            }`}>
+                              <div className="flex items-center justify-between mb-3">
+                                <span className={`text-lg font-black ${dir.name === "Long" ? "text-emerald-500" : "text-rose-500"}`}>
+                                  {dir.name === "Long" ? "Long (做多)" : "Short (做空)"}
+                                </span>
+                                <span className="text-2xl font-black font-mono">
+                                  <span className={dir.totalPnl > 0 ? "text-emerald-500" : dir.totalPnl < 0 ? "text-rose-500" : "text-zinc-500"}>
+                                    {dir.totalPnl > 0 ? "+" : ""}{dir.totalPnl.toFixed(2)}
+                                  </span>
+                                </span>
+                              </div>
+                              <div className="flex gap-6 text-xs">
+                                <div>
+                                  <span className="text-zinc-400">次数</span>
+                                  <p className="font-bold text-zinc-700 dark:text-zinc-300">{dir.count}</p>
+                                </div>
+                                <div>
+                                  <span className="text-zinc-400">胜率</span>
+                                  <p className="font-bold text-zinc-700 dark:text-zinc-300">{dir.winRate}%</p>
+                                </div>
+                                <div>
+                                  <span className="text-zinc-400">均盈亏</span>
+                                  <p className={`font-bold ${dir.avgPnl > 0 ? "text-emerald-500" : dir.avgPnl < 0 ? "text-rose-500" : "text-zinc-500"}`}>
+                                    {dir.avgPnl > 0 ? "+" : ""}{dir.avgPnl.toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-400">暂无数据</p>
+                      )}
+                    </div>
+
+                  </>
+                );
+              })()}
 
             </div>
           )}
