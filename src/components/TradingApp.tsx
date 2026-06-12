@@ -133,7 +133,7 @@ export default function TradingApp({
     date: new Date().toISOString().split("T")[0],
     remarks: "",
     setup: "",
-    type: "趋势延续（Continuation）",
+    type: "趋势延续",
     exitReason: "",
     notes: "",
     positionSize: 1,
@@ -535,7 +535,7 @@ export default function TradingApp({
             onChange={(e) => setTradeForm(prev => ({ ...prev, type: e.target.value }))}
             className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 py-1"
           >
-            <option value="趋势延续（Continuation）">趋势延续</option>
+            <option value="趋势延续">趋势延续</option>
             <option value="反转（Reversal）">反转</option>
             <option value="突破（BO）">突破</option>
             <option value="假突破（fBO）">假突破</option>
@@ -952,17 +952,17 @@ export default function TradingApp({
         </aside>
 
         {/* Content Workspace */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 ml-64">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 ml-64">
           
           {/* TAB 1: DASHBOARD */}
           {activeTab === "dashboard" && (
-            <div className="flex flex-col gap-6 animate-fade-in">
+            <div className="flex flex-col gap-4 animate-fade-in">
               
               {/* Main Stats Cards Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
                 
                 {/* 1. Net Profit */}
-                <div className="p-5 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
+                <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase">总盈亏</span>
                     <div className={`p-1.5 rounded-lg ${netProfit >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"}`}>
@@ -976,7 +976,7 @@ export default function TradingApp({
                 </div>
 
                 {/* 2. Win Rate */}
-                <div className="p-5 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
+                <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase">总胜率</span>
                     <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
@@ -990,7 +990,7 @@ export default function TradingApp({
                 </div>
 
                 {/* 3. Profit Factor */}
-                <div className="p-5 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
+                <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase">盈利因子</span>
                     <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
@@ -1004,7 +1004,7 @@ export default function TradingApp({
                 </div>
 
                 {/* 4. Average Win */}
-                <div className="p-5 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
+                <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase">平均盈利</span>
                     <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
@@ -1018,7 +1018,7 @@ export default function TradingApp({
                 </div>
 
                 {/* 5. Average Loss */}
-                <div className="p-5 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
+                <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase">平均亏损</span>
                     <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500">
@@ -1032,7 +1032,7 @@ export default function TradingApp({
                 </div>
 
                 {/* 6. PnL Ratio */}
-                <div className="p-5 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
+                <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase">风险回报比</span>
                     <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500">
@@ -1109,10 +1109,10 @@ export default function TradingApp({
               </div>
 
               {/* Chart breakdown subgrid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 
                 {/* Chart A: Setup Performance Bar Chart */}
-                <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors duration-200">
+                <div className="p-4 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors duration-200">
                   <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
                     <TrendingUp size={18} className="text-emerald-500" />
                     各入场理由盈利表现 (Top Setups)
@@ -1161,7 +1161,7 @@ export default function TradingApp({
                 </div>
 
                 {/* Chart B: Error reasons breakdown Pie Chart */}
-                <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors duration-200">
+                <div className="p-4 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors duration-200">
                   <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
                     <AlertTriangle size={18} className="text-rose-500" />
                     做错原因分布 (Error Breakdown)
@@ -1230,7 +1230,7 @@ export default function TradingApp({
 
           {/* TAB 2: JOURNAL GRID */}
           {activeTab === "journal" && (
-            <div className="flex flex-col gap-6 animate-fade-in">
+            <div className="flex flex-col gap-4 animate-fade-in">
               
               {/* Header and Control row */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1246,7 +1246,7 @@ export default function TradingApp({
                       date: new Date().toISOString().split("T")[0],
                       remarks: "",
                       setup: setups[0]?.name || "",
-                      type: "趋势延续（Continuation）",
+                      type: "趋势延续",
                       exitReason: exits[0]?.name || "",
                       notes: "",
                       positionSize: 1,
@@ -1267,7 +1267,7 @@ export default function TradingApp({
               </div>
 
               {/* Advanced Filter panel */}
-              <div className="p-4 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 flex flex-wrap gap-4 items-center">
+              <div className="p-3 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 flex flex-wrap gap-3 items-center">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 w-full sm:w-64">
                   <Filter size={14} className="text-zinc-400" />
                   <input
@@ -1333,7 +1333,7 @@ export default function TradingApp({
                   className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 text-xs focus:outline-none"
                 >
                   <option value="all">所有交易类型</option>
-                  <option value="趋势延续（Continuation）">趋势延续</option>
+                  <option value="趋势延续">趋势延续</option>
                   <option value="反转（Reversal）">反转</option>
                   <option value="突破（BO）">突破</option>
                   <option value="假突破（fBO）">假突破</option>
@@ -1363,18 +1363,18 @@ export default function TradingApp({
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="border-b bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800 font-bold text-zinc-500 dark:text-zinc-400">
-                        <th className="p-4">日期</th>
-                        <th className="p-4">品类</th>
-                        <th className="p-4">方向</th>
-                        <th className="p-4">入场原因</th>
-                        <th className="p-4">交易类型</th>
-                        <th className="p-4">仓位</th>
-                        <th className="p-4">入场/离场价格</th>
+                        <th className="px-3 py-2">日期</th>
+                        <th className="px-3 py-2">品类</th>
+                        <th className="px-3 py-2">方向</th>
+                        <th className="px-3 py-2">入场原因</th>
+                        <th className="px-3 py-2">交易类型</th>
+                        <th className="px-3 py-2">仓位</th>
+                        <th className="px-3 py-2">入场/离场价格</th>
                         <th className="p-4 text-right">盈亏点数/金额</th>
-                        <th className="p-4">盈亏状态</th>
-                        <th className="p-4">离场理由</th>
-                        <th className="p-4">错误原因</th>
-                        <th className="p-4">备注/说明</th>
+                        <th className="px-3 py-2">盈亏状态</th>
+                        <th className="px-3 py-2">离场理由</th>
+                        <th className="px-3 py-2">错误原因</th>
+                        <th className="px-3 py-2">备注/说明</th>
                         <th className="p-4 text-center">操作</th>
                       </tr>
                     </thead>
@@ -1516,15 +1516,15 @@ export default function TradingApp({
                           return (
                             <React.Fragment key={trade.id}>
                               <tr className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 transition-colors">
-                                <td className="p-4 font-mono font-medium whitespace-nowrap">
+                                <td className="px-3 py-2 font-mono font-medium whitespace-nowrap">
                                   {new Date(trade.date).toISOString().split("T")[0]}
                                 </td>
-                                <td className="p-4 whitespace-nowrap">
+                                <td className="px-3 py-2 whitespace-nowrap">
                                   <span className="px-2 py-0.5 rounded-full font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xxs">
                                     {trade.symbol || "未知"}
                                   </span>
                                 </td>
-                                <td className="p-4">
+                                <td className="px-3 py-2">
                                   <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-xxs ${
                                     trade.direction === "Long" 
                                       ? "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400" 
@@ -1533,24 +1533,24 @@ export default function TradingApp({
                                     {trade.direction}
                                   </span>
                                 </td>
-                                <td className="p-4 font-semibold text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+                                <td className="px-3 py-2 font-semibold text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
                                   {trade.setup}
                                 </td>
-                                <td className="p-4 text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                                <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
                                   {trade.type}
                                 </td>
-                                <td className="p-4 font-mono">{trade.positionSize}</td>
-                                <td className="p-4 font-mono text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
+                                <td className="px-3 py-2 font-mono">{trade.positionSize}</td>
+                                <td className="px-3 py-2 font-mono text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
                                   <div>入: {trade.entryPrice}</div>
                                   <div>出1: {trade.exitPrice1}</div>
                                   {trade.exitPrice2 && <div>出2: {trade.exitPrice2}</div>}
                                 </td>
-                                <td className={`p-4 font-mono font-bold text-right whitespace-nowrap ${
+                                <td className={`px-3 py-2 font-mono font-bold text-right whitespace-nowrap ${
                                   trade.pnl > 0 ? "text-emerald-500" : trade.pnl < 0 ? "text-rose-500" : "text-zinc-500"
                                 }`}>
                                   {trade.pnl > 0 ? "+" : ""}{trade.pnl.toFixed(2)}
                                 </td>
-                                <td className="p-4">
+                                <td className="px-3 py-2">
                                   <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-xxs ${
                                     trade.status === "win"
                                       ? "bg-emerald-500/10 text-emerald-500 dark:text-emerald-400"
@@ -1561,13 +1561,13 @@ export default function TradingApp({
                                     {trade.status}
                                   </span>
                                 </td>
-                                <td className="p-4 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">{trade.exitReason}</td>
-                                <td className="p-4 text-rose-500 dark:text-rose-400 whitespace-nowrap font-medium">{trade.errorReason || "-"}</td>
-                                <td className="p-4 max-w-xs truncate" title={trade.remarks || ""}>
+                                <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">{trade.exitReason}</td>
+                                <td className="px-3 py-2 text-rose-500 dark:text-rose-400 whitespace-nowrap font-medium">{trade.errorReason || "-"}</td>
+                                <td className="px-3 py-2 max-w-xs truncate" title={trade.remarks || ""}>
                                   <div className="font-semibold text-zinc-700 dark:text-zinc-300 truncate">{trade.remarks || "-"}</div>
                                   <div className="text-xxs text-zinc-400 truncate">{trade.notes}</div>
                                 </td>
-                                <td className="p-4">
+                                <td className="px-3 py-2">
                                   <div className="flex items-center justify-center gap-1.5">
                                     <button
                                       onClick={() => {
@@ -1709,7 +1709,7 @@ export default function TradingApp({
 
           {/* TAB 4: SETTINGS */}
           {activeTab === "settings" && (
-            <div className="flex flex-col gap-6 animate-fade-in">
+            <div className="flex flex-col gap-4 animate-fade-in">
               
               <div>
                 <h2 className="text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">系统设置与管理</h2>
@@ -1717,13 +1717,13 @@ export default function TradingApp({
               </div>
 
               {/* Data Import / Export Panel */}
-              <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
+              <div className="p-4 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
                 <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-100 border-b pb-3 border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
                   <RefreshCw size={16} className="text-emerald-500" />
                   Excel 模板数据互通
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                   
                   {/* Import Excel */}
                   <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between gap-4">
@@ -1785,10 +1785,10 @@ export default function TradingApp({
               </div>
 
               {/* Dynamic Option Management Panels Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 
                 {/* 1. Setup Options Management */}
-                <div className="p-5 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
+                <div className="p-4 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 border-b pb-2 dark:border-zinc-800">
                     入场理由配置 ({setups.length})
                   </h3>
@@ -1827,7 +1827,7 @@ export default function TradingApp({
                 </div>
 
                 {/* 2. Error Options Management */}
-                <div className="p-5 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
+                <div className="p-4 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 border-b pb-2 dark:border-zinc-800">
                     做错原因配置 ({errors.length})
                   </h3>
@@ -1866,7 +1866,7 @@ export default function TradingApp({
                 </div>
 
                 {/* 3. Exit Options Management */}
-                <div className="p-5 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
+                <div className="p-4 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 border-b pb-2 dark:border-zinc-800">
                     离场理由配置 ({exits.length})
                   </h3>
@@ -1905,7 +1905,7 @@ export default function TradingApp({
                 </div>
 
                 {/* 4. Symbol Options Management */}
-                <div className="p-5 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
+                <div className="p-4 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col gap-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 border-b pb-2 dark:border-zinc-800">
                     交易品类配置 ({symbols.length})
                   </h3>
@@ -1950,7 +1950,7 @@ export default function TradingApp({
 
           {/* TAB 5: BEHAVIOR ANALYSIS */}
           {activeTab === "analysis" && (
-            <div className="flex flex-col gap-6 animate-fade-in">
+            <div className="flex flex-col gap-4 animate-fade-in">
 
               {/* Page Header */}
               <div className="flex items-center justify-between">
@@ -1986,7 +1986,7 @@ export default function TradingApp({
                   }
                 };
                 return (
-                  <div className="p-4 rounded-2xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center gap-3">
+                  <div className="p-3 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center gap-2">
                     <Filter size={14} className="text-zinc-400 shrink-0" />
                     {presetRanges.map(p => (
                       <button
@@ -2180,7 +2180,7 @@ export default function TradingApp({
                         入场理由分析
                       </h3>
                       {setupStats.length > 0 ? (
-                        <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="flex flex-col lg:flex-row gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="overflow-x-auto">
                               <table className="w-full text-xs">
@@ -2246,7 +2246,7 @@ export default function TradingApp({
                         做错原因分析
                       </h3>
                       {errorStats.length > 0 ? (
-                        <div className="flex flex-col lg:flex-row gap-6 items-start">
+                        <div className="flex flex-col lg:flex-row gap-4 items-start">
                           {analysisReady && (
                             <div className="h-56 w-56 shrink-0">
                               <ResponsiveContainer width="100%" height="100%">
@@ -2300,7 +2300,7 @@ export default function TradingApp({
                         离场理由分析
                       </h3>
                       {exitStats.length > 0 ? (
-                        <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="flex flex-col lg:flex-row gap-4">
                           <div className="flex-1 min-w-0">{renderStatTable(exitStats)}</div>
                           {analysisReady && (
                             <div className="h-60 w-full lg:w-72 shrink-0">
@@ -2329,7 +2329,7 @@ export default function TradingApp({
                         交易类型分析
                       </h3>
                       {typeStats.length > 0 ? (
-                        <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="flex flex-col lg:flex-row gap-4">
                           <div className="flex-1 min-w-0">{renderStatTable(typeStats)}</div>
                           {analysisReady && (
                             <div className="h-60 w-full lg:w-72 shrink-0">
@@ -2362,7 +2362,7 @@ export default function TradingApp({
                         品类分析
                       </h3>
                       {symbolStats.length > 0 ? (
-                        <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="flex flex-col lg:flex-row gap-4">
                           <div className="flex-1 min-w-0">{renderStatTable(symbolStats)}</div>
                           {analysisReady && (
                             <div className="h-60 w-full lg:w-72 shrink-0">
@@ -2396,7 +2396,7 @@ export default function TradingApp({
                       {dirStats.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {dirStats.map(dir => (
-                            <div key={dir.name} className={`p-5 rounded-2xl border shadow-sm ${
+                            <div key={dir.name} className={`p-3 rounded-lg border shadow-sm ${
                               dir.name === "Long"
                                 ? "bg-emerald-500/5 border-emerald-200 dark:border-emerald-800"
                                 : "bg-rose-500/5 border-rose-200 dark:border-rose-800"
