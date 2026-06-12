@@ -111,6 +111,7 @@ export default function TradingApp({
   initialSymbols
 }: TradingAppProps) {
   const [mounted, setMounted] = useState(false);
+  const [dashboardReady, setDashboardReady] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "diary" | "settings">("dashboard");
   const [darkMode, setDarkMode] = useState(false);
 
@@ -178,6 +179,8 @@ export default function TradingApp({
 
   useEffect(() => {
     setMounted(true);
+    // Delay chart rendering to let DOM layout settle
+    requestAnimationFrame(() => setDashboardReady(true));
     // Default form setup selection
     if (initialSetups.length > 0) {
       setTradeForm(prev => ({ ...prev, setup: initialSetups[0].name }));
@@ -189,6 +192,14 @@ export default function TradingApp({
       setTradeForm(prev => ({ ...prev, symbol: initialSymbols[0].name }));
     }
   }, [initialSetups, initialExits, initialSymbols]);
+
+  // Reset chart ready state when switching to dashboard tab
+  useEffect(() => {
+    if (activeTab === "dashboard") {
+      setDashboardReady(false);
+      requestAnimationFrame(() => setDashboardReady(true));
+    }
+  }, [activeTab]);
 
   // Sync html class for Tailwind v4 dark mode
   useEffect(() => {
@@ -1117,6 +1128,7 @@ export default function TradingApp({
                 </h3>
                 <div className="h-80 w-full">
                   {capitalCurveData.length > 0 ? (
+                    dashboardReady ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={capitalCurveData}>
                         <defs>
@@ -1157,6 +1169,11 @@ export default function TradingApp({
                         />
                       </AreaChart>
                     </ResponsiveContainer>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-zinc-400">
+                        加载图表中...
+                      </div>
+                    )
                   ) : (
                     <div className="flex h-full items-center justify-center text-zinc-400">
                       暂无交易记录，无法显示盈亏曲线。
@@ -1174,8 +1191,9 @@ export default function TradingApp({
                     <TrendingUp size={18} className="text-emerald-500" />
                     各入场理由盈利表现 (Top Setups)
                   </h3>
-                  <div className="h-80">
+                  <div className="h-80 w-full">
                     {setupChartData.length > 0 ? (
+                      dashboardReady ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={setupChartData.slice(0, 10)} layout="vertical">
                           <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
@@ -1203,6 +1221,11 @@ export default function TradingApp({
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-zinc-400">
+                          加载图表中...
+                        </div>
+                      )
                     ) : (
                       <div className="flex h-full items-center justify-center text-zinc-400">
                         暂无数据，请先录入交易。
@@ -1219,6 +1242,7 @@ export default function TradingApp({
                   </h3>
                   <div className="h-80 flex flex-col md:flex-row items-center justify-center gap-4">
                     {errorPieData.length > 0 ? (
+                      dashboardReady ? (
                       <>
                         <div className="h-60 w-60 shrink-0">
                           <ResponsiveContainer width="100%" height="100%">
@@ -1260,6 +1284,11 @@ export default function TradingApp({
                           ))}
                         </div>
                       </>
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-zinc-400">
+                          加载图表中...
+                        </div>
+                      )
                     ) : (
                       <div className="flex h-full items-center justify-center text-zinc-400">
                         目前非常完美，未记录任何错误记录！
