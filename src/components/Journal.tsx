@@ -124,33 +124,33 @@ export default function Journal({
             return (
               <div className="flex flex-col gap-1 min-w-[120px]">
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-zinc-400 w-10 shrink-0">入场:</span>
+                  <span className="text-xs text-zinc-400 w-10 shrink-0">入场:</span>
                   <input type="number" step="any" required value={tradeForm.entryPrice}
                     onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: parseFloat(e.target.value) || 0 }))}
                     className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 font-mono py-0.5" />
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-zinc-400 w-10 shrink-0">SL:</span>
+                  <span className="text-xs text-zinc-400 w-10 shrink-0">SL:</span>
                   <input type="number" step="any" value={tradeForm.stopLoss}
                     onChange={(e) => setTradeForm(prev => ({ ...prev, stopLoss: e.target.value }))}
                     placeholder="止损"
                     className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 font-mono py-0.5" />
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-zinc-400 w-10 shrink-0">TP:</span>
+                  <span className="text-xs text-zinc-400 w-10 shrink-0">TP:</span>
                   <input type="number" step="any" value={tradeForm.takeProfit}
                     onChange={(e) => setTradeForm(prev => ({ ...prev, takeProfit: e.target.value }))}
                     placeholder="止盈"
                     className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 font-mono py-0.5" />
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-zinc-400 w-10 shrink-0">离场1:</span>
+                  <span className="text-xs text-zinc-400 w-10 shrink-0">离场1:</span>
                   <input type="number" step="any" required value={tradeForm.exitPrice1}
                     onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice1: parseFloat(e.target.value) || 0 }))}
                     className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 font-mono py-0.5" />
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-zinc-400 w-10 shrink-0">离场2:</span>
+                  <span className="text-xs text-zinc-400 w-10 shrink-0">离场2:</span>
                   <input type="number" step="any" value={tradeForm.exitPrice2}
                     onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice2: e.target.value }))}
                     placeholder="选填"
@@ -158,8 +158,8 @@ export default function Journal({
                 </div>
                 {liveRR && (
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 w-10 shrink-0 font-bold">RR:</span>
-                    <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">{liveRR}</span>
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 w-10 shrink-0 font-bold">RR:</span>
+                    <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">{liveRR}</span>
                   </div>
                 )}
               </div>
@@ -172,7 +172,7 @@ export default function Journal({
           {livePnl > 0 ? "+" : ""}{livePnl.toFixed(2)}
         </td>
         <td className="p-2.5">
-          <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-xxs ${
+          <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-xs ${
             liveStatus === "win" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
             liveStatus === "lose" ? "bg-rose-500/10 text-rose-600 dark:text-rose-400" : "bg-zinc-500/10 text-zinc-400"
           }`}>
@@ -198,10 +198,10 @@ export default function Journal({
           <div className="flex flex-col gap-1.5 min-w-[180px]">
             <textarea placeholder="今日备注..." value={tradeForm.remarks} rows={2}
               onChange={(e) => setTradeForm(prev => ({ ...prev, remarks: e.target.value }))}
-              className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 py-1 text-xs resize-y leading-relaxed" />
+              className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 py-1 text-sm resize-y leading-relaxed" />
             <textarea placeholder="复盘分析..." value={tradeForm.notes} rows={4}
               onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
-              className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 py-1 text-xs resize-y leading-relaxed" />
+              className="inline-cell-input dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 bg-white border-zinc-300 text-zinc-900 py-1 text-sm resize-y leading-relaxed" />
           </div>
         </td>
         <td className="p-2.5 text-center">
@@ -222,7 +222,7 @@ export default function Journal({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">交易日志仓</h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">在此记录和编辑你的每一笔交易数据</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">在此记录和编辑你的每一笔交易数据</p>
         </div>
         <button
           onClick={() => {
@@ -256,33 +256,33 @@ export default function Journal({
           <Filter size={14} className="text-zinc-400" />
           <input type="text" placeholder="搜索备注/笔记/理由..." value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent border-none outline-none text-xs focus:ring-0" />
+            className="w-full bg-transparent border-none outline-none text-sm focus:ring-0" />
         </div>
         <select value={symbolFilter} onChange={(e) => setSymbolFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-xs focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-sm focus:outline-none">
           <option value="all">所有品类</option>
           {symbols.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
         </select>
         <select value={directionFilter} onChange={(e) => setDirectionFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-xs focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-sm focus:outline-none">
           <option value="all">所有方向</option>
           <option value="Long">Long (做多)</option>
           <option value="Short">Short (做空)</option>
         </select>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-xs focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-sm focus:outline-none">
           <option value="all">所有盈亏状态</option>
           <option value="win">Win (盈利)</option>
           <option value="lose">Lose (亏损)</option>
           <option value="BE">BE (保本)</option>
         </select>
         <select value={setupFilter} onChange={(e) => setSetupFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-xs max-w-xs focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-sm max-w-xs focus:outline-none">
           <option value="all">所有入场理由</option>
           {setups.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
         </select>
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-xs focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800 text-sm focus:outline-none">
           <option value="all">所有交易类型</option>
           <option value="趋势延续">趋势延续</option>
           <option value="反转（Reversal）">反转</option>
@@ -291,14 +291,14 @@ export default function Journal({
         </select>
         {(searchQuery || directionFilter !== "all" || statusFilter !== "all" || setupFilter !== "all" || typeFilter !== "all" || symbolFilter !== "all") && (
           <button onClick={() => { setSearchQuery(""); setDirectionFilter("all"); setStatusFilter("all"); setSetupFilter("all"); setTypeFilter("all"); setSymbolFilter("all"); }}
-            className="text-xs text-rose-600 dark:text-rose-400 hover:underline ml-auto">重置筛选</button>
+            className="text-sm text-rose-600 dark:text-rose-400 hover:underline ml-auto">重置筛选</button>
         )}
       </div>
 
       {/* Data Table */}
       <div className="border border-zinc-200 dark:border-zinc-800/50 rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm transition-colors duration-200">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800/50 font-bold text-zinc-500 dark:text-zinc-400">
                 <th className="px-3 py-2">日期</th><th className="px-3 py-2">品类</th><th className="px-3 py-2">方向</th>
@@ -317,7 +317,7 @@ export default function Journal({
                   <tr className="bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800/50">
                     <td colSpan={13} className="p-3">
                       <div className="flex flex-col gap-3">
-                        <h4 className="text-xs font-bold flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                        <h4 className="text-sm font-bold flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
                           <Camera size={14} className="text-emerald-600 dark:text-emerald-400" />
                           <span>交易截图（保存后自动上传，支持 Cmd+V 粘贴）</span>
                         </h4>
@@ -335,7 +335,7 @@ export default function Journal({
                             ))}
                           </div>
                         )}
-                        <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xxs font-semibold text-zinc-600 dark:text-zinc-200 cursor-pointer transition-colors w-fit">
+                        <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-200 cursor-pointer transition-colors w-fit">
                           <Upload size={12} /><span>选择截图</span>
                           <input type="file" accept="image/*" multiple onChange={handlePendingFileSelect} className="hidden" />
                         </label>
@@ -356,7 +356,7 @@ export default function Journal({
                           <td colSpan={13} className="p-3">
                             <div className="flex flex-col gap-3">
                               <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-bold flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                                <h4 className="text-sm font-bold flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
                                   <Camera size={14} className="text-emerald-600 dark:text-emerald-400" />
                                   <span>交易截图 ({trade.screenshots?.length || 0} 张)</span>
                                 </h4>
@@ -390,12 +390,12 @@ export default function Journal({
                                   ))}
                                 </div>
                               )}
-                              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xxs font-semibold text-zinc-600 dark:text-zinc-200 cursor-pointer transition-colors w-fit">
+                              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-200 cursor-pointer transition-colors w-fit">
                                 <Upload size={12} /><span>选择截图（保存时上传，支持 Cmd+V 粘贴）</span>
                                 <input type="file" accept="image/*" multiple onChange={handlePendingFileSelect} className="hidden" />
                               </label>
                               {isUploadingScreenshot && (
-                                <span className="text-[10px] text-zinc-400 flex items-center gap-1.5">
+                                <span className="text-xs text-zinc-400 flex items-center gap-1.5">
                                   <RefreshCw size={10} className="animate-spin text-emerald-600 dark:text-emerald-400" />正在上传...
                                 </span>
                               )}
@@ -413,12 +413,12 @@ export default function Journal({
                           {new Date(trade.date).toISOString().split("T")[0]}
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">
-                          <span className="px-2 py-0.5 rounded-full font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xxs">
+                          <span className="px-2 py-0.5 rounded-full font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs">
                             {trade.symbol || "未知"}
                           </span>
                         </td>
                         <td className="px-3 py-2">
-                          <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-xxs ${
+                          <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-xs ${
                             trade.direction === "Long" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                           }`}>{trade.direction}</span>
                         </td>
@@ -439,7 +439,7 @@ export default function Journal({
                           {trade.pnl > 0 ? "+" : ""}{trade.pnl.toFixed(2)}
                         </td>
                         <td className="px-3 py-2">
-                          <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-xxs ${
+                          <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-xs ${
                             trade.status === "win" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
                             trade.status === "lose" ? "bg-rose-500/10 text-rose-600 dark:text-rose-400" : "bg-zinc-500/10 text-zinc-400"
                           }`}>{trade.status}</span>
@@ -448,7 +448,7 @@ export default function Journal({
                         <td className="px-3 py-2 text-rose-600 dark:text-rose-400 whitespace-nowrap font-medium">{trade.errorReason || "-"}</td>
                         <td className="px-3 py-2 max-w-xs truncate" title={trade.remarks || ""}>
                           <div className="font-semibold text-zinc-700 dark:text-zinc-300 truncate">{trade.remarks || "-"}</div>
-                          <div className="text-xxs text-zinc-400 truncate">{trade.notes}</div>
+                          <div className="text-xs text-zinc-400 truncate">{trade.notes}</div>
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center justify-center gap-1.5">
@@ -484,12 +484,12 @@ export default function Journal({
                           <td colSpan={12} className="p-4">
                             <div className="flex flex-col gap-4">
                               <div className="flex items-center justify-between border-b pb-2 dark:border-zinc-800/50">
-                                <h4 className="text-xs font-bold flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                                <h4 className="text-sm font-bold flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
                                   <Camera size={14} className="text-emerald-600 dark:text-emerald-400" />
                                   <span>交易截图管理 ({trade.remarks || trade.setup})</span>
                                 </h4>
                                 <button onClick={() => setExpandedScreenshotId(null)}
-                                  className="text-xxs text-zinc-400 dark:text-zinc-400 hover:text-zinc-600">收起</button>
+                                  className="text-xs text-zinc-400 dark:text-zinc-400 hover:text-zinc-600">收起</button>
                               </div>
                               <div className="flex flex-col gap-4">
                                 {trade.screenshots && trade.screenshots.length > 0 ? (
@@ -509,15 +509,15 @@ export default function Journal({
                                       </div>
                                     ))}
                                   </div>
-                                ) : <p className="text-xxs text-zinc-400 italic">暂无截图。您可以上传图表截图以便后续复盘。</p>}
+                                ) : <p className="text-xs text-zinc-400 italic">暂无截图。您可以上传图表截图以便后续复盘。</p>}
                                 <div className="flex items-center gap-3">
-                                  <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xxs font-semibold text-zinc-600 dark:text-zinc-200 cursor-pointer transition-colors w-fit">
+                                  <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-200 cursor-pointer transition-colors w-fit">
                                     <Upload size={12} /><span>添加截图</span>
                                     <input type="file" accept="image/*" multiple
                                       onChange={(e) => handleUploadScreenshots(trade.id, e.target.files)} className="hidden" />
                                   </label>
                                   {isUploadingScreenshot && (
-                                    <span className="text-[10px] text-zinc-400 flex items-center gap-1.5">
+                                    <span className="text-xs text-zinc-400 flex items-center gap-1.5">
                                       <RefreshCw size={10} className="animate-spin text-emerald-600 dark:text-emerald-400" />正在上传...
                                     </span>
                                   )}
