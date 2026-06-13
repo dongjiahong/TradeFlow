@@ -18,6 +18,10 @@ if [ -f "$DB_FILE" ]; then
   cp "$DB_FILE" "$BACKUP"
 fi
 
+echo "🔧 创建表结构..."
+npx prisma db push --skip-generate
+
+echo "📝 导入预置数据..."
 sqlite3 "$DB_FILE" <<'SQL'
 -- 预置入场理由
 INSERT OR IGNORE INTO SetupOption (name) VALUES ('交易区间内三推反转');
