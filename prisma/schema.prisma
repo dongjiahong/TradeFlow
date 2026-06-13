@@ -11,23 +11,23 @@ datasource db {
 }
 
 model SetupOption {
-  id   Int     @id @default(auto()) @map("_id") @db.UnsignedInt
-  name String  @unique
+  id   Int @id @default(autoincrement())
+  name String @unique
 }
 
 model ErrorOption {
-  id   Int     @id @default(auto()) @map("_id") @db.UnsignedInt
-  name String  @unique
+  id   Int @id @default(autoincrement())
+  name String @unique
 }
 
 model ExitOption {
-  id   Int     @id @default(auto()) @map("_id") @db.UnsignedInt
-  name String  @unique
+  id   Int @id @default(autoincrement())
+  name String @unique
 }
 
 model SymbolOption {
-  id   Int     @id @default(auto()) @map("_id") @db.UnsignedInt
-  name String  @unique
+  id   Int @id @default(autoincrement())
+  name String @unique
 }
 
 model Trade {
