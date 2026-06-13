@@ -227,164 +227,167 @@ export default function Analysis({
         当前范围内共 <span className="font-bold text-[var(--text-primary)] tabular-nums">{filtered.length}</span> 笔交易
       </p>
 
-      {/* 1. Setup Analysis */}
-      {sectionCard(
-        "入场理由分析",
-        <TrendingUp size={16} className="text-trade-green" />,
-        setupStats.length > 0 ? (
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 min-w-0">{renderStatTable(setupStats.map(s => ({ name: s.name, count: s.count, totalPnl: s.totalPnl, winRate: s.winRate, avgPnl: s.avgPnl })))}</div>
-            {analysisReady && (
-              <div className="h-72 w-full lg:w-[600px] shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={setupStats.slice(0, 8)} layout="vertical" margin={{ left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
-                    <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
-                    <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={90}
-                      tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
-                    <Bar dataKey="totalPnl" name="总盈亏">
-                      {setupStats.map((entry, idx) => (
-                        <Cell key={idx} fill={entry.totalPnl >= 0 ? "#22c55e" : "#ef4444"} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
-      )}
-
-      {/* 2. Error Analysis */}
-      {sectionCard(
-        "错误分析",
-        <AlertTriangle size={16} className="text-trade-red" />,
-        errorStats.length > 0 ? (
-          <div className="flex flex-col lg:flex-row gap-4 items-start">
-            {analysisReady && (
-              <div className="h-48 w-48 shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RePieChart>
-                    <Pie data={errorStats} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={2} dataKey="count">
-                      {errorStats.map((_, idx) => (
-                        <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </RePieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-            <div className="flex-1 min-w-0">{renderStatTable(errorStats)}</div>
-          </div>
-        ) : <p className="text-xs text-[var(--text-muted)]">没有错误记录，继续保持！</p>
-      )}
-
-      {/* 3. Exit Analysis */}
-      {sectionCard(
-        "离场理由分析",
-        <TrendingUp size={16} className="text-[var(--text-muted)]" />,
-        exitStats.length > 0 ? (
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 min-w-0">{renderStatTable(exitStats)}</div>
-            {analysisReady && (
-              <div className="h-72 w-full lg:w-[600px] shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={exitStats.slice(0, 8)} layout="vertical" margin={{ left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
-                    <XAxis type="number" stroke="#52525b" fontSize={10} />
-                    <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={90}
-                      tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
-                    <Bar dataKey="count" name="次数" fill="#38bdf8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
-      )}
-
-      {/* 4. Type Analysis */}
-      {sectionCard(
-        "交易类型分析",
-        <BarChart3 size={16} className="text-[var(--text-muted)]" />,
-        typeStats.length > 0 ? (
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 min-w-0">{renderStatTable(typeStats)}</div>
-            {analysisReady && (
-              <div className="h-72 w-full lg:w-[600px] shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={typeStats} layout="vertical" margin={{ left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
-                    <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
-                    <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={100}
-                      tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
-                    <Bar dataKey="totalPnl" name="总盈亏">
-                      {typeStats.map((entry, idx) => (
-                        <Cell key={idx} fill={entry.totalPnl >= 0 ? "#22c55e" : "#ef4444"} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
-      )}
-
-      {/* 5. Symbol Analysis */}
-      {sectionCard(
-        "品类分析",
-        <DollarSign size={16} className="text-[var(--text-muted)]" />,
-        symbolStats.length > 0 ? (
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 min-w-0">{renderStatTable(symbolStats)}</div>
-            {analysisReady && (
-              <div className="h-72 w-full lg:w-[600px] shrink-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={symbolStats.slice(0, 8)} layout="vertical" margin={{ left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
-                    <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
-                    <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={60}
-                      tickFormatter={(v) => v.length > 6 ? v.substring(0, 6) + "..." : v} />
-                    <Bar dataKey="totalPnl" name="总盈亏">
-                      {symbolStats.map((entry, idx) => (
-                        <Cell key={idx} fill={entry.totalPnl >= 0 ? "#22c55e" : "#ef4444"} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
-      )}
-
-      {/* 6. Direction Analysis */}
-      {sectionCard(
-        "方向分析",
-        <TrendingUp size={16} className="text-[var(--text-muted)]" />,
-        dirStats.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {dirStats.map(dir => (
-              <div key={dir.name} className="p-4 rounded-lg bg-bg-canvas/50 border border-border-subtle">
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-sm font-bold ${dir.name === "Long" ? "text-trade-green" : "text-trade-red"}`}>
-                    {dir.name === "Long" ? "做多 (Long)" : "做空 (Short)"}
-                  </span>
-                  <span className={`text-xl font-bold font-mono tabular-nums ${dir.totalPnl > 0 ? "text-trade-green" : dir.totalPnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>
-                    {dir.totalPnl > 0 ? "+" : ""}{dir.totalPnl.toFixed(2)}
-                  </span>
+      {/* Setup + Error side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {sectionCard(
+          "入场理由分析",
+          <TrendingUp size={16} className="text-trade-green" />,
+          setupStats.length > 0 ? (
+            <div className="flex flex-row gap-4 items-start">
+              <div className="flex-1 min-w-0">{renderStatTable(setupStats.map(s => ({ name: s.name, count: s.count, totalPnl: s.totalPnl, winRate: s.winRate, avgPnl: s.avgPnl })))}</div>
+              {analysisReady && (
+                <div className="h-52 w-64 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={setupStats.slice(0, 8)} layout="horizontal" margin={{ top: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
+                      <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={90}
+                        tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
+                      <Bar dataKey="totalPnl" name="总盈亏">
+                        {setupStats.map((entry, idx) => (
+                          <Cell key={idx} fill={entry.totalPnl >= 0 ? "#22c55e" : "#ef4444"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="flex gap-5 text-xs">
-                  <div><span className="text-[var(--text-muted)]">次数</span> <span className="font-bold text-[var(--text-primary)] tabular-nums ml-1">{dir.count}</span></div>
-                  <div><span className="text-[var(--text-muted)]">胜率</span> <span className="font-bold text-[var(--text-primary)] tabular-nums ml-1">{dir.winRate}%</span></div>
-                  <div><span className="text-[var(--text-muted)]">均盈亏</span> <span className={`font-bold tabular-nums ml-1 ${dir.avgPnl > 0 ? "text-trade-green" : dir.avgPnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>{dir.avgPnl > 0 ? "+" : ""}{dir.avgPnl.toFixed(2)}</span></div>
+              )}
+            </div>
+          ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
+        )}
+
+        {sectionCard(
+          "错误分析",
+          <AlertTriangle size={16} className="text-trade-red" />,
+          errorStats.length > 0 ? (
+            <div className="flex flex-row gap-4 items-start">
+              {analysisReady && (
+                <div className="h-40 w-40 shrink-0 flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <Pie data={errorStats} cx="50%" cy="50%" innerRadius={30} outerRadius={45} paddingAngle={2} dataKey="count">
+                        {errorStats.map((_, idx) => (
+                          <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </RePieChart>
+                  </ResponsiveContainer>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
-      )}
+              )}
+              <div className="flex-1 min-w-0">{renderStatTable(errorStats)}</div>
+            </div>
+          ) : <p className="text-xs text-[var(--text-muted)]">没有错误记录，继续保持！</p>
+        )}
+      </div>
+
+      {/* Exit + Type side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {sectionCard(
+          "离场理由分析",
+          <TrendingUp size={16} className="text-[var(--text-muted)]" />,
+          exitStats.length > 0 ? (
+            <div className="flex flex-row gap-4 items-start">
+              <div className="flex-1 min-w-0">{renderStatTable(exitStats)}</div>
+              {analysisReady && (
+                <div className="h-52 w-64 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={exitStats.slice(0, 8)} layout="horizontal" margin={{ top: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                      <XAxis type="number" stroke="#52525b" fontSize={10} />
+                      <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={90}
+                        tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
+                      <Bar dataKey="count" name="次数" fill="#38bdf8" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
+        )}
+
+        {sectionCard(
+          "交易类型分析",
+          <BarChart3 size={16} className="text-[var(--text-muted)]" />,
+          typeStats.length > 0 ? (
+            <div className="flex flex-row gap-4 items-start">
+              <div className="flex-1 min-w-0">{renderStatTable(typeStats)}</div>
+              {analysisReady && (
+                <div className="h-52 w-64 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={typeStats} layout="horizontal" margin={{ top: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
+                      <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={100}
+                        tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
+                      <Bar dataKey="totalPnl" name="总盈亏">
+                        {typeStats.map((entry, idx) => (
+                          <Cell key={idx} fill={entry.totalPnl >= 0 ? "#22c55e" : "#ef4444"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
+        )}
+      </div>
+
+      {/* Symbol + Direction side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {sectionCard(
+          "品类分析",
+          <DollarSign size={16} className="text-[var(--text-muted)]" />,
+          symbolStats.length > 0 ? (
+            <div className="flex flex-row gap-4 items-start">
+              <div className="flex-1 min-w-0">{renderStatTable(symbolStats)}</div>
+              {analysisReady && (
+                <div className="h-52 w-64 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={symbolStats.slice(0, 8)} layout="horizontal" margin={{ top: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
+                      <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={60}
+                        tickFormatter={(v) => v.length > 6 ? v.substring(0, 6) + "..." : v} />
+                      <Bar dataKey="totalPnl" name="总盈亏">
+                        {symbolStats.map((entry, idx) => (
+                          <Cell key={idx} fill={entry.totalPnl >= 0 ? "#22c55e" : "#ef4444"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
+        )}
+
+        {sectionCard(
+          "方向分析",
+          <TrendingUp size={16} className="text-[var(--text-muted)]" />,
+          dirStats.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {dirStats.map(dir => (
+                <div key={dir.name} className="p-4 rounded-lg bg-bg-canvas/50 border border-border-subtle">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`text-sm font-bold ${dir.name === "Long" ? "text-trade-green" : "text-trade-red"}`}>
+                      {dir.name === "Long" ? "做多 (Long)" : "做空 (Short)"}
+                    </span>
+                    <span className={`text-xl font-bold font-mono tabular-nums ${dir.totalPnl > 0 ? "text-trade-green" : dir.totalPnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>
+                      {dir.totalPnl > 0 ? "+" : ""}{dir.totalPnl.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex gap-5 text-xs">
+                    <div><span className="text-[var(--text-muted)]">次数</span> <span className="font-bold text-[var(--text-primary)] tabular-nums ml-1">{dir.count}</span></div>
+                    <div><span className="text-[var(--text-muted)]">胜率</span> <span className="font-bold text-[var(--text-primary)] tabular-nums ml-1">{dir.winRate}%</span></div>
+                    <div><span className="text-[var(--text-muted)]">均盈亏</span> <span className={`font-bold tabular-nums ml-1 ${dir.avgPnl > 0 ? "text-trade-green" : dir.avgPnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>{dir.avgPnl > 0 ? "+" : ""}{dir.avgPnl.toFixed(2)}</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-xs text-[var(--text-muted)]">暂无数据</p>
+        )}
+      </div>
     </div>
   );
 }
