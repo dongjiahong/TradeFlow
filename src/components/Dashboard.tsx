@@ -18,177 +18,106 @@ interface DashboardProps {
   errorPieData: { name: string; value: number }[];
   COLORS: string[];
   dashboardReady: boolean;
-  darkMode: boolean;
 }
+
+// KPI Card definition
+const kpis = [
+  { key: "netProfit", label: "总盈亏", icon: DollarSign, format: (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`, color: (v: number) => v >= 0 ? "text-trade-green" : "text-trade-red", bg: (v: number) => v >= 0 ? "bg-trade-green-dim" : "bg-trade-red-dim" },
+  { key: "winRate", label: "胜率", icon: PieChart, format: (v: number) => `${v.toFixed(1)}%`, color: () => "text-[var(--text-primary)]", bg: () => "bg-bg-elevated" },
+  { key: "profitFactor", label: "盈利因子", icon: TrendingUp, format: (v: number) => `${v.toFixed(2)}`, color: (v: number) => v >= 1.5 ? "text-trade-green" : v >= 1 ? "text-[var(--text-primary)]" : "text-trade-red", bg: (v: number) => v >= 1.5 ? "bg-trade-green-dim" : v >= 1 ? "bg-bg-elevated" : "bg-trade-red-dim" },
+  { key: "avgWin", label: "平均盈利", icon: DollarSign, format: (v: number) => `+${v.toFixed(2)}`, color: () => "text-trade-green", bg: () => "bg-trade-green-dim" },
+  { key: "avgLoss", label: "平均亏损", icon: DollarSign, format: (v: number) => `-${v.toFixed(2)}`, color: () => "text-trade-red", bg: () => "bg-trade-red-dim" },
+  { key: "pnlRatio", label: "盈亏比", icon: TrendingUp, format: (v: number) => `${v.toFixed(2)}`, color: (v: number) => v >= 2 ? "text-trade-green" : v >= 1 ? "text-[var(--text-primary)]" : "text-trade-red", bg: (v: number) => v >= 2 ? "bg-trade-green-dim" : v >= 1 ? "bg-bg-elevated" : "bg-trade-red-dim" },
+];
 
 export default function Dashboard({
   netProfit, winRate, profitFactor, avgWin, avgLoss, pnlRatio,
   capitalCurveData, setupChartData, errorPieData, COLORS,
-  dashboardReady, darkMode
+  dashboardReady
 }: DashboardProps) {
+  const kpisData = [netProfit, winRate, profitFactor, avgWin, avgLoss, pnlRatio];
+
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      {/* Main Stats Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800/50 shadow-sm transition-colors duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-400 uppercase">总盈亏</span>
-            <div className={`p-1.5 rounded-lg ${netProfit >= 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 text-rose-600 dark:text-rose-400"}`}>
-              <DollarSign size={14} />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {kpis.map((kpi, idx) => (
+          <div key={kpi.key} className="p-3 rounded-lg bg-bg-surface border border-border-subtle transition-colors">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-[var(--text-muted)] uppercase">{kpi.label}</span>
+              <div className={`${kpi.bg(kpisData[idx])} p-1.5 rounded`}>
+                <kpi.icon size={14} className={kpi.color(kpisData[idx])} />
+              </div>
             </div>
+            <h3 className={`text-xl font-bold tracking-tight tabular-nums ${kpi.color(kpisData[idx])}`}>
+              {kpi.format(kpisData[idx])}
+            </h3>
           </div>
-          <h3 className={`text-xl md:text-2xl font-black tracking-tight ${netProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-            {netProfit >= 0 ? "+" : ""}{netProfit.toFixed(2)}
-          </h3>
-          <p className="text-xxs text-zinc-400 mt-1">账户净资金变动</p>
-        </div>
-
-        <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800/50 shadow-sm transition-colors duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-400 uppercase">总胜率</span>
-            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
-              <PieChart size={14} />
-            </div>
-          </div>
-          <h3 className="text-xl md:text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
-            {winRate.toFixed(1)}%
-          </h3>
-          <p className="text-xxs text-zinc-400 mt-1">win / (win + lose)</p>
-        </div>
-
-        <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800/50 shadow-sm transition-colors duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-400 uppercase">盈利因子</span>
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
-              <TrendingUp size={14} />
-            </div>
-          </div>
-          <h3 className={`text-xl md:text-2xl font-black tracking-tight ${profitFactor >= 1.5 ? "text-emerald-600 dark:text-emerald-400" : profitFactor >= 1.0 ? "text-zinc-900 dark:text-zinc-50" : "text-rose-600 dark:text-rose-400"}`}>
-            {profitFactor.toFixed(2)}
-          </h3>
-          <p className="text-xxs text-zinc-400 mt-1">总盈利 / 总亏损</p>
-        </div>
-
-        <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800/50 shadow-sm transition-colors duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-400 uppercase">平均盈利</span>
-            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <DollarSign size={14} />
-            </div>
-          </div>
-          <h3 className="text-xl md:text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
-            +{avgWin.toFixed(2)}
-          </h3>
-          <p className="text-xxs text-zinc-400 mt-1">每笔赢单均值</p>
-        </div>
-
-        <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800/50 shadow-sm transition-colors duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-400 uppercase">平均亏损</span>
-            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-              <DollarSign size={14} />
-            </div>
-          </div>
-          <h3 className="text-xl md:text-2xl font-black tracking-tight text-rose-600 dark:text-rose-400">
-            -{avgLoss.toFixed(2)}
-          </h3>
-          <p className="text-xxs text-zinc-400 mt-1">每笔输单均值</p>
-        </div>
-
-        <div className="p-3 rounded-lg border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800/50 shadow-sm transition-colors duration-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-400 uppercase">风险回报比</span>
-            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500">
-              <TrendingUp size={14} />
-            </div>
-          </div>
-          <h3 className={`text-xl md:text-2xl font-black tracking-tight ${pnlRatio >= 2.0 ? "text-emerald-600 dark:text-emerald-400" : pnlRatio >= 1.0 ? "text-zinc-900 dark:text-zinc-50" : "text-rose-600 dark:text-rose-400"}`}>
-            {pnlRatio.toFixed(2)}
-          </h3>
-          <p className="text-xxs text-zinc-400 mt-1">平均盈 / 平均亏</p>
-        </div>
+        ))}
       </div>
 
-      {/* Capital Curve Area Chart */}
-      <div className="p-6 rounded-3xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800/50 shadow-sm transition-colors duration-200">
-        <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
-          <TrendingUp size={18} className="text-emerald-600 dark:text-emerald-400" />
-          累计盈亏资金曲线
-        </h3>
-        <div className="h-80 w-full">
+      {/* Capital Curve */}
+      <div className="p-5 rounded-lg bg-bg-surface border border-border-subtle transition-colors">
+        <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">资金曲线</h3>
+        <div className="h-72 w-full">
           {capitalCurveData.length > 0 ? (
             dashboardReady ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={capitalCurveData}>
                 <defs>
                   <linearGradient id="colorPnl" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#059669" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
-                <XAxis dataKey="date" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={11} tickLine={false} />
-                <YAxis stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={11} tickLine={false} axisLine={false} />
-                <Area type="monotone" dataKey="pnl" name="累计盈亏" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorPnl)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="date" stroke="#52525b" fontSize={11} tickLine={false} />
+                <YAxis stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
+                <Area type="monotone" dataKey="pnl" name="累计盈亏" stroke="#22c55e" strokeWidth={2} fillOpacity={1} fill="url(#colorPnl)" />
               </AreaChart>
             </ResponsiveContainer>
-            ) : <div className="flex h-full items-center justify-center text-zinc-400">加载图表中...</div>
-          ) : <div className="flex h-full items-center justify-center text-zinc-400">暂无交易记录，无法显示盈亏曲线。</div>
+            ) : <div className="flex h-full items-center justify-center text-[var(--text-muted)]">加载图表中...</div>
+          ) : <div className="flex h-full items-center justify-center text-[var(--text-muted)]">暂无交易记录，无法显示盈亏曲线。</div>
           }
         </div>
       </div>
 
-      {/* Chart breakdown subgrid */}
+      {/* Bottom row: setups + errors */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="p-4 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800/50 shadow-sm transition-colors duration-200">
-          <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
-            <TrendingUp size={18} className="text-emerald-600 dark:text-emerald-400" />
-            各入场理由盈利表现 (Top Setups)
-          </h3>
-          <div className="h-80 w-full">
+        <div className="p-5 rounded-lg bg-bg-surface border border-border-subtle transition-colors">
+          <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">入场理由盈利</h3>
+          <div className="h-72 w-full">
             {setupChartData.length > 0 ? (
               dashboardReady ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={setupChartData.slice(0, 10)} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
-                  <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
-                  <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={110}
-                    tickFormatter={(v) => v.length > 12 ? v.substring(0, 12) + "..." : v} />
-                  <Bar dataKey="pnl" name="总盈亏">
+                <BarChart data={setupChartData.slice(0, 10)} layout="vertical" margin={{ left: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
+                  <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
+                  <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={100}
+                    tickFormatter={(v) => v.length > 10 ? v.substring(0, 10) + "..." : v} />
+                  <Bar dataKey="pnl" name="总盈亏" radius={[0, 4, 4, 0]}>
                     {setupChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? "#059669" : "#dc2626"} />
+                      <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? "#22c55e" : "#ef4444"} />
                     ))}
-                    <LabelList dataKey="pnl" position="right" className="text-sm font-bold" content={({ viewBox }) => {
-                      if (viewBox && "x" in viewBox && "y" in viewBox) {
-                        const text = String(viewBox.text || "");
-                        return (
-                          <text x={viewBox.x + 8} y={viewBox.y} fill={darkMode ? "#f4f4f5" : "#18181b"} fontSize={14} fontWeight="bold">{text}</text>
-                        );
-                      }
-                      return null;
-                    }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-              ) : <div className="flex h-full items-center justify-center text-zinc-400">加载图表中...</div>
-            ) : <div className="flex h-full items-center justify-center text-zinc-400">暂无数据，请先录入交易。</div>
+              ) : <div className="flex h-full items-center justify-center text-[var(--text-muted)]">加载图表中...</div>
+            ) : <div className="flex h-full items-center justify-center text-[var(--text-muted)]">暂无数据。</div>
             }
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800/50 shadow-sm transition-colors duration-200">
-          <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100 mb-4 flex items-center gap-2">
-            <AlertTriangle size={18} className="text-rose-600 dark:text-rose-400" />
-            做错原因分布 (Error Breakdown)
-          </h3>
-          <div className="h-80 flex flex-col md:flex-row items-center justify-center gap-4">
+        <div className="p-5 rounded-lg bg-bg-surface border border-border-subtle transition-colors">
+          <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">错误分布</h3>
+          <div className="h-72 flex flex-col md:flex-row items-center justify-center gap-6">
             {errorPieData.length > 0 ? (
               dashboardReady ? (
               <>
-                <div className="h-60 w-60 shrink-0">
+                <div className="h-56 w-56 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <RePieChart>
-                      <Pie data={errorPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={3} dataKey="value">
+                      <Pie data={errorPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={2} dataKey="value">
                         {errorPieData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
@@ -196,20 +125,20 @@ export default function Dashboard({
                     </RePieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto w-full text-xs">
+                <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto w-full text-xs">
                   {errorPieData.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between gap-4 p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
+                    <div key={idx} className="flex items-center justify-between gap-3 p-1.5 rounded hover:bg-bg-hover transition-colors">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
-                        <span className="text-zinc-600 dark:text-zinc-300 truncate" title={item.name}>{item.name}</span>
+                        <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
+                        <span className="text-[var(--text-secondary)] truncate">{item.name}</span>
                       </div>
-                      <span className="font-bold text-zinc-900 dark:text-zinc-100">{item.value} 次</span>
+                      <span className="font-semibold text-[var(--text-primary)] tabular-nums">{item.value} 次</span>
                     </div>
                   ))}
                 </div>
               </>
-              ) : <div className="flex h-full items-center justify-center text-zinc-400">加载图表中...</div>
-            ) : <div className="flex h-full items-center justify-center text-zinc-400">目前非常完美，未记录任何错误记录！</div>
+              ) : <div className="flex h-full items-center justify-center text-[var(--text-muted)]">加载图表中...</div>
+            ) : <div className="flex h-full items-center justify-center text-[var(--text-muted)] text-sm">目前没有错误记录。完美。</div>
             }
           </div>
         </div>

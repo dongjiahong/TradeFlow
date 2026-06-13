@@ -3,54 +3,73 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;
+  --foreground: #18181b;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Bright mode defaults (overridden by .dark below) */
+  --color-bg-canvas: #fafafa;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #f4f4f5;
+  --color-bg-hover: #f0f0f0;
+  --color-border-subtle: #e4e4e7;
+  --color-border-standard: #d4d4d8;
+  --color-border-strong: #a1a1aa;
+
+  --color-trade-green: #059669;
+  --color-trade-green-dim: #d1fae5;
+  --color-trade-green-glow: rgba(5, 150, 105, 0.3);
+  --color-trade-red: #dc2626;
+  --color-trade-red-dim: #fee2e2;
+  --color-trade-red-glow: rgba(220, 38, 38, 0.3);
+
+  --color-text-primary: #18181b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #a1a1aa;
+
+  --color-accent: #3b82f6;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-size-xxs: 0.75rem;
+  --font-size-xxs: 0.6875rem;
 }
 
-/* Scale up UI proportionally */
+.dark {
+  --color-bg-canvas: #08090a;
+  --color-bg-surface: rgba(255, 255, 255, 0.03);
+  --color-bg-elevated: rgba(255, 255, 255, 0.05);
+  --color-bg-hover: rgba(255, 255, 255, 0.06);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-standard: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+
+  --color-trade-green: #22c55e;
+  --color-trade-green-dim: rgba(34, 197, 94, 0.12);
+  --color-trade-green-glow: rgba(34, 197, 94, 0.3);
+  --color-trade-red: #ef4444;
+  --color-trade-red-dim: rgba(239, 68, 68, 0.12);
+  --color-trade-red-glow: rgba(239, 68, 68, 0.3);
+
+  --color-text-primary: #ededed;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #52525b;
+}
+
 html {
   font-size: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #09090b;
-    --foreground: #e4e4e7;
+    --background: #08090a;
+    --foreground: #ededed;
   }
 }
 
-/* Override browser-native dark mode on form controls */
+/* Calendar picker indicator */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0);
-}
-.dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
-}
-
-/* Custom trading palette — replaces Tailwind default emerald/rose with professional trading colors */
-:root {
-  --trade-green: #059669;
-  --trade-green-muted: #d1fae5;
-  --trade-red: #dc2626;
-  --trade-red-muted: #fee2e2;
-}
-.dark {
-  --trade-green-muted: #064e3b;
-  --trade-red-muted: #450a0a;
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Screenshot grid */
@@ -90,7 +109,7 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-/* Expand animation for screenshot section */
+/* Expand animation */
 @keyframes expand-section {
   from { max-height: 0; opacity: 0; }
   to { max-height: 400px; opacity: 1; }
@@ -100,40 +119,30 @@ body {
   overflow: hidden;
 }
 
-/* Inline cell inputs — full color control to avoid browser defaults */
+/* Inline cell inputs */
 .inline-cell-input {
   width: 100%;
   min-width: 0;
   padding: 4px 6px;
   font-size: 0.75rem;
   border-radius: 6px;
-  border: 1px solid;
+  border: 1px solid var(--color-border-standard);
   outline: none;
   transition: border-color 0.15s ease;
-  background-color: #fff;
-  color: #18181b;
-  border-color: #d4d4d4;
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-primary);
 }
 .inline-cell-input:focus {
-  border-color: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
-}
-.dark .inline-cell-input {
-  background-color: #27272a;
-  color: #f4f4f5;
-  border-color: #3f3f46;
+  border-color: var(--color-trade-green);
+  box-shadow: 0 0 0 2px var(--color-trade-green-dim);
 }
 
 select option {
-  background-color: #fff;
-  color: #18181b;
-}
-.dark select option {
-  background-color: #27272a;
-  color: #f4f4f5;
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-primary);
 }
 
-/* Global select border/background — ensures no browser-native blue tint */
+/* Custom select */
 select {
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -148,24 +157,23 @@ select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
 
-/* Date picker calendar icon — invert for dark mode */
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0);
-}
-.dark input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-}
-
-/* Remove recharts focus outlines (blue border on click) */
+/* Remove recharts focus outlines */
 .recharts-wrapper:focus,
 .recharts-wrapper *:focus {
   outline: none !important;
   box-shadow: none !important;
 }
-
-/* recharts focus outline — override everything */
 *:focus,
 *:focus-visible {
   outline: none !important;
   box-shadow: none !important;
+}
+
+/* Fade-in animation */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
 }

@@ -14,6 +14,7 @@ import {
   addErrorOption,
   deleteErrorOption,
   addExitOption,
+  deleteExitOption,
   deleteSymbolOption,
   importExcelData
 } from "../app/actions";
@@ -339,7 +340,7 @@ export default function TradingApp({
   };
   const handleDeleteExit = async (id: string) => {
     if (confirm("确定要删除此离场理由选项吗？")) {
-      const res = await deleteErrorOption(id);
+      const res = await deleteExitOption(id);
       if (res.success) setExits(prev => prev.filter(ex => ex.id !== id));
     }
   };
@@ -374,8 +375,16 @@ export default function TradingApp({
 
   const overallComplianceRate = 0;
 
+  // --- SIDEBAR NAV ITEMS ---
+  const navItems = [
+    { key: "dashboard" as const, icon: <PieChart size={18} />, label: "仪表盘" },
+    { key: "journal" as const, icon: <BookOpen size={18} />, label: "交易日志" },
+    { key: "analysis" as const, icon: <BarChart3 size={18} />, label: "行为分析" },
+    { key: "settings" as const, icon: <Settings size={18} />, label: "设置" }
+  ];
+
   return (
-    <div className={`flex flex-col flex-1 h-screen font-sans ${darkMode ? "dark bg-[#09090b] text-[#e4e4e7]" : "bg-[#fafafa] text-[#18181b]"}`}>
+    <div className="flex flex-col flex-1 h-screen bg-[var(--background)] text-[var(--foreground)]">
 
       {/* LIGHTBOX OVERLAY */}
       {lightboxImage && (
@@ -392,19 +401,19 @@ export default function TradingApp({
       )}
 
       {/* Top Header */}
-      <header className="flex h-14 items-center justify-between border-b px-6 bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800/50 transition-colors duration-200 fixed top-0 left-0 right-0 z-40">
+      <header className="flex h-14 items-center justify-between border-b border-border-subtle px-6 bg-bg-canvas z-40 fixed top-0 left-0 right-0">
         <div className="flex items-center gap-3">
-          <div className="text-emerald-600 dark:text-emerald-400"><TrendingUp size={18} /></div>
-          <h1 className="text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-100">TradeFlow Pro</h1>
+          <div className="text-trade-green"><TrendingUp size={18} /></div>
+          <h1 className="text-base font-bold tracking-tight text-[var(--text-primary)]">TradeFlow Pro</h1>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800/50 bg-zinc-50 dark:bg-zinc-800/50">
-            <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-              总盈亏: <span className={netProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>{netProfit >= 0 ? "+" : ""}{netProfit.toFixed(2)}</span>
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-bg-surface border border-border-subtle">
+            <span className="text-xs font-semibold text-[var(--text-secondary)]">
+              总盈亏: <span className={netProfit >= 0 ? "text-trade-green" : "text-trade-red"}>{netProfit >= 0 ? "+" : ""}{netProfit.toFixed(2)}</span>
             </span>
           </div>
           <button onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-lg border hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800/50 text-zinc-500 dark:text-zinc-400 transition-all duration-200">
+            className="p-2 rounded-lg border border-border-subtle text-[var(--text-secondary)] hover:bg-bg-hover transition-colors">
             {darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </div>
@@ -413,32 +422,27 @@ export default function TradingApp({
       {/* Main Workspace */}
       <div className="flex flex-1 overflow-hidden pt-14">
         {/* Sidebar */}
-        <aside className="w-64 border-r bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800/50 flex flex-col justify-between py-6 px-4 shrink-0 transition-colors duration-200 fixed top-14 left-0 bottom-0 z-30">
+        <aside className="w-64 border-r border-border-subtle bg-bg-canvas flex flex-col justify-between py-6 px-4 shrink-0 fixed top-14 left-0 bottom-0 z-30">
           <nav className="flex flex-col gap-1">
-            {[
-              { key: "dashboard" as const, icon: <PieChart size={16} />, label: "仪表盘" },
-              { key: "journal" as const, icon: <BookOpen size={16} />, label: "交易日志" },
-              { key: "analysis" as const, icon: <BarChart3 size={16} />, label: "行为分析" },
-              { key: "settings" as const, icon: <Settings size={16} />, label: "设置" }
-            ].map(tab => (
+            {navItems.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-left ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
                   activeTab === tab.key
-                    ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-l-2 border-emerald-500"
-                    : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    ? "bg-bg-elevated text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-bg-hover hover:text-[var(--text-primary)]"
                 }`}>
                 {tab.icon}{tab.label}
               </button>
             ))}
           </nav>
-          <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800/50">
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-400 mb-1">本月自律评分</h3>
+          <div className="p-3 rounded-lg bg-bg-surface border border-border-subtle">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">本月自律评分</h3>
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{overallComplianceRate.toFixed(1)}%</span>
-              <span className="text-xs text-zinc-400">执行率</span>
+              <span className="text-xl font-bold text-trade-green">{overallComplianceRate.toFixed(1)}%</span>
+              <span className="text-xs text-[var(--text-muted)]">执行率</span>
             </div>
-            <div className="mt-1.5 w-full bg-zinc-200 dark:bg-zinc-700 h-1 rounded-full overflow-hidden">
-              <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${overallComplianceRate}%` }}></div>
+            <div className="mt-1.5 w-full bg-bg-elevated h-1 rounded-full overflow-hidden">
+              <div className="bg-trade-green h-full rounded-full transition-all duration-500" style={{ width: `${overallComplianceRate}%` }}></div>
             </div>
           </div>
         </aside>
@@ -451,14 +455,13 @@ export default function TradingApp({
               avgWin={avgWin} avgLoss={avgLoss} pnlRatio={pnlRatio}
               capitalCurveData={capitalCurveData} setupChartData={setupChartData}
               errorPieData={errorPieData} COLORS={COLORS}
-              dashboardReady={dashboardReady} darkMode={darkMode}
+              dashboardReady={dashboardReady}
             />
           )}
           {activeTab === "journal" && (
             <Journal
               trades={trades} filteredTrades={filteredTrades}
               setups={setups} errors={errors} exits={exits} symbols={symbols}
-              darkMode={darkMode}
               inlineEditingId={inlineEditingId} setInlineEditingId={setInlineEditingId}
               tradeForm={tradeForm} setTradeForm={setTradeForm}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
@@ -489,7 +492,6 @@ export default function TradingApp({
               newErrorName={newErrorName} setNewErrorName={setNewErrorName}
               newExitName={newExitName} setNewExitName={setNewExitName}
               newSymbolName={newSymbolName} setNewSymbolName={setNewSymbolName}
-              darkMode={darkMode}
               onImportExcel={handleImportExcel}
               onAddSetup={handleAddSetup} onDeleteSetup={handleDeleteSetup}
               onAddError={handleAddError} onDeleteError={handleDeleteError}
@@ -503,7 +505,7 @@ export default function TradingApp({
               trades={trades}
               quickRange={quickRange} setQuickRange={setQuickRange}
               dateRange={dateRange} setDateRange={setDateRange}
-              analysisReady={analysisReady} darkMode={darkMode}
+              analysisReady={analysisReady}
             />
           )}
         </main>
