@@ -23,11 +23,11 @@ interface DashboardProps {
 // KPI Card definition
 const kpis = [
   { key: "netProfit", label: "总盈亏", icon: DollarSign, format: (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`, color: (v: number) => v >= 0 ? "text-trade-green" : "text-trade-red", bg: (v: number) => v >= 0 ? "bg-trade-green-dim" : "bg-trade-red-dim" },
-  { key: "winRate", label: "胜率", icon: PieChart, format: (v: number) => `${v.toFixed(1)}%`, color: () => "text-[var(--text-primary)]", bg: () => "bg-bg-elevated" },
-  { key: "profitFactor", label: "盈利因子", icon: TrendingUp, format: (v: number) => `${v.toFixed(2)}`, color: (v: number) => v >= 1.5 ? "text-trade-green" : v >= 1 ? "text-[var(--text-primary)]" : "text-trade-red", bg: (v: number) => v >= 1.5 ? "bg-trade-green-dim" : v >= 1 ? "bg-bg-elevated" : "bg-trade-red-dim" },
+  { key: "winRate", label: "胜率", icon: PieChart, format: (v: number) => `${v.toFixed(1)}%`, color: () => "text-[var(--text-primary)]", bg: () => "bg-[var(--color-bg-elevated)]" },
+  { key: "profitFactor", label: "盈利因子", icon: TrendingUp, format: (v: number) => `${v.toFixed(2)}`, color: (v: number) => v >= 1.5 ? "text-trade-green" : v >= 1 ? "text-[var(--text-primary)]" : "text-trade-red", bg: (v: number) => v >= 1.5 ? "bg-trade-green-dim" : v >= 1 ? "bg-[var(--color-bg-elevated)]" : "bg-trade-red-dim" },
   { key: "avgWin", label: "平均盈利", icon: DollarSign, format: (v: number) => `+${v.toFixed(2)}`, color: () => "text-trade-green", bg: () => "bg-trade-green-dim" },
   { key: "avgLoss", label: "平均亏损", icon: DollarSign, format: (v: number) => `-${v.toFixed(2)}`, color: () => "text-trade-red", bg: () => "bg-trade-red-dim" },
-  { key: "pnlRatio", label: "盈亏比", icon: TrendingUp, format: (v: number) => `${v.toFixed(2)}`, color: (v: number) => v >= 2 ? "text-trade-green" : v >= 1 ? "text-[var(--text-primary)]" : "text-trade-red", bg: (v: number) => v >= 2 ? "bg-trade-green-dim" : v >= 1 ? "bg-bg-elevated" : "bg-trade-red-dim" },
+  { key: "pnlRatio", label: "盈亏比", icon: TrendingUp, format: (v: number) => `${v.toFixed(2)}`, color: (v: number) => v >= 2 ? "text-trade-green" : v >= 1 ? "text-[var(--text-primary)]" : "text-trade-red", bg: (v: number) => v >= 2 ? "bg-trade-green-dim" : v >= 1 ? "bg-[var(--color-bg-elevated)]" : "bg-trade-red-dim" },
 ];
 
 export default function Dashboard({
@@ -42,7 +42,7 @@ export default function Dashboard({
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {kpis.map((kpi, idx) => (
-          <div key={kpi.key} className="p-3 rounded-lg bg-bg-surface border border-border-subtle transition-colors">
+          <div key={kpi.key} className="p-3 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] transition-colors">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-[var(--text-muted)] uppercase">{kpi.label}</span>
               <div className={`${kpi.bg(kpisData[idx])} p-1.5 rounded`}>
@@ -57,7 +57,7 @@ export default function Dashboard({
       </div>
 
       {/* Capital Curve */}
-      <div className="p-5 rounded-lg bg-bg-surface border border-border-subtle transition-colors">
+      <div className="p-5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] transition-colors">
         <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">资金曲线</h3>
         <div className="h-72 w-full">
           {capitalCurveData.length > 0 ? (
@@ -84,7 +84,7 @@ export default function Dashboard({
 
       {/* Bottom row: setups + errors */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="p-5 rounded-lg bg-bg-surface border border-border-subtle transition-colors">
+        <div className="p-5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] transition-colors">
           <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">入场理由盈利</h3>
           <div className="h-72 w-full">
             {setupChartData.length > 0 ? (
@@ -108,7 +108,7 @@ export default function Dashboard({
           </div>
         </div>
 
-        <div className="p-5 rounded-lg bg-bg-surface border border-border-subtle transition-colors">
+        <div className="p-5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] transition-colors">
           <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">错误分布</h3>
           <div className="h-72 flex flex-col md:flex-row items-center justify-center gap-6">
             {errorPieData.length > 0 ? (
@@ -127,7 +127,7 @@ export default function Dashboard({
                 </div>
                 <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto w-full text-xs">
                   {errorPieData.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between gap-3 p-1.5 rounded hover:bg-bg-hover transition-colors">
+                    <div key={idx} className="flex items-center justify-between gap-3 p-1.5 rounded hover:bg-[var(--color-bg-hover)] transition-colors">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
                         <span className="text-[var(--text-secondary)] truncate">{item.name}</span>

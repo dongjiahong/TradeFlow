@@ -131,7 +131,7 @@ export default function Analysis({
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-border-subtle text-[var(--text-muted)]">
+          <tr className="border-b border-[var(--color-border-subtle)] text-[var(--text-muted)]">
             <th className="text-left py-2 pr-4 font-semibold">维度</th>
             <th className="text-right py-2 px-3 font-semibold">次数</th>
             <th className="text-right py-2 px-3 font-semibold">总盈亏</th>
@@ -141,7 +141,7 @@ export default function Analysis({
         </thead>
         <tbody>
           {data.map((row, i) => (
-            <tr key={i} className="border-b border-border-subtle hover:bg-bg-hover transition-colors">
+            <tr key={i} className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-hover)] transition-colors">
               <td className="py-2 pr-4 font-semibold text-[var(--text-secondary)] truncate max-w-[140px]">{row.name}</td>
               <td className="text-right py-2 px-3 font-mono text-[var(--text-secondary)] tabular-nums">{row.count}</td>
               <td className={`text-right py-2 px-3 font-mono font-bold tabular-nums ${row.totalPnl > 0 ? "text-trade-green" : row.totalPnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>
@@ -184,7 +184,7 @@ export default function Analysis({
   };
 
   const sectionCard = (title: string, icon: React.ReactNode, content: React.ReactNode) => (
-    <div className="p-5 rounded-lg bg-bg-surface border border-border-subtle transition-colors">
+    <div className="p-5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] transition-colors">
       <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4 flex items-center gap-2">
         {icon}{title}
       </h3>
@@ -203,12 +203,12 @@ export default function Analysis({
       </div>
 
       {/* Date Filter */}
-      <div className="p-3 rounded-lg bg-bg-surface border border-border-subtle flex flex-wrap items-center gap-2">
+      <div className="p-3 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-wrap items-center gap-2">
         <Filter size={14} className="text-[var(--text-muted)] shrink-0" />
         {presetRanges.map(p => (
           <button key={p.key} onClick={() => setPreset(p.key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              quickRange === p.key ? "bg-trade-green text-white" : "bg-bg-surface text-[var(--text-secondary)] hover:bg-bg-hover"
+              quickRange === p.key ? "bg-trade-green text-white" : "bg-[var(--color-bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)]"
             }`}>
             {p.label}
           </button>
@@ -216,11 +216,11 @@ export default function Analysis({
         <span className="text-border-strong">|</span>
         <input type="date" value={dateRange.start}
           onChange={e => { setDateRange(prev => ({ ...prev, start: e.target.value })); setQuickRange("all"); }}
-          className="px-2 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-xs text-[var(--text-primary)]" />
+          className="px-2 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)]" />
         <span className="text-xs text-[var(--text-muted)]">~</span>
         <input type="date" value={dateRange.end}
           onChange={e => { setDateRange(prev => ({ ...prev, end: e.target.value })); setQuickRange("all"); }}
-          className="px-2 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-xs text-[var(--text-primary)]" />
+          className="px-2 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)]" />
       </div>
 
       <p className="text-xs text-[var(--text-muted)]">
@@ -238,8 +238,8 @@ export default function Analysis({
               {analysisReady && (
                 <div className="h-52 w-64 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={setupStats.slice(0, 8)} layout="horizontal" margin={{ top: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                    <BarChart data={setupStats.slice(0, 8)} layout="vertical" margin={{ left: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
                       <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
                       <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={90}
                         tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
@@ -291,8 +291,8 @@ export default function Analysis({
               {analysisReady && (
                 <div className="h-52 w-64 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={exitStats.slice(0, 8)} layout="horizontal" margin={{ top: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                    <BarChart data={exitStats.slice(0, 8)} layout="vertical" margin={{ left: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
                       <XAxis type="number" stroke="#52525b" fontSize={10} />
                       <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={90}
                         tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
@@ -314,8 +314,8 @@ export default function Analysis({
               {analysisReady && (
                 <div className="h-52 w-64 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={typeStats} layout="horizontal" margin={{ top: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                    <BarChart data={typeStats} layout="vertical" margin={{ left: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
                       <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
                       <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={100}
                         tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
@@ -344,8 +344,8 @@ export default function Analysis({
               {analysisReady && (
                 <div className="h-52 w-64 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={symbolStats.slice(0, 8)} layout="horizontal" margin={{ top: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                    <BarChart data={symbolStats.slice(0, 8)} layout="vertical" margin={{ left: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
                       <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
                       <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={60}
                         tickFormatter={(v) => v.length > 6 ? v.substring(0, 6) + "..." : v} />
@@ -368,7 +368,7 @@ export default function Analysis({
           dirStats.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
               {dirStats.map(dir => (
-                <div key={dir.name} className="p-4 rounded-lg bg-bg-canvas/50 border border-border-subtle">
+                <div key={dir.name} className="p-4 rounded-lg bg-[var(--color-bg-canvas)]/50 border border-[var(--color-border-subtle)]">
                   <div className="flex items-center justify-between mb-2">
                     <span className={`text-sm font-bold ${dir.name === "Long" ? "text-trade-green" : "text-trade-red"}`}>
                       {dir.name === "Long" ? "做多 (Long)" : "做空 (Short)"}

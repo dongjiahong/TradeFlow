@@ -384,7 +384,7 @@ export default function TradingApp({
   ];
 
   return (
-    <div className="flex flex-col flex-1 h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex flex-col flex-1 h-screen bg-[var(--color-bg-canvas)] text-[var(--color-text-primary)]">
 
       {/* LIGHTBOX OVERLAY */}
       {lightboxImage && (
@@ -401,19 +401,19 @@ export default function TradingApp({
       )}
 
       {/* Top Header */}
-      <header className="flex h-14 items-center justify-between border-b border-border-subtle px-6 bg-bg-canvas z-40 fixed top-0 left-0 right-0">
+      <header className="flex h-14 items-center justify-between border-b border-[var(--color-border-subtle)] px-6 bg-[var(--color-bg-canvas)] z-40 fixed top-0 left-0 right-0">
         <div className="flex items-center gap-3">
           <div className="text-trade-green"><TrendingUp size={18} /></div>
           <h1 className="text-base font-bold tracking-tight text-[var(--text-primary)]">TradeFlow Pro</h1>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-bg-surface border border-border-subtle">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
             <span className="text-xs font-semibold text-[var(--text-secondary)]">
               总盈亏: <span className={netProfit >= 0 ? "text-trade-green" : "text-trade-red"}>{netProfit >= 0 ? "+" : ""}{netProfit.toFixed(2)}</span>
             </span>
           </div>
           <button onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-lg border border-border-subtle text-[var(--text-secondary)] hover:bg-bg-hover transition-colors">
+            className="p-2 rounded-lg border border-[var(--color-border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors">
             {darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </div>
@@ -422,26 +422,26 @@ export default function TradingApp({
       {/* Main Workspace */}
       <div className="flex flex-1 overflow-hidden pt-14">
         {/* Sidebar */}
-        <aside className="w-64 border-r border-border-subtle bg-bg-canvas flex flex-col justify-between py-6 px-4 shrink-0 fixed top-14 left-0 bottom-0 z-30">
+        <aside className="w-64 border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-canvas)] flex flex-col justify-between py-6 px-4 shrink-0 fixed top-14 left-0 bottom-0 z-30">
           <nav className="flex flex-col gap-1">
             {navItems.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
                   activeTab === tab.key
-                    ? "bg-bg-elevated text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)] hover:bg-bg-hover hover:text-[var(--text-primary)]"
+                    ? "bg-[var(--color-bg-elevated)] text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--text-primary)]"
                 }`}>
                 {tab.icon}{tab.label}
               </button>
             ))}
           </nav>
-          <div className="p-3 rounded-lg bg-bg-surface border border-border-subtle">
+          <div className="p-3 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">本月自律评分</h3>
             <div className="flex items-baseline gap-2">
               <span className="text-xl font-bold text-trade-green">{overallComplianceRate.toFixed(1)}%</span>
               <span className="text-xs text-[var(--text-muted)]">执行率</span>
             </div>
-            <div className="mt-1.5 w-full bg-bg-elevated h-1 rounded-full overflow-hidden">
+            <div className="mt-1.5 w-full bg-[var(--color-bg-elevated)] h-1 rounded-full overflow-hidden">
               <div className="bg-trade-green h-full rounded-full transition-all duration-500" style={{ width: `${overallComplianceRate}%` }}></div>
             </div>
           </div>

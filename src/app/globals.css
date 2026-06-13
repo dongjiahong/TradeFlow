@@ -36,6 +36,9 @@
 }
 
 .dark {
+  --background: #08090a;
+  --foreground: #ededed;
+
   --color-bg-canvas: #08090a;
   --color-bg-surface: rgba(255, 255, 255, 0.03);
   --color-bg-elevated: rgba(255, 255, 255, 0.05);

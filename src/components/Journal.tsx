@@ -173,7 +173,7 @@ export default function Journal({
         <td className="p-2">
           <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] tabular-nums ${
             liveStatus === "win" ? "bg-[var(--trade-green-dim)] text-trade-green" :
-            liveStatus === "lose" ? "bg-[var(--trade-red-dim)] text-trade-red" : "bg-bg-elevated text-[var(--text-muted)]"
+            liveStatus === "lose" ? "bg-[var(--trade-red-dim)] text-trade-red" : "bg-[var(--color-bg-elevated)] text-[var(--text-muted)]"
           }`}>
             {liveStatus}
           </span>
@@ -208,7 +208,7 @@ export default function Journal({
             <button onClick={handleSaveTrade} title="保存"
               className="p-1.5 rounded bg-trade-green text-white hover:bg-green-600 transition-colors"><Check size={13} /></button>
             <button onClick={() => { clearPendingScreenshots(); setInlineEditingId(null); }} title="取消"
-              className="p-1.5 rounded bg-bg-elevated text-[var(--text-secondary)] hover:bg-bg-hover transition-colors"><X size={13} /></button>
+              className="p-1.5 rounded bg-[var(--color-bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors"><X size={13} /></button>
           </div>
         </td>
       </>
@@ -224,7 +224,7 @@ export default function Journal({
       {trade.screenshots && trade.screenshots.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {trade.screenshots.map(pic => (
-            <div key={pic.id} className="relative group rounded-lg overflow-hidden border border-border-subtle w-[100px]">
+            <div key={pic.id} className="relative group rounded-lg overflow-hidden border border-[var(--color-border-subtle)] w-[100px]">
               <img src={`/api/screenshots/${pic.id}`} alt={pic.filename}
                 onClick={() => setLightboxImage(`/api/screenshots/${pic.id}`)}
                 className="screenshot-thumb w-full cursor-pointer" />
@@ -250,7 +250,7 @@ export default function Journal({
           ))}
         </div>
       )}
-      <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-border-standard bg-bg-surface hover:bg-bg-hover text-xs font-semibold text-[var(--text-secondary)] cursor-pointer transition-colors w-fit">
+      <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-[var(--color-border-standard)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] text-xs font-semibold text-[var(--text-secondary)] cursor-pointer transition-colors w-fit">
         <Upload size={12} /><span>{isEditingRow ? "选择截图（保存时上传）" : "添加截图"}</span>
         <input type="file" accept="image/*" multiple onChange={isEditingRow ? handlePendingFileSelect : (e) => handleUploadScreenshots(trade.id, e.target.files)} className="hidden" />
       </label>
@@ -288,37 +288,37 @@ export default function Journal({
       </div>
 
       {/* Filters */}
-      <div className="p-3 rounded-lg bg-bg-surface border border-border-subtle flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-subtle bg-bg-surface w-full sm:w-64">
+      <div className="p-3 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-wrap gap-3 items-center">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] w-full sm:w-64">
           <input type="text" placeholder="搜索备注/笔记/理由..." value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]" />
         </div>
         <select value={symbolFilter} onChange={(e) => setSymbolFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-sm text-[var(--text-primary)] focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
           <option value="all">所有品类</option>
           {symbols.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
         </select>
         <select value={directionFilter} onChange={(e) => setDirectionFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-sm text-[var(--text-primary)] focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
           <option value="all">所有方向</option>
           <option value="Long">Long</option>
           <option value="Short">Short</option>
         </select>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-sm text-[var(--text-primary)] focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
           <option value="all">所有状态</option>
           <option value="win">盈利</option>
           <option value="lose">亏损</option>
           <option value="BE">保本</option>
         </select>
         <select value={setupFilter} onChange={(e) => setSetupFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-sm text-[var(--text-primary)] max-w-xs focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] max-w-xs focus:outline-none">
           <option value="all">所有入场</option>
           {setups.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
         </select>
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-border-subtle bg-bg-surface text-sm text-[var(--text-primary)] focus:outline-none">
+          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
           <option value="all">所有类型</option>
           <option value="趋势延续">趋势延续</option>
           <option value="反转（Reversal）">反转</option>
@@ -332,11 +332,11 @@ export default function Journal({
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-border-subtle overflow-hidden bg-bg-surface transition-colors">
+      <div className="rounded-lg border border-[var(--color-border-subtle)] overflow-hidden bg-[var(--color-bg-surface)] transition-colors">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-border-subtle">
+              <tr className="border-b border-[var(--color-border-subtle)]">
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">日期</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">品类</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">方向</th>
@@ -363,7 +363,7 @@ export default function Journal({
                         <tr className="bg-[var(--trade-green-dim)]">
                           {renderInlineEditCells()}
                         </tr>
-                        <tr className="bg-bg-canvas/50 border-b border-border-subtle">
+                        <tr className="bg-[var(--color-bg-canvas)]/50 border-b border-[var(--color-border-subtle)]">
                           <td colSpan={13} className="p-3">
                             {inlineEditingId === "__new__"
                               ? screenshotBlock({ ...trades[0]!, screenshots: [] } as Trade, true)
@@ -380,12 +380,12 @@ export default function Journal({
 
                 return (
                   <React.Fragment key={trade.id}>
-                    <tr className="hover:bg-bg-hover transition-colors">
+                    <tr className="hover:bg-[var(--color-bg-hover)] transition-colors">
                       <td className="px-3 py-2 font-mono text-xs whitespace-nowrap tabular-nums text-[var(--text-secondary)]">
                         {new Date(trade.date).toISOString().split("T")[0]}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded font-semibold bg-bg-elevated text-[var(--text-secondary)] text-[10px]">
+                        <span className="px-2 py-0.5 rounded font-semibold bg-[var(--color-bg-elevated)] text-[var(--text-secondary)] text-[10px]">
                           {trade.symbol || "-"}
                         </span>
                       </td>
@@ -413,7 +413,7 @@ export default function Journal({
                       <td className="px-3 py-2">
                         <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
                           trade.status === "win" ? "bg-[var(--trade-green-dim)] text-trade-green" :
-                          trade.status === "lose" ? "bg-[var(--trade-red-dim)] text-trade-red" : "bg-bg-elevated text-[var(--text-muted)]"
+                          trade.status === "lose" ? "bg-[var(--trade-red-dim)] text-trade-red" : "bg-[var(--color-bg-elevated)] text-[var(--text-muted)]"
                         }`}>{trade.status}</span>
                       </td>
                       <td className="px-3 py-2 text-[var(--text-muted)] whitespace-nowrap text-xs">{trade.exitReason}</td>
@@ -427,7 +427,7 @@ export default function Journal({
                           <button onClick={() => setExpandedScreenshotId(prev => prev === trade.id ? null : trade.id)} title="截图"
                             className={`p-1.5 rounded transition-colors ${
                               expandedScreenshotId === trade.id ? "bg-trade-green text-white" :
-                              (trade.screenshots && trade.screenshots.length > 0) ? "text-trade-green hover:bg-[var(--trade-green-dim)]" : "text-[var(--text-muted)] hover:bg-bg-hover"
+                              (trade.screenshots && trade.screenshots.length > 0) ? "text-trade-green hover:bg-[var(--trade-green-dim)]" : "text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)]"
                             }`}>
                             <Camera size={13} />
                           </button>
@@ -443,7 +443,7 @@ export default function Journal({
                               errorReason: trade.errorReason || "", symbol: trade.symbol
                             });
                           }} title="编辑"
-                            className="p-1.5 rounded hover:bg-bg-hover text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                            className="p-1.5 rounded hover:bg-[var(--color-bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                             <Edit size={13} />
                           </button>
                           <button onClick={() => handleDeleteTrade(trade.id)} title="删除"
@@ -454,7 +454,7 @@ export default function Journal({
                       </td>
                     </tr>
                     {expandedScreenshotId === trade.id && (
-                      <tr className="bg-bg-canvas/50 border-b border-border-subtle">
+                      <tr className="bg-[var(--color-bg-canvas)]/50 border-b border-[var(--color-border-subtle)]">
                         <td colSpan={13} className="p-4">
                           {screenshotBlock(trade, false)}
                         </td>

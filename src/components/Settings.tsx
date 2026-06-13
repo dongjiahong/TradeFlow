@@ -48,21 +48,21 @@ export default function Settings({
     addKey: string; addVal: string; onChangeAdd: React.Dispatch<React.SetStateAction<string>>;
     onAdd: () => Promise<void>; onDelete: (id: string) => Promise<void>;
   }) => (
-    <div className="p-4 rounded-lg bg-bg-surface border border-border-subtle flex flex-col gap-3">
+    <div className="p-4 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-col gap-3">
       <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
         {title} ({count})
       </h3>
       <div className="flex gap-2">
         <input type="text" placeholder={placeholder} value={addVal} onChange={(e) => onChangeAdd(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") onAdd(); }}
-          className="flex-1 px-3 py-1.5 border border-border-subtle bg-bg-surface text-xs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" />
+          className="flex-1 px-3 py-1.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" />
         <button onClick={onAdd} className="px-3 py-1.5 bg-trade-green text-white text-xs font-bold rounded-lg hover:bg-green-600 transition-colors">
           添加
         </button>
       </div>
       <div className="flex flex-col gap-1 max-h-[240px] overflow-y-auto pr-1">
         {items.map(item => (
-          <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-bg-canvas/50 hover:bg-bg-hover text-xs text-[var(--text-secondary)] transition-colors">
+          <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-canvas)]/50 hover:bg-[var(--color-bg-hover)] text-xs text-[var(--text-secondary)] transition-colors">
             <span className="truncate">{item.name}</span>
             <button onClick={() => onDelete(item.id)} className="text-[var(--text-muted)] hover:text-trade-red transition-colors p-1">
               <X size={12} />
@@ -82,13 +82,13 @@ export default function Settings({
       </div>
 
       {/* Import / Export */}
-      <div className="p-4 rounded-lg bg-bg-surface border border-border-subtle flex flex-col gap-4">
+      <div className="p-4 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-col gap-4">
         <h3 className="text-sm font-bold text-[var(--text-secondary)] flex items-center gap-2">
           <RefreshCw size={16} className="text-trade-green" />
           数据导入导出
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-lg bg-bg-canvas/50 border border-border-subtle flex flex-col justify-between gap-4">
+          <div className="p-4 rounded-lg bg-[var(--color-bg-canvas)]/50 border border-[var(--color-border-subtle)] flex flex-col justify-between gap-4">
             <div>
               <h4 className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Upload size={14} className="text-trade-green" />
@@ -104,7 +104,7 @@ export default function Settings({
             </label>
           </div>
 
-          <div className="p-4 rounded-lg bg-bg-canvas/50 border border-border-subtle flex flex-col justify-between gap-4">
+          <div className="p-4 rounded-lg bg-[var(--color-bg-canvas)]/50 border border-[var(--color-border-subtle)] flex flex-col justify-between gap-4">
             <div>
               <h4 className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Download size={14} className="text-[var(--text-muted)]" />
@@ -115,14 +115,14 @@ export default function Settings({
               </p>
             </div>
             <a href="/api/export" download="trading-log-export.xlsx"
-              className="inline-block px-4 py-2 bg-bg-elevated hover:bg-bg-hover text-[var(--text-primary)] text-xs font-bold rounded-lg text-center active:scale-95 transition-all text-center">
+              className="inline-block px-4 py-2 bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--text-primary)] text-xs font-bold rounded-lg text-center active:scale-95 transition-all text-center">
               下载 Excel 文件
             </a>
           </div>
         </div>
 
         {importStatus && (
-          <div className="p-3 rounded-lg bg-bg-hover text-[var(--text-secondary)] text-xs flex items-center gap-2 font-medium">
+          <div className="p-3 rounded-lg bg-[var(--color-bg-hover)] text-[var(--text-secondary)] text-xs flex items-center gap-2 font-medium">
             <span className="h-1.5 w-1.5 rounded-full bg-trade-green animate-ping shrink-0"></span>
             {importStatus}
           </div>
