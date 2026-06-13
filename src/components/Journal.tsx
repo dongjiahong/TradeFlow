@@ -335,7 +335,7 @@ export default function Journal({
                             ))}
                           </div>
                         )}
-                        <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xxs font-semibold text-zinc-600 dark:text-zinc-400 cursor-pointer transition-colors w-fit">
+                        <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xxs font-semibold text-zinc-600 dark:text-zinc-200 cursor-pointer transition-colors w-fit">
                           <Upload size={12} /><span>选择截图</span>
                           <input type="file" accept="image/*" multiple onChange={handlePendingFileSelect} className="hidden" />
                         </label>
@@ -390,7 +390,7 @@ export default function Journal({
                                   ))}
                                 </div>
                               )}
-                              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xxs font-semibold text-zinc-600 dark:text-zinc-400 cursor-pointer transition-colors w-fit">
+                              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xxs font-semibold text-zinc-600 dark:text-zinc-200 cursor-pointer transition-colors w-fit">
                                 <Upload size={12} /><span>选择截图（保存时上传，支持 Cmd+V 粘贴）</span>
                                 <input type="file" accept="image/*" multiple onChange={handlePendingFileSelect} className="hidden" />
                               </label>
@@ -511,7 +511,7 @@ export default function Journal({
                                   </div>
                                 ) : <p className="text-xxs text-zinc-400 italic">暂无截图。您可以上传图表截图以便后续复盘。</p>}
                                 <div className="flex items-center gap-3">
-                                  <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xxs font-semibold text-zinc-600 dark:text-zinc-400 cursor-pointer transition-colors w-fit">
+                                  <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xxs font-semibold text-zinc-600 dark:text-zinc-200 cursor-pointer transition-colors w-fit">
                                     <Upload size={12} /><span>添加截图</span>
                                     <input type="file" accept="image/*" multiple
                                       onChange={(e) => handleUploadScreenshots(trade.id, e.target.files)} className="hidden" />

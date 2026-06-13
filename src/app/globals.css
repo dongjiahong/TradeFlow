@@ -27,6 +27,14 @@ html {
   }
 }
 
+/* Override browser-native dark mode on form controls */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0);
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 /* Custom trading palette — replaces Tailwind default emerald/rose with professional trading colors */
 :root {
   --trade-green: #059669;
@@ -92,7 +100,7 @@ body {
   overflow: hidden;
 }
 
-/* Inline cell inputs */
+/* Inline cell inputs — full color control to avoid browser defaults */
 .inline-cell-input {
   width: 100%;
   min-width: 0;
@@ -102,10 +110,18 @@ body {
   border: 1px solid;
   outline: none;
   transition: border-color 0.15s ease;
+  background-color: #fff;
+  color: #18181b;
+  border-color: #d4d4d4;
 }
 .inline-cell-input:focus {
   border-color: #10b981;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+.dark .inline-cell-input {
+  background-color: #27272a;
+  color: #f4f4f5;
+  border-color: #3f3f46;
 }
 
 select option {
@@ -115,4 +131,27 @@ select option {
 .dark select option {
   background-color: #27272a;
   color: #f4f4f5;
+}
+
+/* Global select border/background — ensures no browser-native blue tint */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 0.75rem;
+}
+.dark select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* Date picker calendar icon — invert for dark mode */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0);
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
 }
