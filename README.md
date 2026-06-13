@@ -82,19 +82,8 @@ DATABASE_URL="file:./dev.db"
 
 ## 生产部署
 
-### 方式一：一键部署脚本（推荐）
 
-```bash
-# 首次部署（含数据库初始化）
-bash scripts/deploy.sh --first
-
-# 后续部署（仅构建，不初始化数据库）
-bash scripts/deploy.sh
-```
-
-脚本自动完成：依赖安装 → 数据库初始化 → Prisma Client 生成 → 生产构建 → 目录创建。
-
-### 方式二：手动部署
+### 手动部署
 
 ```bash
 # 1. 安装依赖（仅生产环境）
@@ -113,26 +102,6 @@ npm run build
 npm start
 ```
 
-### PM2 部署示例
-
-```bash
-# 安装 PM2
-npm install -g pm2
-
-# 启动
-pm2 start npm --name "tradingflow" -- start
-
-# 保存进程列表
-pm2 save
-pm2 startup
-```
-
-### Docker 部署（需要 Dockerfile）
-
-```bash
-docker build -t tradingflow .
-docker run -p 3000:3000 -v $(pwd)/data:/app/data tradingflow
-```
 
 ## 开发命令
 

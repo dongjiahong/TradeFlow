@@ -19,34 +19,34 @@ if [ -f "$DB_FILE" ]; then
 fi
 
 echo "🔧 创建表结构..."
-npx prisma db push --skip-generate
+npx prisma db push 
 
 echo "📝 导入预置数据..."
 sqlite3 "$DB_FILE" <<'SQL'
 -- 预置入场理由
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('交易区间内三推反转');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('交易区间内2ndleg陷阱');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('交易区间确认突破');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('AIL，AIS首次回调');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('牛旗或熊旗');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('三推楔形、信号k');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('三推楔形、双底');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('嵌套三推楔形');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('嵌套楔形、高潮、信号K');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('三重底');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('三推楔形、双顶');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('交易区间上下沿、信号K');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('交易区间内2ndleg、趋势线');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('EMA20、H/L1');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('交易区间顶低限价单');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('交易区间内2ndleg陷阱、信号K');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('强趋势50%回调');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('三推楔形、EMA20、信号K');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('抛物线楔形、信号K');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('趋势线、信号K');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('H1、L1');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('H2、L2');
-INSERT OR IGNORE INTO SetupOption (name) VALUES ('不知道为什么开仓');
+INSERT INTO SetupOption (name) VALUES ('交易区间内三推反转');
+INSERT INTO SetupOption (name) VALUES ('交易区间内2ndleg陷阱');
+INSERT INTO SetupOption (name) VALUES ('交易区间确认突破');
+INSERT INTO SetupOption (name) VALUES ('AIL，AIS首次回调');
+INSERT INTO SetupOption (name) VALUES ('牛旗或熊旗');
+INSERT INTO SetupOption (name) VALUES ('三推楔形、信号k');
+INSERT INTO SetupOption (name) VALUES ('三推楔形、双底');
+INSERT INTO SetupOption (name) VALUES ('嵌套三推楔形');
+INSERT INTO SetupOption (name) VALUES ('嵌套楔形、高潮、信号K');
+INSERT INTO SetupOption (name) VALUES ('三重底');
+INSERT INTO SetupOption (name) VALUES ('三推楔形、双顶');
+INSERT INTO SetupOption (name) VALUES ('交易区间上下沿、信号K');
+INSERT INTO SetupOption (name) VALUES ('交易区间内2ndleg、趋势线');
+INSERT INTO SetupOption (name) VALUES ('EMA20、H/L1');
+INSERT INTO SetupOption (name) VALUES ('交易区间顶低限价单');
+INSERT INTO SetupOption (name) VALUES ('交易区间内2ndleg陷阱、信号K');
+INSERT INTO SetupOption (name) VALUES ('强趋势50%回调');
+INSERT INTO SetupOption (name) VALUES ('三推楔形、EMA20、信号K');
+INSERT INTO SetupOption (name) VALUES ('抛物线楔形、信号K');
+INSERT INTO SetupOption (name) VALUES ('趋势线、信号K');
+INSERT INTO SetupOption (name) VALUES ('H1、L1');
+INSERT INTO SetupOption (name) VALUES ('H2、L2');
+INSERT INTO SetupOption (name) VALUES ('不知道为什么开仓');
 
 -- 预置错误原因
 INSERT INTO ErrorOption (name) VALUES ('逆势交易');
