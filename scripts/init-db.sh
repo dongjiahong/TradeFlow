@@ -3,6 +3,7 @@
 # 用法: bash scripts/init-db.sh
 
 set -e
+export DATABASE_URL="${DATABASE_URL:-file:./data/dev.db}"
 
 DB_FILE="${DB_FILE:-data/dev.db}"
 DB_DIR="$(dirname "$DB_FILE")"

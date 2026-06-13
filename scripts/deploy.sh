@@ -3,7 +3,7 @@
 # 用法: bash scripts/deploy.sh [--first]
 #   --first  首次部署时传入，会初始化数据库
 
-set -e
+export DATABASE_URL="file:./data/dev.db"
 
 FIRST_DEPLOY=false
 for arg in "$@"; do
