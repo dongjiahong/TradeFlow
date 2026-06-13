@@ -141,3 +141,34 @@ npm run dev       # 启动开发服务器
 npm run build     # 生产构建
 npm start         # 启动生产服务器
 ```
+
+## Nginx 反代
+
+项目自带 Nginx 配置文件 `nginx/tradeflow.conf`，安装步骤：
+
+```bash
+# 1. 修改域名（可选）
+sed -i 's/tradeflow.example.com/你的域名或 IP/' nginx/tradeflow.conf
+
+# 2. 复制到 Nginx 配置目录
+sudo cp nginx/tradeflow.conf /etc/nginx/conf.d/tradeflow.conf
+
+# 3. 验证配置并重载
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+配置说明：
+
+| 配置项 | 值 | 说明 |
+|--------|------|------|
+| 监听端口 | 80 | HTTP |
+| 反代地址 | 127.0.0.1:3000 | Next.js 生产服务 |
+| 上传限制 | 50M | 截图上传大小上限 |
+| WebSocket | 启用 | HMR 和 SSE 支持 |
+
+如果需要 HTTPS，推荐用 Let's Encrypt：
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d tradeflow.example.com
+```
