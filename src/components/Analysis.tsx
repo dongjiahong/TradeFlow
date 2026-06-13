@@ -1,7 +1,7 @@
 "use client";
 
 import { Filter, TrendingUp, AlertTriangle, ChevronRight, BarChart3, DollarSign } from "lucide-react";
-import { ResponsiveContainer, BarChart, Bar, Cell, CartesianGrid, XAxis, YAxis, Tooltip, PieChart as RePieChart, Pie } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, Cell, CartesianGrid, XAxis, YAxis, PieChart as RePieChart, Pie } from "recharts";
 
 interface AnalysisProps {
   trades: any[];
@@ -263,14 +263,13 @@ export default function Analysis({
               </div>
             </div>
             {analysisReady && (
-              <div className="h-60 w-full lg:w-72 shrink-0">
+              <div className="h-80 w-full lg:w-[720px] shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={setupStats.slice(0, 8)} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
                     <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
                     <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={90}
                       tickFormatter={(v: string) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
-                    <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
                     <Bar dataKey="totalPnl" name="总盈亏">
                       {setupStats.map((entry, idx) => (
                         <Cell key={idx} fill={entry.totalPnl >= 0 ? "#059669" : "#dc2626"} />
@@ -301,7 +300,6 @@ export default function Analysis({
                         <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
                   </RePieChart>
                 </ResponsiveContainer>
               </div>
@@ -346,15 +344,14 @@ export default function Analysis({
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 min-w-0">{renderStatTable(exitStats)}</div>
             {analysisReady && (
-              <div className="h-60 w-full lg:w-72 shrink-0">
+              <div className="h-80 w-full lg:w-[720px] shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={exitStats.slice(0, 8)} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
                     <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
                     <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={90}
                       tickFormatter={(v: string) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
-                    <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
-                    <Bar dataKey="count" name="次数" fill="#38bdf8" />
+<Bar dataKey="count" name="次数" fill="#38bdf8" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -373,14 +370,13 @@ export default function Analysis({
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 min-w-0">{renderStatTable(typeStats)}</div>
             {analysisReady && (
-              <div className="h-60 w-full lg:w-72 shrink-0">
+              <div className="h-80 w-full lg:w-[720px] shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={typeStats} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
                     <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
                     <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={100}
                       tickFormatter={(v: string) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
-                    <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
                     <Bar dataKey="totalPnl" name="总盈亏">
                       {typeStats.map((entry, idx) => (
                         <Cell key={idx} fill={entry.totalPnl >= 0 ? "#059669" : "#dc2626"} />
@@ -404,13 +400,12 @@ export default function Analysis({
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 min-w-0">{renderStatTable(symbolStats)}</div>
             {analysisReady && (
-              <div className="h-60 w-full lg:w-72 shrink-0">
+              <div className="h-80 w-full lg:w-[720px] shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={symbolStats.slice(0, 8)} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
                     <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
                     <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={60} />
-                    <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#fff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "12px" }} />
                     <Bar dataKey="totalPnl" name="总盈亏">
                       {symbolStats.map((entry, idx) => (
                         <Cell key={idx} fill={entry.totalPnl >= 0 ? "#059669" : "#dc2626"} />

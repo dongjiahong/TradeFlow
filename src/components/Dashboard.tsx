@@ -2,8 +2,8 @@
 
 import { TrendingUp, DollarSign, PieChart, AlertTriangle } from "lucide-react";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell, PieChart as RePieChart, Pie
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
+  BarChart, Bar, Cell, PieChart as RePieChart, Pie, LabelList
 } from "recharts";
 
 interface DashboardProps {
@@ -129,7 +129,6 @@ export default function Dashboard({
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={darkMode ? "#27272a" : "#f4f4f5"} />
                 <XAxis dataKey="date" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={11} tickLine={false} />
                 <YAxis stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#ffffff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "8px", color: darkMode ? "#f4f4f5" : "#18181b" }} />
                 <Area type="monotone" dataKey="pnl" name="累计盈亏" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorPnl)" />
               </AreaChart>
             </ResponsiveContainer>
@@ -155,11 +154,19 @@ export default function Dashboard({
                   <XAxis type="number" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} />
                   <YAxis type="category" dataKey="name" stroke={darkMode ? "#71717a" : "#a1a1aa"} fontSize={10} width={110}
                     tickFormatter={(v) => v.length > 12 ? v.substring(0, 12) + "..." : v} />
-                  <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#ffffff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "8px", color: darkMode ? "#f4f4f5" : "#18181b" }} />
                   <Bar dataKey="pnl" name="总盈亏">
                     {setupChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? "#059669" : "#dc2626"} />
                     ))}
+                    <LabelList dataKey="pnl" position="right" className="text-sm font-bold" content={({ viewBox }) => {
+                      if (viewBox && "x" in viewBox && "y" in viewBox) {
+                        const text = String(viewBox.text || "");
+                        return (
+                          <text x={viewBox.x + 8} y={viewBox.y} fill={darkMode ? "#f4f4f5" : "#18181b"} fontSize={14} fontWeight="bold">{text}</text>
+                        );
+                      }
+                      return null;
+                    }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -186,7 +193,6 @@ export default function Dashboard({
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: darkMode ? "#18181b" : "#ffffff", borderColor: darkMode ? "#27272a" : "#e4e4e7", borderRadius: "8px", color: darkMode ? "#f4f4f5" : "#18181b" }} />
                     </RePieChart>
                   </ResponsiveContainer>
                 </div>
