@@ -22,7 +22,8 @@ import {
   importExcelData,
   exportExcelData,
   uploadScreenshot,
-  deleteScreenshot
+  deleteScreenshot,
+  deleteTradesByDateRange
 } from "../lib/db";
 import ScreenshotImage from "./ScreenshotImage";
 import Dashboard from "./Dashboard";
@@ -47,7 +48,7 @@ export default function TradingApp({
   const [mounted, setMounted] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
   const [analysisReady, setAnalysisReady] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "settings" | "analysis">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "settings" | "analysis">("journal");
   const [darkMode, setDarkMode] = useState(false);
 
   // Analysis date filter
@@ -68,6 +69,9 @@ export default function TradingApp({
   const [setupFilter, setSetupFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [symbolFilter, setSymbolFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<"30" | "today" | "week" | "month" | "all" | "custom">("30");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   // Inline editing & screenshots
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
@@ -306,6 +310,16 @@ export default function TradingApp({
     }
   };
 
+  const handleDeleteTradesByDateRange = async (startDate: string, endDate: string) => {
+    const res = await deleteTradesByDateRange(startDate, endDate);
+    if (res.success) {
+      await refreshData();
+      return { success: true, count: res.count };
+    } else {
+      return { success: false, error: res.error };
+    }
+  };
+
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -389,7 +403,36 @@ export default function TradingApp({
   };
 
   // --- FILTERS LOGIC ---
-  const filteredTrades = trades.filter(t => {
+  const getLocalDateStr = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  let dateFilteredTrades = [...trades];
+  if (dateFilter === "today") {
+    const todayStr = getLocalDateStr();
+    dateFilteredTrades = trades.filter(t => t.date === todayStr);
+  } else if (dateFilter === "week") {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(today.setDate(diff));
+    const mondayStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+    dateFilteredTrades = trades.filter(t => t.date >= mondayStr);
+  } else if (dateFilter === "month") {
+    const today = new Date();
+    const firstDayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+    dateFilteredTrades = trades.filter(t => t.date >= firstDayStr);
+  } else if (dateFilter === "custom") {
+    dateFilteredTrades = trades.filter(t => (!customStartDate || t.date >= customStartDate) && (!customEndDate || t.date <= customEndDate));
+  } else if (dateFilter === "30") {
+    dateFilteredTrades = trades.slice(-30);
+  }
+
+  const filteredTrades = dateFilteredTrades.filter(t => {
     const matchesSearch =
       (t.remarks && t.remarks.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (t.notes && t.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -501,6 +544,9 @@ export default function TradingApp({
               setupFilter={setupFilter} setSetupFilter={setSetupFilter}
               typeFilter={typeFilter} setTypeFilter={setTypeFilter}
               symbolFilter={symbolFilter} setSymbolFilter={setSymbolFilter}
+              dateFilter={dateFilter} setDateFilter={setDateFilter}
+              customStartDate={customStartDate} setCustomStartDate={setCustomStartDate}
+              customEndDate={customEndDate} setCustomEndDate={setCustomEndDate}
               pendingScreenshots={pendingScreenshots}
               isUploadingScreenshot={isUploadingScreenshot}
               lightboxImage={lightboxImage} setLightboxImage={setLightboxImage}
@@ -517,6 +563,7 @@ export default function TradingApp({
           )}
           {activeTab === "settings" && (
             <SettingsTab
+              trades={trades}
               setups={setups} errors={errors} exits={exits} symbols={symbols}
               isImporting={isImporting} importStatus={importStatus}
               newSetupName={newSetupName} setNewSetupName={setNewSetupName}
@@ -530,6 +577,7 @@ export default function TradingApp({
               onAddExit={handleAddExit} onDeleteExit={handleDeleteExit}
               onAddSymbol={handleAddSymbol}
               onDeleteSymbol={handleDeleteSymbol}
+              onDeleteTradesByDateRange={handleDeleteTradesByDateRange}
             />
           )}
           {activeTab === "analysis" && (

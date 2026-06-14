@@ -862,3 +862,31 @@ export async function exportExcelData() {
     return { success: false, error: error.message };
   }
 }
+
+export async function deleteTradesByDateRange(startDate: string, endDate: string) {
+  try {
+    // 找出符合日期范围的交易
+    const tradesToDelete = await db.trades
+      .where("date")
+      .between(startDate, endDate, true, true)
+      .toArray();
+    
+    const ids = tradesToDelete.map(t => t.id);
+    if (ids.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    await db.transaction("rw", [db.trades, db.screenshots], async () => {
+      // 删除关联截图
+      await db.screenshots.where("tradeId").anyOf(ids).delete();
+      // 删除交易
+      await db.trades.where("id").anyOf(ids).delete();
+    });
+
+    return { success: true, count: ids.length };
+  } catch (error: any) {
+    console.error("Error deleting trades by date range:", error);
+    return { success: false, error: error.message };
+  }
+}
+

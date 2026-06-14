@@ -1,9 +1,11 @@
 "use client";
 
-import { RefreshCw, Upload, Download, X } from "lucide-react";
-import type { OptionItem } from "./types";
+import { useState } from "react";
+import { RefreshCw, Upload, Download, X, AlertTriangle, Trash2 } from "lucide-react";
+import type { OptionItem, Trade } from "./types";
 
 interface SettingsProps {
+  trades: Trade[];
   setups: OptionItem[];
   errors: OptionItem[];
   exits: OptionItem[];
@@ -28,10 +30,11 @@ interface SettingsProps {
   onDeleteExit: (id: string | number) => Promise<void>;
   onAddSymbol: () => Promise<void>;
   onDeleteSymbol: (id: string | number) => Promise<void>;
+  onDeleteTradesByDateRange: (startDate: string, endDate: string) => Promise<{ success: boolean; count?: number; error?: string }>;
 }
 
 export default function Settings({
-  setups, errors, exits, symbols,
+  trades, setups, errors, exits, symbols,
   isImporting, importStatus,
   newSetupName, setNewSetupName,
   newErrorName, setNewErrorName,
@@ -39,8 +42,88 @@ export default function Settings({
   newSymbolName, setNewSymbolName,
   onImportExcel, onExportExcel, onAddSetup, onDeleteSetup,
   onAddError, onDeleteError,
-  onAddExit, onDeleteExit, onAddSymbol, onDeleteSymbol
+  onAddExit, onDeleteExit, onAddSymbol, onDeleteSymbol,
+  onDeleteTradesByDateRange
 }: SettingsProps) {
+  // 日志管理删除状态
+  const [deleteStartDate, setDeleteStartDate] = useState("");
+  const [deleteEndDate, setDeleteEndDate] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState("");
+
+  const getOldestDate = () => {
+    if (trades && trades.length > 0) {
+      const d = trades[0].date;
+      return typeof d === "string" ? d.split("T")[0] : new Date(d).toISOString().split("T")[0];
+    }
+    // 如果没有任何数据，默认最早是今天
+    return new Date().toISOString().split("T")[0];
+  };
+
+  const getTradesCountInRange = () => {
+    if (!deleteStartDate || !deleteEndDate) return 0;
+    return trades.filter(t => {
+      const d = typeof t.date === "string" ? t.date.split("T")[0] : new Date(t.date).toISOString().split("T")[0];
+      return d >= deleteStartDate && d <= deleteEndDate;
+    }).length;
+  };
+
+  // 快捷设置删除范围
+  const setDeleteRangeMonthsAgo = (months: number) => {
+    const today = new Date();
+    today.setMonth(today.getMonth() - months);
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    setDeleteStartDate("1970-01-01");
+    setDeleteEndDate(`${y}-${m}-${d}`);
+    setDeleteMsg("");
+  };
+
+  const setDeleteRangeAll = () => {
+    setDeleteStartDate("1970-01-01");
+    setDeleteEndDate(new Date().toISOString().split("T")[0]);
+    setDeleteMsg("");
+  };
+
+  const triggerDeleteCheck = () => {
+    if (!deleteStartDate || !deleteEndDate) {
+      alert("请先选择要删除的开始日期和结束日期！");
+      return;
+    }
+    if (deleteStartDate > deleteEndDate) {
+      alert("开始日期不能晚于结束日期！");
+      return;
+    }
+    setDeleteMsg("");
+    setShowDeleteConfirm(true);
+  };
+
+  const executeDelete = async (needBackup: boolean) => {
+    setIsDeleting(true);
+    try {
+      if (needBackup) {
+        onExportExcel();
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+      
+      const res = await onDeleteTradesByDateRange(deleteStartDate, deleteEndDate);
+      if (res.success) {
+        setDeleteMsg(`成功删除了该时间段内的 ${res.count ?? 0} 条交易日志！`);
+        setDeleteStartDate("");
+        setDeleteEndDate("");
+      } else {
+        alert("删除失败: " + res.error);
+      }
+    } catch (err: any) {
+      alert("操作出错: " + err.message);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const OptionPanel = ({
     title, count, items, placeholder,
     addKey, addVal, onChangeAdd, onAdd, onDelete
@@ -130,6 +213,62 @@ export default function Settings({
         )}
       </div>
 
+      {/* Log Management */}
+      <div className="p-4 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-col gap-4">
+        <h3 className="text-sm font-bold text-[var(--text-secondary)] flex items-center gap-2">
+          <Trash2 size={16} className="text-trade-red" />
+          交易日志清理与管理
+        </h3>
+        <div className="p-4 rounded-lg bg-[var(--color-bg-canvas)]/50 border border-[var(--color-border-subtle)] flex flex-col gap-4">
+          <p className="text-xs text-[var(--text-secondary)]">
+            选择日期区间，一键安全清理该时段内所有的交易日志。为了防止误删，系统将在此过程前提示您进行备份。
+          </p>
+          
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--text-muted)]">开始日期:</span>
+              <input type="date" value={deleteStartDate} onChange={(e) => { setDeleteStartDate(e.target.value); setDeleteMsg(""); }}
+                className="px-3 py-1.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--text-muted)]">结束日期:</span>
+              <input type="date" value={deleteEndDate} onChange={(e) => { setDeleteEndDate(e.target.value); setDeleteMsg(""); }}
+                className="px-3 py-1.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" />
+            </div>
+            
+            <div className="flex gap-2">
+              <button onClick={() => setDeleteRangeMonthsAgo(3)}
+                className="px-2.5 py-1.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] text-[var(--text-secondary)] text-xxs rounded-lg transition-colors cursor-pointer">
+                3个月前
+              </button>
+              <button onClick={() => setDeleteRangeMonthsAgo(6)}
+                className="px-2.5 py-1.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] text-[var(--text-secondary)] text-xxs rounded-lg transition-colors cursor-pointer">
+                6个月前
+              </button>
+              <button onClick={() => setDeleteRangeMonthsAgo(12)}
+                className="px-2.5 py-1.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] text-[var(--text-secondary)] text-xxs rounded-lg transition-colors cursor-pointer">
+                1年前
+              </button>
+              <button onClick={setDeleteRangeAll}
+                className="px-2.5 py-1.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] text-[var(--text-secondary)] text-xxs rounded-lg transition-colors cursor-pointer">
+                全部日志
+              </button>
+            </div>
+          </div>
+          
+          <button onClick={triggerDeleteCheck}
+            className="w-fit px-4 py-2 bg-trade-red hover:bg-red-600 active:scale-95 text-white text-xs font-bold rounded-lg transition-all cursor-pointer">
+            安全删除选中时段日志
+          </button>
+          
+          {deleteMsg && (
+            <div className="p-3 rounded-lg bg-[var(--color-bg-hover)] text-trade-green text-xs font-medium">
+              {deleteMsg}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Option Panels Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <OptionPanel title="入场理由" count={setups.length} items={setups} placeholder="新入场理由..."
@@ -141,6 +280,45 @@ export default function Settings({
         <OptionPanel title="交易品类" count={symbols.length} items={symbols} placeholder="新品类 (如 BTC)..."
           addKey="symbol" addVal={newSymbolName} onChangeAdd={setNewSymbolName} onAdd={onAddSymbol} onDelete={onDeleteSymbol} />
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded-xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-4 animate-scale-in">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-[var(--trade-red-dim)] text-trade-red shrink-0">
+                <AlertTriangle size={24} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">⚠️ 交易日志清理警告</h3>
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  您将要删除从 <span className="font-bold text-[var(--text-primary)]">{deleteStartDate}</span> 至 <span className="font-bold text-[var(--text-primary)]">{deleteEndDate}</span> 日期范围内的所有交易日志。
+                  <br />
+                  在此期间内**共计有 <span className="font-bold text-trade-red">{getTradesCountInRange()}</span> 条交易日志**会被删除。
+                </p>
+                <p className="text-xs text-trade-red font-semibold leading-relaxed">
+                  此操作将永久抹除日志及其所有的交易截图数据，不可撤销！建议您在删除前导出备份。
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-2 mt-2">
+              <button onClick={() => executeDelete(true)} disabled={isDeleting}
+                className="w-full py-2 bg-trade-green hover:bg-green-600 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center">
+                {isDeleting ? "正在处理..." : "推荐：先导出备份并删除"}
+              </button>
+              <button onClick={() => executeDelete(false)} disabled={isDeleting}
+                className="w-full py-2 bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] disabled:opacity-50 text-trade-red text-xs font-bold rounded-lg transition-colors cursor-pointer text-center border border-[var(--color-border-subtle)]">
+                {isDeleting ? "正在处理..." : "不备份，直接删除"}
+              </button>
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting}
+                className="w-full py-2 bg-[var(--color-bg-canvas)] hover:bg-[var(--color-bg-hover)] disabled:opacity-50 text-[var(--text-secondary)] text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center border border-[var(--color-border-subtle)]">
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

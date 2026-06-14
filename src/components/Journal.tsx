@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus, Trash, Edit, Check, X,
   Upload, Camera, Image as ImageIcon, RefreshCw
@@ -41,6 +41,12 @@ interface JournalProps {
   setTypeFilter: React.Dispatch<React.SetStateAction<string>>;
   symbolFilter: string;
   setSymbolFilter: React.Dispatch<React.SetStateAction<string>>;
+  dateFilter: "30" | "today" | "week" | "month" | "all" | "custom";
+  setDateFilter: React.Dispatch<React.SetStateAction<"30" | "today" | "week" | "month" | "all" | "custom">>;
+  customStartDate: string;
+  setCustomStartDate: React.Dispatch<React.SetStateAction<string>>;
+  customEndDate: string;
+  setCustomEndDate: React.Dispatch<React.SetStateAction<string>>;
   pendingScreenshots: { file: File; preview: string }[];
   isUploadingScreenshot: boolean;
   lightboxImage: string | null;
@@ -64,12 +70,30 @@ export default function Journal({
   searchQuery, setSearchQuery, directionFilter, setDirectionFilter,
   statusFilter, setStatusFilter, setupFilter, setSetupFilter,
   typeFilter, setTypeFilter, symbolFilter, setSymbolFilter,
+  dateFilter, setDateFilter, customStartDate, setCustomStartDate, customEndDate, setCustomEndDate,
   pendingScreenshots, isUploadingScreenshot,
   lightboxImage, setLightboxImage, expandedScreenshotId, setExpandedScreenshotId,
   calculateLivePnl, calculateLiveRR,
   handleSaveTrade, handleDeleteTrade, handleUploadScreenshots, handleDeleteScreenshot,
   handlePendingFileSelect, removePendingScreenshot, clearPendingScreenshots
 }: JournalProps) {
+  // 分页状态与计算
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 30;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    filteredTrades.length, searchQuery, directionFilter, statusFilter,
+    setupFilter, typeFilter, symbolFilter, dateFilter
+  ]);
+
+  const totalPages = Math.ceil(filteredTrades.length / pageSize) || 1;
+  const activePage = Math.min(currentPage, totalPages);
+  const startIndex = (activePage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedTrades = filteredTrades.slice(startIndex, endIndex);
+
   const renderInlineEditCells = () => {
     const livePnl = calculateLivePnl();
     const liveStatus = livePnl > 0 ? "win" : livePnl < 0 ? "lose" : "BE";
@@ -295,6 +319,24 @@ export default function Journal({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]" />
         </div>
+        <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value as any)}
+          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
+          <option value="30">最近 30 条</option>
+          <option value="today">今天</option>
+          <option value="week">本周</option>
+          <option value="month">本月</option>
+          <option value="all">全部</option>
+          <option value="custom">自定义范围</option>
+        </select>
+        {dateFilter === "custom" && (
+          <div className="flex items-center gap-1.5">
+            <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] focus:outline-none" />
+            <span className="text-xs text-[var(--text-muted)]">至</span>
+            <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)}
+              className="px-2 py-1 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] focus:outline-none" />
+          </div>
+        )}
         <select value={symbolFilter} onChange={(e) => setSymbolFilter(e.target.value)}
           className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
           <option value="all">所有品类</option>
@@ -326,8 +368,8 @@ export default function Journal({
           <option value="突破（BO）">突破</option>
           <option value="假突破（fBO）">假突破</option>
         </select>
-        {(searchQuery || directionFilter !== "all" || statusFilter !== "all" || setupFilter !== "all" || typeFilter !== "all" || symbolFilter !== "all") && (
-          <button onClick={() => { setSearchQuery(""); setDirectionFilter("all"); setStatusFilter("all"); setSetupFilter("all"); setTypeFilter("all"); setSymbolFilter("all"); }}
+        {(searchQuery || directionFilter !== "all" || statusFilter !== "all" || setupFilter !== "all" || typeFilter !== "all" || symbolFilter !== "all" || dateFilter !== "30" || customStartDate || customEndDate) && (
+          <button onClick={() => { setSearchQuery(""); setDirectionFilter("all"); setStatusFilter("all"); setSetupFilter("all"); setTypeFilter("all"); setSymbolFilter("all"); setDateFilter("30"); setCustomStartDate(""); setCustomEndDate(""); }}
             className="text-xs text-trade-red hover:underline ml-auto">重置</button>
         )}
       </div>
@@ -376,7 +418,7 @@ export default function Journal({
                   })()
                 ) : null
               )}
-              {filteredTrades.map(trade => {
+              {paginatedTrades.map(trade => {
                 if (inlineEditingId === trade.id) return null;
 
                 return (
@@ -425,7 +467,7 @@ export default function Journal({
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center justify-center gap-1">
-                          <button onClick={() => setExpandedScreenshotId(prev => prev === trade.id ? null : trade.id)} title="截图"
+                           <button onClick={() => setExpandedScreenshotId(prev => prev === trade.id ? null : trade.id)} title="截图"
                             className={`p-1.5 rounded transition-colors ${
                               expandedScreenshotId === trade.id ? "bg-trade-green text-white" :
                               (trade.screenshots && trade.screenshots.length > 0) ? "text-trade-green hover:bg-[var(--trade-green-dim)]" : "text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)]"
@@ -470,6 +512,36 @@ export default function Journal({
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-bg-surface)] border-t border-[var(--color-border-subtle)] flex-wrap gap-2">
+            <div className="text-xs text-[var(--text-muted)]">
+              显示 {startIndex + 1} - {Math.min(endIndex, filteredTrades.length)} 条，共 <span className="font-bold">{filteredTrades.length}</span> 条交易记录
+            </div>
+            <div className="flex items-center gap-1.5 font-mono">
+              <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={activePage === 1}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--text-secondary)] disabled:opacity-40 hover:bg-[var(--color-bg-hover)] disabled:hover:bg-transparent transition-colors cursor-pointer">
+                上一页
+              </button>
+              {Array.from({ length: totalPages }).map((_, idx) => {
+                const p = idx + 1;
+                return (
+                  <button key={p} onClick={() => setCurrentPage(p)}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      activePage === p
+                        ? "bg-trade-green text-white"
+                        : "border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)]"
+                    }`}>
+                    {p}
+                  </button>
+                );
+              })}
+              <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={activePage === totalPages}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--text-secondary)] disabled:opacity-40 hover:bg-[var(--color-bg-hover)] disabled:hover:bg-transparent transition-colors cursor-pointer">
+                下一页
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
