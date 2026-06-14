@@ -1,143 +1,91 @@
-# TradeFlow Pro
+# TradeFlow Pro - 交易复盘与自律分析系统
 
-个人交易复盘与自律分析系统。记录交易细节、多维度行为分析、发现交易模式。
+个人交易复盘与自律分析系统。记录交易细节、多维度行为分析、发现交易模式。本系统为**纯前端单页应用 (SPA)**，所有数据与截图完全存储在用户浏览器的本地 **IndexedDB** 数据库中，不依赖任何后端服务器，保护交易数据私密安全。
 
-## 功能
+## 🌟 功能
 
-- **仪表盘** — 总盈亏、胜率、盈利因子等 KPI 概览，资金曲线走势
-- **交易日志** — 录入交易记录，支持截图标注、Excel 批量导入、内联编辑
-- **行为分析** — 按入场理由、错误类型、离场理由、交易类型、品类、方向六维度统计
-- **设置** — 管理入场理由、错误原因、离场理由、交易品类选项
-- **暗色主题** — 支持亮色/暗色切换
+- **仪表盘** — 总盈亏、胜率、盈利因子等 KPI 概览，资金曲线走势。
+- **交易日志** — 录入交易记录，支持复制/粘贴截图标注、内联快速编辑。
+- **行为分析** — 按入场理由、错误类型、离场理由、交易类型、品类、方向六个维度统计胜率和盈利表现。
+- **设置管理** — 自定义管理入场理由、错误原因、离场理由、交易品类选项。
+- **数据导入导出** — 纯浏览器端实现数据的高效导入导出，支持导出为 Excel (`.xlsx`) 文件（内置完整统计公式），或从原 Excel 模板一键导入恢复历史记录。
+- **暗色主题** — 支持根据系统偏好或手动切换亮色/暗色主题。
 
-## 技术栈
+## 🛠️ 技术栈
 
-- **框架**: Next.js 16 (App Router)
-- **UI**: React 19 + Tailwind CSS v4
-- **图表**: Recharts v3
-- **数据库**: SQLite + Prisma
+- **构建工具**: Vite
+- **UI 框架**: React 19 (TypeScript)
+- **样式系统**: Tailwind CSS v4
+- **图表库**: Recharts
+- **本地数据库**: IndexedDB (基于 Dexie.js 强力驱动)
+- **Excel 解析**: SheetJS (xlsx)
 - **图标**: Lucide React
 
-## 快速开始
+## 🚀 快速开始
 
 ```bash
-# 安装依赖
+# 1. 安装依赖
 npm install
 
-# 初始化数据库（首次）
-npx prisma generate
-npx prisma db push
-
-# 启动开发服务器
+# 2. 启动本地开发服务器
 npm run dev
 ```
 
-打开 [http://localhost:3000](http://localhost:3000)
+启动后，在浏览器中打开提示的本地地址（通常为 `http://localhost:5173`）即可运行。
 
-## 项目结构
+## 📦 项目结构
 
 ```
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── actions.ts          # Server Actions (CRUD)
-│   │   ├── api/                # API routes (截图上传/导出)
-│   │   ├── globals.css         # 全局样式 + 暗色主题变量
-│   │   └── page.tsx            # 入口页面
-│   ├── components/
-│   │   ├── TradingApp.tsx      # 主应用组件
-│   │   ├── Dashboard.tsx       # 仪表盘
-│   │   ├── Journal.tsx         # 交易日志
-│   │   ├── Analysis.tsx        # 行为分析
-│   │   ├── Settings.tsx        # 设置
-│   │   ├── types.ts            # TypeScript 类型定义
-│   │   └── hooks/              # 自定义 Hooks
-│   └── lib/
-│       └── db.ts               # 数据库连接
-├── prisma/
-│   └── schema.prisma           # Prisma 数据模型
-├── scripts/
-│   ├── init-db.sh              # 数据库初始化（预置数据导入）
-│   └── deploy.sh               # 生产部署脚本
-└── data/
-    ├── dev.db                  # SQLite 数据库（由 .gitignore 忽略）
-    └── screenshots/            # 截图存储目录
+├── index.html                  # 静态单页应用 HTML 入口
+├── vite.config.ts              # Vite 配置文件
+├── tsconfig.json               # TypeScript 配置
+├── package.json                # 项目依赖及编译指令
+├── nginx/
+│   └── tradeflow.conf          # NGINX 生产静态部署配置文件
+└── src/
+    ├── main.tsx                # 应用启动挂载入口
+    ├── App.tsx                 # SPA 主页面结构
+    ├── globals.css             # 全局样式及暗色主题变量
+    ├── components/
+    │   ├── TradingApp.tsx      # 应用状态控制中心
+    │   ├── Dashboard.tsx       # 仪表盘图表组件
+    │   ├── Journal.tsx         # 交易日志表格及编辑表单
+    │   ├── Analysis.tsx        # 行为统计与图表分析
+    │   ├── Settings.tsx        # 自定义设置及数据导入导出
+    │   ├── ScreenshotImage.tsx # 截图按需异步加载与内存释放组件
+    │   ├── types.ts            # 全局 TypeScript 接口声明
+    │   └── hooks/              # 自定义状态管理 Hooks
+    └── lib/
+        └── db.ts               # Dexie 数据库实例及纯前端增删改查、Excel 导入导出接口
 ```
 
-## 数据模型
+## 💾 备份与导入导出
 
-| 模型 | 说明 |
-|------|------|
-| Trade | 交易记录（日期、方向、进出场价格、盈亏、状态等） |
-| SetupOption | 入场理由选项 |
-| ErrorOption | 错误原因选项 |
-| ExitOption | 离场理由选项 |
-| SymbolOption | 交易品类选项 |
-| TradeScreenshot | 交易截图 |
+1. **导出数据**：在“系统设置”页面中点击**“下载 Excel 文件”**。系统将把您在 IndexedDB 中的全部交易日志、自定义配置选项等自动打包成 Excel 格式并触发下载。下载后的 Excel 依然内建了胜率、累计盈亏等完全相同的计算公式。
+2. **导入数据**：在“系统设置”页面中点击**“选择并导入”**，上传导出的或原本的 Excel 模板。**注意：这会覆盖清空浏览器本地现有的交易记录！**
 
-## 环境变量
+由于截图存储在 IndexedDB 的 Blob 字段中，Excel 文件中暂时不包含截图二进制数据。
 
-```bash
-DATABASE_URL="file:./dev.db"
-```
+## 🌐 生产部署 (NGINX 静态托管)
 
-## 生产部署
+由于项目编译后是纯静态的 HTML/CSS/JS 文件，因此它可以被托管于任何静态服务器（如 Nginx、Vercel、Netlify、GitHub Pages 等）。
 
+### NGINX 配置步骤：
 
-### 手动部署
+1. **构建生产静态文件**：
+   ```bash
+   npm run build
+   ```
+   该指令会在项目根目录下生成 `dist/` 文件夹。
 
-```bash
-# 1. 安装依赖（仅生产环境）
-npm ci --omit=dev
+2. **配置 NGINX**：
+   我们提供了为 SPA 优化的 NGINX 配置文件 [nginx/tradeflow.conf](file:///Users/lele/develop/vibe_coding/TradingLog/nginx/tradeflow.conf)。请修改配置文件中的 `server_name`（您的域名或 IP）以及 `root`（指向您服务器上 `dist` 目录的实际存放路径）。
 
-# 2. 初始化数据库（首次）
-bash scripts/init-db.sh
-
-# 3. 生成 Prisma Client
-npx prisma generate
-
-# 4. 构建
-npm run build
-
-# 5. 启动
-npm start
-```
-
-
-## 开发命令
-
-```bash
-npm run dev       # 启动开发服务器
-npm run build     # 生产构建
-npm start         # 启动生产服务器
-```
-
-## Nginx 反代
-
-项目自带 Nginx 配置文件 `nginx/tradeflow.conf`，安装步骤：
-
-```bash
-# 1. 修改域名（可选）
-sed -i 's/tradeflow.example.com/你的域名或 IP/' nginx/tradeflow.conf
-
-# 2. 复制到 Nginx 配置目录
-sudo cp nginx/tradeflow.conf /etc/nginx/conf.d/tradeflow.conf
-
-# 3. 验证配置并重载
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-配置说明：
-
-| 配置项 | 值 | 说明 |
-|--------|------|------|
-| 监听端口 | 80 | HTTP |
-| 反代地址 | 127.0.0.1:3000 | Next.js 生产服务 |
-| 上传限制 | 50M | 截图上传大小上限 |
-| WebSocket | 启用 | HMR 和 SSE 支持 |
-
-如果需要 HTTPS，推荐用 Let's Encrypt：
-
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d tradeflow.example.com
-```
+3. **启用配置并重新载入 NGINX**：
+   ```bash
+   # 复制配置到 nginx 的 conf 目录
+   sudo cp nginx/tradeflow.conf /etc/nginx/conf.d/tradeflow.conf
+   
+   # 检查语法并重载
+   sudo nginx -t && sudo systemctl reload nginx
+   ```

@@ -46,3 +46,4 @@ data/screenshots/
 dev.db
 scratch/
 .agents
+dist
