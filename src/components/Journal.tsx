@@ -5,6 +5,7 @@ import {
   Plus, Trash, Edit, Check, X,
   Upload, Camera, Image as ImageIcon, RefreshCw
 } from "lucide-react";
+import ScreenshotImage from "./ScreenshotImage";
 import type { Trade, OptionItem } from "./types";
 
 interface JournalProps {
@@ -225,8 +226,8 @@ export default function Journal({
         <div className="flex flex-wrap gap-2">
           {trade.screenshots.map(pic => (
             <div key={pic.id} className="relative group rounded-lg overflow-hidden border border-[var(--color-border-subtle)] w-[100px]">
-              <img src={`/api/screenshots/${pic.id}`} alt={pic.filename}
-                onClick={() => setLightboxImage(`/api/screenshots/${pic.id}`)}
+              <ScreenshotImage screenshotId={pic.id} alt={pic.filename}
+                onClick={() => setLightboxImage(pic.id)}
                 className="screenshot-thumb w-full cursor-pointer" />
               <button onClick={() => handleDeleteScreenshot(trade.id, pic.id)}
                 className="absolute top-1 right-1 p-1 rounded-full bg-trade-red text-white opacity-0 group-hover:opacity-100 transition-opacity" title="删除">

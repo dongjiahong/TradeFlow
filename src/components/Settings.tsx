@@ -19,14 +19,15 @@ interface SettingsProps {
   newSymbolName: string;
   setNewSymbolName: React.Dispatch<React.SetStateAction<string>>;
   onImportExcel: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onExportExcel: () => void;
   onAddSetup: () => Promise<void>;
-  onDeleteSetup: (id: string) => Promise<void>;
+  onDeleteSetup: (id: string | number) => Promise<void>;
   onAddError: () => Promise<void>;
-  onDeleteError: (id: string) => Promise<void>;
+  onDeleteError: (id: string | number) => Promise<void>;
   onAddExit: () => Promise<void>;
-  onDeleteExit: (id: string) => Promise<void>;
+  onDeleteExit: (id: string | number) => Promise<void>;
   onAddSymbol: () => Promise<void>;
-  onDeleteSymbol: (id: string) => Promise<void>;
+  onDeleteSymbol: (id: string | number) => Promise<void>;
 }
 
 export default function Settings({
@@ -36,7 +37,7 @@ export default function Settings({
   newErrorName, setNewErrorName,
   newExitName, setNewExitName,
   newSymbolName, setNewSymbolName,
-  onImportExcel, onAddSetup, onDeleteSetup,
+  onImportExcel, onExportExcel, onAddSetup, onDeleteSetup,
   onAddError, onDeleteError,
   onAddExit, onDeleteExit, onAddSymbol, onDeleteSymbol
 }: SettingsProps) {
@@ -46,7 +47,7 @@ export default function Settings({
   }: {
     title: string; count: number; items: OptionItem[]; placeholder: string;
     addKey: string; addVal: string; onChangeAdd: React.Dispatch<React.SetStateAction<string>>;
-    onAdd: () => Promise<void>; onDelete: (id: string) => Promise<void>;
+    onAdd: () => Promise<void>; onDelete: (id: string | number) => Promise<void>;
   }) => (
     <div className="p-4 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-col gap-3">
       <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -64,7 +65,7 @@ export default function Settings({
         {items.map(item => (
           <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-canvas)]/50 hover:bg-[var(--color-bg-hover)] text-xs text-[var(--text-secondary)] transition-colors">
             <span className="truncate">{item.name}</span>
-            <button onClick={() => onDelete(item.id)} className="text-[var(--text-muted)] hover:text-trade-red transition-colors p-1">
+            <button onClick={() => item.id !== undefined && onDelete(item.id)} className="text-[var(--text-muted)] hover:text-trade-red transition-colors p-1">
               <X size={12} />
             </button>
           </div>
@@ -114,10 +115,10 @@ export default function Settings({
                 将交易记录、日记和自定义选项完整导出为 `.xlsx` 文件。
               </p>
             </div>
-            <a href="/api/export" download="trading-log-export.xlsx"
-              className="inline-block px-4 py-2 bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--text-primary)] text-xs font-bold rounded-lg text-center active:scale-95 transition-all text-center">
+            <button onClick={onExportExcel}
+              className="w-full inline-block px-4 py-2 bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--text-primary)] text-xs font-bold rounded-lg text-center active:scale-95 transition-all text-center cursor-pointer">
               下载 Excel 文件
-            </a>
+            </button>
           </div>
         </div>
 

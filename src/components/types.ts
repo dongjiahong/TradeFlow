@@ -22,7 +22,7 @@ export interface Trade {
 }
 
 export interface OptionItem {
-  id: string;
+  id?: string | number;
   name: string;
 }
 

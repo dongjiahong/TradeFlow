@@ -6,6 +6,8 @@ import {
   Moon, Sun, BarChart3
 } from "lucide-react";
 import {
+  getTrades,
+  getConfigOptions,
   createTrade,
   updateTrade,
   deleteTrade,
@@ -16,8 +18,13 @@ import {
   addExitOption,
   deleteExitOption,
   deleteSymbolOption,
-  importExcelData
-} from "../app/actions";
+  addSymbolOption,
+  importExcelData,
+  exportExcelData,
+  uploadScreenshot,
+  deleteScreenshot
+} from "../lib/db";
+import ScreenshotImage from "./ScreenshotImage";
 import Dashboard from "./Dashboard";
 import Journal from "./Journal";
 import Analysis from "./Analysis";
@@ -25,18 +32,18 @@ import SettingsTab from "./Settings";
 import type { Trade, OptionItem } from "./types";
 
 export default function TradingApp({
-  initialTrades,
-  initialSetups,
-  initialErrors,
-  initialExits,
-  initialSymbols
+  initialTrades = [],
+  initialSetups = [],
+  initialErrors = [],
+  initialExits = [],
+  initialSymbols = []
 }: {
-  initialTrades: Trade[];
-  initialSetups: OptionItem[];
-  initialErrors: OptionItem[];
-  initialExits: OptionItem[];
-  initialSymbols: OptionItem[];
-}) {
+  initialTrades?: Trade[];
+  initialSetups?: OptionItem[];
+  initialErrors?: OptionItem[];
+  initialExits?: OptionItem[];
+  initialSymbols?: OptionItem[];
+} = {}) {
   const [mounted, setMounted] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
   const [analysisReady, setAnalysisReady] = useState(false);
@@ -88,13 +95,33 @@ export default function TradingApp({
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState("");
 
+  const refreshData = async () => {
+    const localTrades = await getTrades();
+    const localOptions = await getConfigOptions();
+    setTrades(localTrades);
+    setSetups(localOptions.setups);
+    setErrors(localOptions.errors);
+    setExits(localOptions.exits);
+    setSymbols(localOptions.symbols);
+    return localOptions;
+  };
+
   useEffect(() => {
     setMounted(true);
-    requestAnimationFrame(() => setDashboardReady(true));
-    if (initialSetups.length > 0) setTradeForm(prev => ({ ...prev, setup: initialSetups[0].name }));
-    if (initialExits.length > 0) setTradeForm(prev => ({ ...prev, exitReason: initialExits[0].name }));
-    if (initialSymbols.length > 0) setTradeForm(prev => ({ ...prev, symbol: initialSymbols[0].name }));
-  }, [initialSetups, initialExits, initialSymbols]);
+    let active = true;
+    async function loadLocalData() {
+      const localOptions = await refreshData();
+      if (active) {
+        if (localOptions.setups.length > 0) setTradeForm(prev => ({ ...prev, setup: localOptions.setups[0].name }));
+        if (localOptions.exits.length > 0) setTradeForm(prev => ({ ...prev, exitReason: localOptions.exits[0].name }));
+        if (localOptions.symbols.length > 0) setTradeForm(prev => ({ ...prev, symbol: localOptions.symbols[0].name }));
+        setDashboardReady(true);
+        setAnalysisReady(true);
+      }
+    }
+    loadLocalData();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (activeTab === "dashboard") { setDashboardReady(false); requestAnimationFrame(() => setDashboardReady(true)); }
@@ -205,11 +232,7 @@ export default function TradingApp({
     setIsUploadingScreenshot(true);
     try {
       for (const item of pendingScreenshots) {
-        const formData = new FormData();
-        formData.append("tradeId", tradeId);
-        formData.append("file", item.file);
-        const res = await fetch("/api/screenshots", { method: "POST", body: formData });
-        const data = await res.json();
+        const data = await uploadScreenshot(tradeId, item.file);
         if (data.success && data.screenshot) {
           setTrades(prev => prev.map(t => t.id === tradeId ? { ...t, screenshots: [...(t.screenshots || []), data.screenshot] } : t));
         }
@@ -256,11 +279,7 @@ export default function TradingApp({
     setIsUploadingScreenshot(true);
     try {
       for (let i = 0; i < files.length; i++) {
-        const formData = new FormData();
-        formData.append("tradeId", tradeId);
-        formData.append("file", files[i]);
-        const res = await fetch("/api/screenshots", { method: "POST", body: formData });
-        const data = await res.json();
+        const data = await uploadScreenshot(tradeId, files[i]);
         if (data.success && data.screenshot) {
           setTrades(prev => prev.map(t => t.id === tradeId ? { ...t, screenshots: [...(t.screenshots || []), data.screenshot] } : t));
         } else { alert(`上传失败: ${data.error || "未知错误"}`); }
@@ -272,8 +291,7 @@ export default function TradingApp({
   const handleDeleteScreenshot = async (tradeId: string, screenshotId: string) => {
     if (!confirm("确定要删除这张截图吗？")) return;
     try {
-      const res = await fetch(`/api/screenshots/${screenshotId}`, { method: "DELETE" });
-      const data = await res.json();
+      const data = await deleteScreenshot(screenshotId);
       if (data.success) {
         setTrades(prev => prev.map(t => t.id === tradeId ? { ...t, screenshots: (t.screenshots || []).filter(s => s.id !== screenshotId) } : t));
       } else { alert(`删除失败: ${data.error || "未知错误"}`); }
@@ -299,12 +317,25 @@ export default function TradingApp({
         const base64Data = (evt.target?.result as string).split(",")[1];
         setImportStatus("正在同步到本地数据库，这可能需要几十秒时间...");
         const res = await importExcelData(base64Data);
-        if (res.success) { setImportStatus(`导入成功！共导入了 ${res.tradesCount} 笔交易！`); window.location.reload(); }
+        if (res.success) {
+          setImportStatus(`导入成功！共导入了 ${res.tradesCount} 笔交易！`);
+          await refreshData();
+        }
         else { setImportStatus(`导入失败: ${res.error}`); }
       } catch (err: any) { setImportStatus(`文件读取出错: ${err.message}`); }
       finally { setIsImporting(false); }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleExportExcel = async () => {
+    setImportStatus("正在从浏览器 IndexedDB 组装数据并导出...");
+    const res = await exportExcelData();
+    if (res.success) {
+      setImportStatus("导出成功，已触发浏览器文件下载！");
+    } else {
+      setImportStatus(`导出失败: ${res.error}`);
+    }
   };
 
   // Settings CRUD
@@ -314,7 +345,7 @@ export default function TradingApp({
     if (res.success && res.option) { setSetups(prev => [...prev, res.option!].sort((a, b) => a.name.localeCompare(b.name))); setNewSetupName(""); }
     else { alert("添加失败: " + res.error); }
   };
-  const handleDeleteSetup = async (id: string) => {
+  const handleDeleteSetup = async (id: string | number) => {
     if (confirm("确定要删除此入场理由选项吗？")) {
       const res = await deleteSetupOption(id);
       if (res.success) setSetups(prev => prev.filter(s => s.id !== id));
@@ -326,7 +357,7 @@ export default function TradingApp({
     if (res.success && res.option) { setErrors(prev => [...prev, res.option!].sort((a, b) => a.name.localeCompare(b.name))); setNewErrorName(""); }
     else { alert("添加失败: " + res.error); }
   };
-  const handleDeleteError = async (id: string) => {
+  const handleDeleteError = async (id: string | number) => {
     if (confirm("确定要删除此错误原因选项吗？")) {
       const res = await deleteErrorOption(id);
       if (res.success) setErrors(prev => prev.filter(e => e.id !== id));
@@ -338,7 +369,7 @@ export default function TradingApp({
     if (res.success && res.option) { setExits(prev => [...prev, res.option!].sort((a, b) => a.name.localeCompare(b.name))); setNewExitName(""); }
     else { alert("添加失败: " + res.error); }
   };
-  const handleDeleteExit = async (id: string) => {
+  const handleDeleteExit = async (id: string | number) => {
     if (confirm("确定要删除此离场理由选项吗？")) {
       const res = await deleteExitOption(id);
       if (res.success) setExits(prev => prev.filter(ex => ex.id !== id));
@@ -346,11 +377,11 @@ export default function TradingApp({
   };
   const handleAddSymbol = async () => {
     if (!newSymbolName.trim()) return;
-    const res = await addSetupOption(newSymbolName.trim());
+    const res = await addSymbolOption(newSymbolName.trim());
     if (res.success && res.option) { setSymbols(prev => [...prev, res.option!].sort((a, b) => a.name.localeCompare(b.name))); setNewSymbolName(""); }
     else { alert("添加失败: " + res.error); }
   };
-  const handleDeleteSymbol = async (id: string) => {
+  const handleDeleteSymbol = async (id: string | number) => {
     if (confirm("确定要删除此品类选项吗？")) {
       const res = await deleteSymbolOption(id);
       if (res.success) setSymbols(prev => prev.filter(s => s.id !== id));
@@ -391,7 +422,7 @@ export default function TradingApp({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           onClick={() => setLightboxImage(null)}>
           <div className="relative max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            <img src={lightboxImage} alt="Preview" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
+            <ScreenshotImage screenshotId={lightboxImage} alt="Preview" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
             <button onClick={() => setLightboxImage(null)}
               className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors">
               <Settings size={20} />
@@ -493,6 +524,7 @@ export default function TradingApp({
               newExitName={newExitName} setNewExitName={setNewExitName}
               newSymbolName={newSymbolName} setNewSymbolName={setNewSymbolName}
               onImportExcel={handleImportExcel}
+              onExportExcel={handleExportExcel}
               onAddSetup={handleAddSetup} onDeleteSetup={handleDeleteSetup}
               onAddError={handleAddError} onDeleteError={handleDeleteError}
               onAddExit={handleAddExit} onDeleteExit={handleDeleteExit}

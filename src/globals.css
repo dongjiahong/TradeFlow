@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #fafafa;
+  --foreground: #18181b;
+}
+
+@theme inline {
+  /* Bright mode defaults (overridden by .dark below) */
+  --color-bg-canvas: #fafafa;
+  --color-bg-surface: #ffffff;
+  --color-bg-elevated: #f4f4f5;
+  --color-bg-hover: #f0f0f0;
+  --color-border-subtle: #e4e4e7;
+  --color-border-standard: #d4d4d8;
+  --color-border-strong: #a1a1aa;
+
+  --color-trade-green: #059669;
+  --color-trade-green-dim: #d1fae5;
+  --color-trade-green-glow: rgba(5, 150, 105, 0.3);
+  --color-trade-red: #dc2626;
+  --color-trade-red-dim: #fee2e2;
+  --color-trade-red-glow: rgba(220, 38, 38, 0.3);
+
+  --color-text-primary: #18181b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #a1a1aa;
+
+  --color-accent: #3b82f6;
+
+  --font-sans: "Geist", sans-serif;
+  --font-mono: "Geist Mono", monospace;
+  --font-size-xxs: 0.6875rem;
+}
+
+.dark {
+  --background: #08090a;
+  --foreground: #ededed;
+
+  --color-bg-canvas: #08090a;
+  --color-bg-surface: rgba(255, 255, 255, 0.03);
+  --color-bg-elevated: rgba(255, 255, 255, 0.05);
+  --color-bg-hover: rgba(255, 255, 255, 0.06);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-border-standard: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+
+  --color-trade-green: #22c55e;
+  --color-trade-green-dim: rgba(34, 197, 94, 0.12);
+  --color-trade-green-glow: rgba(34, 197, 94, 0.3);
+  --color-trade-red: #ef4444;
+  --color-trade-red-dim: rgba(239, 68, 68, 0.12);
+  --color-trade-red-glow: rgba(239, 68, 68, 0.3);
+
+  --color-text-primary: #ededed;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #52525b;
+}
+
+html {
+  font-size: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #08090a;
+    --foreground: #ededed;
+  }
+}
+
+/* Calendar picker indicator */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* Screenshot grid */
+.screenshot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+.screenshot-thumb {
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.screenshot-thumb:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Lightbox */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  cursor: zoom-out;
+}
+.lightbox-overlay img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Expand animation */
+@keyframes expand-section {
+  from { max-height: 0; opacity: 0; }
+  to { max-height: 400px; opacity: 1; }
+}
+.screenshot-expand {
+  animation: expand-section 0.3s ease-out forwards;
+  overflow: hidden;
+}
+
+/* Inline cell inputs */
+.inline-cell-input {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-standard);
+  outline: none;
+  transition: border-color 0.15s ease;
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+.inline-cell-input:focus {
+  border-color: var(--color-trade-green);
+  box-shadow: 0 0 0 2px var(--color-trade-green-dim);
+}
+
+select option {
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+/* Custom select */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 0.75rem;
+}
+.dark select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* Remove recharts focus outlines */
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+*:focus,
+*:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Fade-in animation */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
