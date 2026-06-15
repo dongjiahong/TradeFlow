@@ -33,6 +33,48 @@ interface SettingsProps {
   onDeleteTradesByDateRange: (startDate: string, endDate: string) => Promise<{ success: boolean; count?: number; error?: string }>;
 }
 
+interface OptionPanelProps {
+  title: string;
+  count: number;
+  items: OptionItem[];
+  placeholder: string;
+  addKey: string;
+  addVal: string;
+  onChangeAdd: React.Dispatch<React.SetStateAction<string>>;
+  onAdd: () => Promise<void>;
+  onDelete: (id: string | number) => Promise<void>;
+}
+
+const OptionPanel = ({
+  title, count, items, placeholder,
+  addKey, addVal, onChangeAdd, onAdd, onDelete
+}: OptionPanelProps) => (
+  <div className="p-4 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-col gap-3">
+    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+      {title} ({count})
+    </h3>
+    <div className="flex gap-2">
+      <input type="text" placeholder={placeholder} value={addVal} onChange={(e) => onChangeAdd(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") onAdd(); }}
+        className="flex-1 px-3 py-1.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" />
+      <button onClick={onAdd} className="px-3 py-1.5 bg-trade-green text-white text-xs font-bold rounded-lg hover:bg-green-600 transition-colors">
+        添加
+      </button>
+    </div>
+    <div className="flex flex-col gap-1 max-h-[240px] overflow-y-auto pr-1">
+      {items.map(item => (
+        <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-canvas)]/50 hover:bg-[var(--color-bg-hover)] text-xs text-[var(--text-secondary)] transition-colors">
+          <span className="truncate">{item.name}</span>
+          <button onClick={() => item.id !== undefined && onDelete(item.id)} className="text-[var(--text-muted)] hover:text-trade-red transition-colors p-1">
+            <X size={12} />
+          </button>
+        </div>
+      ))}
+      {items.length === 0 && <p className="text-xs text-[var(--text-muted)] text-center py-4">暂无配置项</p>}
+    </div>
+  </div>
+);
+
 export default function Settings({
   trades, setups, errors, exits, symbols,
   isImporting, importStatus,
@@ -124,39 +166,7 @@ export default function Settings({
     }
   };
 
-  const OptionPanel = ({
-    title, count, items, placeholder,
-    addKey, addVal, onChangeAdd, onAdd, onDelete
-  }: {
-    title: string; count: number; items: OptionItem[]; placeholder: string;
-    addKey: string; addVal: string; onChangeAdd: React.Dispatch<React.SetStateAction<string>>;
-    onAdd: () => Promise<void>; onDelete: (id: string | number) => Promise<void>;
-  }) => (
-    <div className="p-4 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-col gap-3">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-        {title} ({count})
-      </h3>
-      <div className="flex gap-2">
-        <input type="text" placeholder={placeholder} value={addVal} onChange={(e) => onChangeAdd(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") onAdd(); }}
-          className="flex-1 px-3 py-1.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" />
-        <button onClick={onAdd} className="px-3 py-1.5 bg-trade-green text-white text-xs font-bold rounded-lg hover:bg-green-600 transition-colors">
-          添加
-        </button>
-      </div>
-      <div className="flex flex-col gap-1 max-h-[240px] overflow-y-auto pr-1">
-        {items.map(item => (
-          <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-canvas)]/50 hover:bg-[var(--color-bg-hover)] text-xs text-[var(--text-secondary)] transition-colors">
-            <span className="truncate">{item.name}</span>
-            <button onClick={() => item.id !== undefined && onDelete(item.id)} className="text-[var(--text-muted)] hover:text-trade-red transition-colors p-1">
-              <X size={12} />
-            </button>
-          </div>
-        ))}
-        {items.length === 0 && <p className="text-xs text-[var(--text-muted)] text-center py-4">暂无配置项</p>}
-      </div>
-    </div>
-  );
+
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">

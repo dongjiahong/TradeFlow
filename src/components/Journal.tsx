@@ -461,9 +461,9 @@ export default function Journal({
                       </td>
                       <td className="px-3 py-2 text-[var(--text-muted)] whitespace-nowrap text-xs">{trade.exitReason}</td>
                       <td className="px-3 py-2 text-trade-red whitespace-nowrap text-xs font-medium">{trade.errorReason || "-"}</td>
-                      <td className="px-3 py-2 max-w-xs truncate" title={trade.remarks || ""}>
+                      <td className="px-3 py-2 max-w-xs whitespace-normal break-all" title={trade.remarks || ""}>
                         <div className="font-semibold text-[var(--text-secondary)] truncate text-xs">{trade.remarks || "-"}</div>
-                        {trade.notes && <div className="text-[10px] text-[var(--text-muted)] truncate">{trade.notes}</div>}
+                        {trade.notes && <div className="text-[10px] text-[var(--text-muted)] whitespace-normal break-all mt-0.5">{trade.notes}</div>}
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center justify-center gap-1">
