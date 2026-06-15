@@ -511,17 +511,21 @@ export async function importExcelData(base64Data: string) {
       }
 
       // Convert date
-      let parsedDateStr = "";
+      let parsedDateOnly = "";
       if (dateVal instanceof Date) {
-        parsedDateStr = dateVal.toISOString().split("T")[0];
+        parsedDateOnly = dateVal.toISOString().split("T")[0];
       } else {
         const d = Date.parse(String(dateVal));
         if (!isNaN(d)) {
-          parsedDateStr = new Date(d).toISOString().split("T")[0];
+          parsedDateOnly = new Date(d).toISOString().split("T")[0];
         } else {
           continue;
         }
       }
+      const h = String(Math.floor(i / 3600) % 24).padStart(2, '0');
+      const m = String(Math.floor(i / 60) % 60).padStart(2, '0');
+      const s = String(i % 60).padStart(2, '0');
+      const parsedDateStr = `${parsedDateOnly}T${h}:${m}:${s}`;
 
       const remarks = row[1] ? String(row[1]) : "";
       const setup = row[2] ? String(row[2]) : "其他";

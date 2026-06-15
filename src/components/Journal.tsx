@@ -101,8 +101,11 @@ export default function Journal({
     return (
       <>
         <td className="p-2">
-          <input type="date" required value={tradeForm.date}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, date: e.target.value }))}
+          <input type="date" required value={tradeForm.date.substring(0, 10)}
+            onChange={(e) => {
+              const oldTime = tradeForm.date.includes("T") ? tradeForm.date.split("T")[1] : "12:00:00";
+              setTradeForm(prev => ({ ...prev, date: `${e.target.value}T${oldTime}` }));
+            }}
             className="inline-cell-input bg-transparent text-[var(--text-primary)]" />
         </td>
         <td className="p-2">
@@ -297,9 +300,14 @@ export default function Journal({
         </div>
         <button
           onClick={() => {
+            const getLocalISOString = () => {
+              const d = new Date();
+              const pad = (n: number) => String(n).padStart(2, '0');
+              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            };
             setInlineEditingId("__new__");
             setTradeForm({
-              date: new Date().toISOString().split("T")[0],
+              date: getLocalISOString(),
               remarks: "", setup: setups[0]?.name || "", type: "趋势延续",
               exitReason: exits[0]?.name || "", notes: "", positionSize: 1,
               direction: "Long", entryPrice: 0, stopLoss: "", takeProfit: "",

@@ -45,6 +45,12 @@ export default function TradingApp({
   initialExits?: OptionItem[];
   initialSymbols?: OptionItem[];
 } = {}) {
+  const getLocalISOString = () => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+
   const [mounted, setMounted] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
   const [analysisReady, setAnalysisReady] = useState(false);
@@ -82,7 +88,7 @@ export default function TradingApp({
 
   // Trade form states
   const [tradeForm, setTradeForm] = useState({
-    date: new Date().toISOString().split("T")[0],
+    date: getLocalISOString(),
     remarks: "", setup: "", type: "趋势延续", exitReason: "", notes: "",
     positionSize: 1, direction: "Long", entryPrice: 0,
     stopLoss: "", takeProfit: "", exitPrice1: 0, exitPrice2: "",
@@ -260,10 +266,12 @@ export default function TradingApp({
       symbol: tradeForm.symbol, errorReason: tradeForm.errorReason || undefined
     };
 
+    const sortTradesAsc = (a: Trade, b: Trade) => new Date(a.date).getTime() - new Date(b.date).getTime();
+
     if (inlineEditingId && inlineEditingId !== "__new__") {
       const res = await updateTrade(inlineEditingId, payload);
       if (res.success && res.trade) {
-        setTrades(prev => prev.map(t => t.id === inlineEditingId ? { ...(res.trade as unknown as Trade), screenshots: t.screenshots } : t));
+        setTrades(prev => prev.map(t => t.id === inlineEditingId ? { ...(res.trade as unknown as Trade), screenshots: t.screenshots } : t).sort(sortTradesAsc));
         if (pendingScreenshots.length > 0) await uploadPendingScreenshots(inlineEditingId);
         setInlineEditingId(null);
       } else { alert("更新失败: " + res.error); }
@@ -271,7 +279,7 @@ export default function TradingApp({
       const res = await createTrade(payload);
       if (res.success && res.trade) {
         const newTrade = { ...(res.trade as unknown as Trade), screenshots: [] };
-        setTrades(prev => [...prev, newTrade].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+        setTrades(prev => [...prev, newTrade].sort(sortTradesAsc));
         if (pendingScreenshots.length > 0) await uploadPendingScreenshots(res.trade.id);
         setInlineEditingId(null);
       } else { alert("添加失败: " + res.error); }
