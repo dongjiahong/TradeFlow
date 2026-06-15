@@ -322,6 +322,7 @@ export default function TradingApp({
   };
 
   const removePendingScreenshot = (index: number) => {
+    if (!confirm("确定要删除这张待上传的截图吗？")) return;
     setPendingScreenshots(prev => { URL.revokeObjectURL(prev[index].preview); return prev.filter((_, i) => i !== index); });
   };
 

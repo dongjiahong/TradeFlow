@@ -128,6 +128,7 @@ export default function AiReviewModal({ period, trades, rules, onClose }: AiRevi
         direction: t.direction,
         setup: t.setup,
         type: t.type,
+        process: t.process,
         positionSize: t.positionSize,
         entryPrice: t.entryPrice,
         exitPrice: t.exitPrice1,
@@ -152,7 +153,7 @@ ${doRulesStr ? "- " + doRulesStr : "暂无"}
 ${dontRulesStr ? "- " + dontRulesStr : "暂无"}
 
 重要审查守则：
-数据中的 \`remarks\`（备注）和 \`notes\`（自我复盘）是交易员本人撰写的，可能存在主观合理化、心理偏见或对自己违规行为的掩饰。作为教练，你必须保持高度的客观和警惕，切勿将其当作无可争辩的事实。你要交叉比对其实际交易参数（如入场/离场理由、类型、盈亏状况、离场错误等）与做单原则，严格审视其描述是否真实合理。如果发现交易员的表述存在狡辩、避重就轻或与数据矛盾，请予以指出并揭示其纪律盲点。
+数据中的 \`remarks\`（备注）和 \`notes\`（自我复盘）是交易员本人撰写的，可能存在主观合理化、心理偏见或对自己违规行为的掩饰。作为教练，你必须保持高度的客观和警惕，切勿将其当作无可争辩的事实。你要交叉比对其实际交易参数（如入场/离场理由、类型、过程、盈亏状况、离场错误等）与做单原则，严格审视其描述是否真实合理。如果发现交易员的表述存在狡辩、避重就轻或与数据矛盾，请予以指出并揭示其纪律盲点。
 
 报告格式要求（请严格使用清晰的 Markdown 格式输出，内容不要超过 1500 字）：
 1. 整体交易状况总结：分析整体表现、胜率、盈亏比、主要错误归因。特别是核对交易员在整体上是否遵守了上面列出的“应做”与“忌做”做单原则，并给出系统性的纪律改进建议。
@@ -453,6 +454,7 @@ ${dontRulesStr ? "- " + dontRulesStr : "暂无"}
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]" style={{ color: "#4b5563" }}>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>入场理由:</span> {trade.setup}</div>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>交易类型:</span> {trade.type}</div>
+                          <div><span className="font-semibold" style={{ color: "#1f2937" }}>交易过程:</span> {trade.process || "无"}</div>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>离场理由:</span> {trade.exitReason}</div>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>离场错误:</span> {trade.errorReason || "无"}</div>
                           <div className="col-span-2 mt-1 leading-relaxed">
