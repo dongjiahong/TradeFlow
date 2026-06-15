@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
   TrendingUp, BookOpen, Settings, PieChart,
-  Moon, Sun, BarChart3
+  Moon, Sun, BarChart3, ScrollText
 } from "lucide-react";
 import {
   getTrades,
@@ -23,14 +23,18 @@ import {
   exportExcelData,
   uploadScreenshot,
   deleteScreenshot,
-  deleteTradesByDateRange
+  deleteTradesByDateRange,
+  getTradingRules,
+  addTradingRule,
+  deleteTradingRule
 } from "../lib/db";
 import ScreenshotImage from "./ScreenshotImage";
 import Dashboard from "./Dashboard";
 import Journal from "./Journal";
 import Analysis from "./Analysis";
+import Rules from "./Rules";
 import SettingsTab from "./Settings";
-import type { Trade, OptionItem } from "./types";
+import type { Trade, OptionItem, TradingRule } from "./types";
 
 export default function TradingApp({
   initialTrades = [],
@@ -54,7 +58,7 @@ export default function TradingApp({
   const [mounted, setMounted] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
   const [analysisReady, setAnalysisReady] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "settings" | "analysis">("journal");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "settings" | "analysis" | "rules">("journal");
   const [darkMode, setDarkMode] = useState(false);
 
   // Analysis date filter
@@ -67,6 +71,8 @@ export default function TradingApp({
   const [errors, setErrors] = useState<OptionItem[]>(initialErrors);
   const [exits, setExits] = useState<OptionItem[]>(initialExits);
   const [symbols, setSymbols] = useState<OptionItem[]>(initialSymbols);
+  const [rules, setRules] = useState<TradingRule[]>([]);
+  const [showRulesDropdown, setShowRulesDropdown] = useState(false);
 
   // Journal UI states
   const [searchQuery, setSearchQuery] = useState("");
@@ -108,12 +114,32 @@ export default function TradingApp({
   const refreshData = async () => {
     const localTrades = await getTrades();
     const localOptions = await getConfigOptions();
+    const localRules = await getTradingRules();
     setTrades(localTrades);
     setSetups(localOptions.setups);
     setErrors(localOptions.errors);
     setExits(localOptions.exits);
     setSymbols(localOptions.symbols);
+    setRules(localRules);
     return localOptions;
+  };
+
+  const handleAddRule = async (content: string, type: "do" | "dont") => {
+    try {
+      const newRule = await addTradingRule(content, type);
+      setRules(prev => [...prev, newRule]);
+    } catch (err: any) {
+      alert("添加原则失败: " + err.message);
+    }
+  };
+
+  const handleDeleteRule = async (id: number) => {
+    try {
+      await deleteTradingRule(id);
+      setRules(prev => prev.filter(r => r.id !== id));
+    } catch (err: any) {
+      alert("删除原则失败: " + err.message);
+    }
   };
 
   useEffect(() => {
@@ -535,6 +561,7 @@ export default function TradingApp({
     { key: "dashboard" as const, icon: <PieChart size={18} />, label: "仪表盘" },
     { key: "journal" as const, icon: <BookOpen size={18} />, label: "交易日志" },
     { key: "analysis" as const, icon: <BarChart3 size={18} />, label: "行为分析" },
+    { key: "rules" as const, icon: <ScrollText size={18} />, label: "做单原则" },
     { key: "settings" as const, icon: <Settings size={18} />, label: "设置" }
   ];
 
@@ -562,6 +589,77 @@ export default function TradingApp({
           <h1 className="text-base font-bold tracking-tight text-[var(--text-primary)]">TradeFlow Pro</h1>
         </div>
         <div className="flex items-center gap-4">
+          {/* 做单原则帘子 */}
+          <div className="relative">
+            <button onClick={() => setShowRulesDropdown(!showRulesDropdown)}
+              className={`flex items-center gap-1.5 h-10 px-3 rounded-lg border border-[var(--color-border-subtle)] text-xs font-semibold hover:bg-[var(--color-bg-hover)] transition-all cursor-pointer ${
+                showRulesDropdown 
+                  ? "bg-[var(--color-bg-elevated)] border-[var(--color-border-strong)] text-[var(--color-text-primary)]" 
+                  : "bg-[var(--color-bg-surface)] text-[var(--text-secondary)]"
+              }`}>
+              <ScrollText size={14} className="text-trade-green" />
+              <span className="hidden sm:inline">做单原则</span>
+            </button>
+            
+            {showRulesDropdown && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowRulesDropdown(false)} />
+                <div className="absolute left-0 mt-2 w-[480px] sm:w-[560px] max-h-[80vh] overflow-y-auto z-50 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] shadow-2xl p-4 flex flex-col gap-4 animate-fade-in text-left">
+                  <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2">
+                    <h3 className="font-bold text-xs text-[var(--color-text-primary)] flex items-center gap-1.5">
+                      <ScrollText size={14} className="text-trade-green animate-pulse" />交易做单原则
+                    </h3>
+                    <span className="text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] px-2 py-0.5 rounded-full">
+                      共 {rules.length} 条
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 divide-x divide-[var(--color-border-subtle)]">
+                    <div className="pr-2">
+                      <h4 className="text-xs font-bold text-trade-green flex items-center gap-1.5 mb-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-trade-green" />应做交易 (DO)
+                      </h4>
+                      {rules.filter(r => r.type === "do").length === 0 ? (
+                        <p className="text-xs text-[var(--text-muted)] italic pl-3">暂未设定应做原则</p>
+                      ) : (
+                        <ul className="flex flex-col gap-1.5 pl-3">
+                          {rules.filter(r => r.type === "do").map(r => (
+                            <li key={r.id} className="text-xs text-[var(--color-text-primary)] flex items-start gap-1.5 leading-relaxed">
+                              <span className="text-trade-green shrink-0 mt-1">•</span>
+                              <span>{r.content}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="pl-4">
+                      <h4 className="text-xs font-bold text-trade-red flex items-center gap-1.5 mb-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-trade-red" />忌做交易 (DON'T)
+                      </h4>
+                      {rules.filter(r => r.type === "dont").length === 0 ? (
+                        <p className="text-xs text-[var(--text-muted)] italic pl-3">暂未设定忌做原则</p>
+                      ) : (
+                        <ul className="flex flex-col gap-1.5 pl-3">
+                          {rules.filter(r => r.type === "dont").map(r => (
+                            <li key={r.id} className="text-xs text-[var(--color-text-primary)] flex items-start gap-1.5 leading-relaxed">
+                              <span className="text-trade-red shrink-0 mt-1">•</span>
+                              <span>{r.content}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                  <div className="border-t border-[var(--color-border-subtle)] pt-2.5 flex justify-end">
+                    <button onClick={() => { setActiveTab("rules"); setShowRulesDropdown(false); }}
+                      className="text-xs text-trade-green font-semibold hover:underline cursor-pointer">
+                      管理原则 &rarr;
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="flex items-center gap-2">
             {/* 今日 */}
             <div className="hidden lg:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] min-w-[105px] leading-tight">
@@ -707,6 +805,13 @@ export default function TradingApp({
               onAddSymbol={handleAddSymbol}
               onDeleteSymbol={handleDeleteSymbol}
               onDeleteTradesByDateRange={handleDeleteTradesByDateRange}
+            />
+          )}
+          {activeTab === "rules" && (
+            <Rules
+              rules={rules}
+              onAddRule={handleAddRule}
+              onDeleteRule={handleDeleteRule}
             />
           )}
           {activeTab === "analysis" && (

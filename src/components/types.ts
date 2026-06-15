@@ -26,6 +26,13 @@ export interface OptionItem {
   name: string;
 }
 
+export interface TradingRule {
+  id?: number;
+  content: string;
+  type: "do" | "dont";
+  createdAt: number;
+}
+
 export interface TradingAppProps {
   initialTrades: Trade[];
   initialSetups: OptionItem[];

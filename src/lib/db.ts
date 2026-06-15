@@ -37,6 +37,13 @@ export interface ScreenshotRecord {
   blob: Blob;
 }
 
+export interface TradingRule {
+  id?: number;
+  content: string;
+  type: "do" | "dont";
+  createdAt: number;
+}
+
 // --- DATABASE CLASS ---
 class TradingLogDatabase extends Dexie {
   trades!: Table<Trade, string>;
@@ -45,6 +52,7 @@ class TradingLogDatabase extends Dexie {
   exitOptions!: Table<OptionItem, number>;
   symbolOptions!: Table<OptionItem, number>;
   screenshots!: Table<ScreenshotRecord, string>;
+  tradingRules!: Table<TradingRule, number>;
 
   constructor() {
     super("TradingLogDatabase");
@@ -55,6 +63,15 @@ class TradingLogDatabase extends Dexie {
       exitOptions: "++id, &name",
       symbolOptions: "++id, &name",
       screenshots: "id, tradeId",
+    });
+    this.version(2).stores({
+      trades: "id, date",
+      setupOptions: "++id, &name",
+      errorOptions: "++id, &name",
+      exitOptions: "++id, &name",
+      symbolOptions: "++id, &name",
+      screenshots: "id, tradeId",
+      tradingRules: "++id, type, createdAt"
     });
   }
 }
@@ -800,5 +817,29 @@ export async function deleteTradesByDateRange(startDate: string, endDate: string
     console.error("Error deleting trades by date range:", error);
     return { success: false, error: error.message };
   }
+}
+
+// --- TRADING RULES ACTIONS ---
+export async function getTradingRules(): Promise<TradingRule[]> {
+  try {
+    return await db.tradingRules.orderBy("createdAt").toArray();
+  } catch (error) {
+    console.error("Failed to get trading rules:", error);
+    return [];
+  }
+}
+
+export async function addTradingRule(content: string, type: "do" | "dont"): Promise<TradingRule> {
+  const rule: TradingRule = {
+    content,
+    type,
+    createdAt: Date.now()
+  };
+  const id = await db.tradingRules.add(rule);
+  return { ...rule, id };
+}
+
+export async function deleteTradingRule(id: number): Promise<void> {
+  await db.tradingRules.delete(id);
 }
 
