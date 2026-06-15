@@ -101,172 +101,27 @@ export default function Journal({
   const endIndex = startIndex + pageSize;
   const paginatedTrades = filteredTrades.slice(startIndex, endIndex);
 
-  const renderInlineEditCells = () => {
-    const livePnl = calculateLivePnl();
-    const liveStatus = livePnl > 0 ? "win" : livePnl < 0 ? "lose" : "BE";
-
-    return (
-      <>
-        <td className="p-2">
-          <input type="date" required value={tradeForm.date.substring(0, 10)}
-            onChange={(e) => {
-              const oldTime = tradeForm.date.includes("T") ? tradeForm.date.split("T")[1] : "12:00:00";
-              setTradeForm(prev => ({ ...prev, date: `${e.target.value}T${oldTime}` }));
-            }}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)]" />
-        </td>
-        <td className="p-2">
-          <select value={tradeForm.symbol}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, symbol: e.target.value }))}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)]">
-            {symbols.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-          </select>
-        </td>
-        <td className="p-2">
-          <select value={tradeForm.direction}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, direction: e.target.value }))}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)]">
-            <option value="Long">Long</option>
-            <option value="Short">Short</option>
-          </select>
-        </td>
-        <td className="p-2">
-          <select value={tradeForm.marketEnv}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, marketEnv: e.target.value }))}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)]">
-            <option value="">-- 无 --</option>
-            <option value="突破">突破</option>
-            <option value="窄通道">窄通道</option>
-            <option value="宽通道">宽通道</option>
-            <option value="震荡区间">震荡区间</option>
-          </select>
-        </td>
-        <td className="p-2">
-          <select value={tradeForm.setup}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, setup: e.target.value }))}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)]">
-            {setups.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-          </select>
-        </td>
-        <td className="p-2">
-          <select value={tradeForm.type}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, type: e.target.value }))}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)]">
-            <option value="趋势延续">趋势延续</option>
-            <option value="反转（Reversal）">反转</option>
-            <option value="突破（BO）">突破</option>
-            <option value="假突破（fBO）">假突破</option>
-          </select>
-        </td>
-        <td className="p-2">
-          <input type="number" step="any" required value={tradeForm.positionSize}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, positionSize: parseFloat(e.target.value) || 0 }))}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)] font-mono w-full min-w-[80px]" />
-        </td>
-        <td className="p-2">
-          {(() => {
-            const liveRR = calculateLiveRR();
-            return (
-              <div className="flex flex-col gap-0.5 min-w-[110px]">
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-[var(--text-muted)] w-8 shrink-0">入场:</span>
-                  <input type="number" step="any" required value={tradeForm.entryPrice}
-                    onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: parseFloat(e.target.value) || 0 }))}
-                    className="inline-cell-input bg-transparent text-[var(--text-primary)] font-mono" />
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-[var(--text-muted)] w-8 shrink-0">SL:</span>
-                  <input type="number" step="any" value={tradeForm.stopLoss}
-                    onChange={(e) => setTradeForm(prev => ({ ...prev, stopLoss: e.target.value }))}
-                    placeholder="止损"
-                    className="inline-cell-input bg-transparent text-[var(--text-primary)] font-mono" />
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-[var(--text-muted)] w-8 shrink-0">TP:</span>
-                  <input type="number" step="any" value={tradeForm.takeProfit}
-                    onChange={(e) => setTradeForm(prev => ({ ...prev, takeProfit: e.target.value }))}
-                    placeholder="止盈"
-                    className="inline-cell-input bg-transparent text-[var(--text-primary)] font-mono" />
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-[var(--text-muted)] w-8 shrink-0">离场1:</span>
-                  <input type="number" step="any" required value={tradeForm.exitPrice1}
-                    onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice1: parseFloat(e.target.value) || 0 }))}
-                    className="inline-cell-input bg-transparent text-[var(--text-primary)] font-mono" />
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-[var(--text-muted)] w-8 shrink-0">离场2:</span>
-                  <input type="number" step="any" value={tradeForm.exitPrice2}
-                    onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice2: e.target.value }))}
-                    placeholder="选填"
-                    className="inline-cell-input bg-transparent text-[var(--text-primary)] font-mono" />
-                </div>
-                {liveRR && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-trade-green w-8 shrink-0 font-bold">RR:</span>
-                    <span className="text-xs font-mono font-bold text-trade-green tabular-nums">{liveRR}</span>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </td>
-        <td className={`p-2 font-mono font-bold text-right whitespace-nowrap tabular-nums ${
-          livePnl > 0 ? "text-trade-green" : livePnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"
-        }`}>
-          {livePnl > 0 ? "+" : ""}{livePnl.toFixed(2)}
-        </td>
-        <td className="p-2">
-          <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] tabular-nums ${
-            liveStatus === "win" ? "bg-[var(--trade-green-dim)] text-trade-green" :
-            liveStatus === "lose" ? "bg-[var(--trade-red-dim)] text-trade-red" : "bg-[var(--color-bg-elevated)] text-[var(--text-muted)]"
-          }`}>
-            {liveStatus}
-          </span>
-        </td>
-        <td className="p-2">
-          <select value={tradeForm.exitReason}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, exitReason: e.target.value }))}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)]">
-            {exits.map(ex => <option key={ex.id} value={ex.name}>{ex.name}</option>)}
-          </select>
-        </td>
-        <td className="p-2">
-          <select value={tradeForm.process}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, process: e.target.value }))}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)]">
-            <option value="">-- 无 --</option>
-            {processes.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-          </select>
-        </td>
-        <td className="p-2">
-          <select value={tradeForm.errorReason}
-            onChange={(e) => setTradeForm(prev => ({ ...prev, errorReason: e.target.value }))}
-            className="inline-cell-input bg-transparent text-[var(--text-primary)]">
-            <option value="">-- 无错误 --</option>
-            {errors.map(err => <option key={err.id} value={err.name}>{err.name}</option>)}
-          </select>
-        </td>
-        <td className="p-2">
-          <div className="flex flex-col gap-1.5 min-w-[160px]">
-            <textarea placeholder="备注..." value={tradeForm.remarks} rows={2}
-              onChange={(e) => setTradeForm(prev => ({ ...prev, remarks: e.target.value }))}
-              className="inline-cell-input bg-transparent text-[var(--text-primary)] text-sm resize-y" />
-            <textarea placeholder="复盘..." value={tradeForm.notes} rows={3}
-              onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
-              className="inline-cell-input bg-transparent text-[var(--text-primary)] text-sm resize-y" />
-          </div>
-        </td>
-        <td className="p-2 text-center">
-          <div className="flex items-center justify-center gap-1.5">
-            <button onClick={handleSaveTrade} title="保存"
-              className="p-1.5 rounded bg-trade-green text-white hover:bg-green-600 transition-colors"><Check size={13} /></button>
-            <button onClick={() => { clearPendingScreenshots(); setInlineEditingId(null); }} title="取消"
-              className="p-1.5 rounded bg-[var(--color-bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors"><X size={13} /></button>
-          </div>
-        </td>
-      </>
-    );
+  const handleRowClick = (trade: Trade) => {
+    setInlineEditingId(trade.id);
+    setTradeForm({
+      date: new Date(trade.date).toISOString().split("T")[0],
+      remarks: trade.remarks || "",
+      setup: trade.setup,
+      type: trade.type,
+      exitReason: trade.exitReason,
+      notes: trade.notes || "",
+      positionSize: trade.positionSize,
+      direction: trade.direction,
+      entryPrice: trade.entryPrice,
+      stopLoss: trade.stopLoss !== null ? String(trade.stopLoss) : "",
+      takeProfit: trade.takeProfit !== null ? String(trade.takeProfit) : "",
+      exitPrice1: trade.exitPrice1,
+      exitPrice2: trade.exitPrice2 !== null ? String(trade.exitPrice2) : "",
+      errorReason: trade.errorReason || "",
+      symbol: trade.symbol,
+      process: trade.process || "",
+      marketEnv: trade.marketEnv || ""
+    });
   };
 
   const screenshotBlock = (trade: Trade, isEditingRow: boolean) => (
@@ -317,7 +172,7 @@ export default function Journal({
   );
 
   return (
-    <div className="flex flex-col gap-4 animate-fade-in">
+    <div className="flex flex-col gap-4 animate-fade-in relative min-h-full">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -434,138 +289,59 @@ export default function Journal({
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">环境</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">入场理由</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">类型</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">仓位</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">价格</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-right">盈亏</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">状态</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-right">RR</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">离场</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">过程</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">错误</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">备注</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-center">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
-              {(inlineEditingId === "__new__" || inlineEditingId ? [inlineEditingId] : []).length > 0 && (
-                inlineEditingId === "__new__" || filteredTrades.some(t => t.id === inlineEditingId) ? (
-                  (() => {
-                    const editingTrade = inlineEditingId === "__new__" ? null : filteredTrades.find(t => t.id === inlineEditingId);
-                    if (editingTrade && !editingTrade) return null;
-                    return (
-                      <React.Fragment>
-                        <tr className="bg-[var(--trade-green-dim)]">
-                          {renderInlineEditCells()}
-                        </tr>
-                        <tr className="bg-[var(--color-bg-canvas)]/50 border-b border-[var(--color-border-subtle)]">
-                          <td colSpan={15} className="p-3">
-                            {inlineEditingId === "__new__"
-                              ? screenshotBlock({ ...trades[0]!, screenshots: [] } as Trade, true)
-                              : screenshotBlock(editingTrade!, true)}
-                          </td>
-                        </tr>
-                      </React.Fragment>
-                    );
-                  })()
-                ) : null
-              )}
               {paginatedTrades.map(trade => {
-                if (inlineEditingId === trade.id) return null;
+                const isEditing = inlineEditingId === trade.id;
+                const rowBgClass = trade.status === "win"
+                  ? "bg-trade-green-dim/35 dark:bg-trade-green-dim/15 hover:bg-trade-green-dim/50 dark:hover:bg-trade-green-dim/25 text-[var(--text-primary)]"
+                  : trade.status === "lose"
+                    ? "bg-trade-red-dim/35 dark:bg-trade-red-dim/15 hover:bg-trade-red-dim/50 dark:hover:bg-trade-red-dim/25 text-[var(--text-primary)]"
+                    : "hover:bg-[var(--color-bg-hover)] bg-[var(--color-bg-surface)] text-[var(--text-primary)]";
+                const activeClass = isEditing ? "ring-2 ring-trade-green ring-inset" : "";
 
                 return (
-                  <React.Fragment key={trade.id}>
-                    <tr className="hover:bg-[var(--color-bg-hover)] transition-colors">
-                      <td className="px-3 py-2 font-mono text-xs whitespace-nowrap tabular-nums text-[var(--text-secondary)]">
-                        {new Date(trade.date).toISOString().split("T")[0]}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded font-semibold bg-[var(--color-bg-elevated)] text-[var(--text-secondary)] text-[10px]">
-                          {trade.symbol || "-"}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
-                          trade.direction === "Long" ? "bg-[var(--trade-green-dim)] text-trade-green" : "bg-[var(--trade-red-dim)] text-trade-red"
-                        }`}>{trade.direction}</span>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded font-semibold bg-[var(--color-bg-elevated)] text-[var(--text-secondary)] text-[10px]">
-                          {trade.marketEnv || "-"}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 font-semibold text-[var(--text-secondary)] whitespace-nowrap">{trade.setup}</td>
-                      <td className="px-3 py-2 text-[var(--text-muted)] whitespace-nowrap">{trade.type}</td>
-                      <td className="px-3 py-2 font-mono text-xs tabular-nums text-[var(--text-secondary)]">{trade.positionSize}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-[var(--text-muted)] whitespace-nowrap">
-                        <div>入: {trade.entryPrice}</div>
-                        {trade.stopLoss && <div>SL: {trade.stopLoss}</div>}
-                        {trade.takeProfit && <div>TP: {trade.takeProfit}</div>}
-                        <div>出1: {trade.exitPrice1}</div>
-                        {trade.exitPrice2 && <div>出2: {trade.exitPrice2}</div>}
-                        {trade.rr && <div className="text-trade-green font-bold">RR: {trade.rr}</div>}
-                      </td>
-                      <td className={`px-3 py-2 font-mono font-bold text-right whitespace-nowrap tabular-nums ${
-                        trade.pnl > 0 ? "text-trade-green" : trade.pnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"
-                      }`}>
-                        {trade.pnl > 0 ? "+" : ""}{trade.pnl.toFixed(2)}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
-                          trade.status === "win" ? "bg-[var(--trade-green-dim)] text-trade-green" :
-                          trade.status === "lose" ? "bg-[var(--trade-red-dim)] text-trade-red" : "bg-[var(--color-bg-elevated)] text-[var(--text-muted)]"
-                        }`}>{trade.status}</span>
-                      </td>
-                      <td className="px-3 py-2 text-[var(--text-muted)] whitespace-nowrap text-xs">{trade.exitReason}</td>
-                      <td className="px-3 py-2 text-[var(--text-muted)] whitespace-nowrap text-xs">{trade.process || "-"}</td>
-                      <td className="px-3 py-2 text-trade-red whitespace-nowrap text-xs font-medium">{trade.errorReason || "-"}</td>
-                      <td className="px-3 py-2 max-w-xs whitespace-normal break-all" title={trade.remarks || ""}>
-                        <div className="font-semibold text-[var(--text-secondary)] truncate text-xs">{trade.remarks || "-"}</div>
-                        {trade.notes && <div className="text-[10px] text-[var(--text-muted)] whitespace-normal break-all mt-0.5">{trade.notes}</div>}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center justify-center gap-1">
-                           <button onClick={() => setExpandedScreenshotId(prev => prev === trade.id ? null : trade.id)} title="截图"
-                            className={`p-1.5 rounded transition-colors ${
-                              expandedScreenshotId === trade.id ? "bg-trade-green text-white" :
-                              (trade.screenshots && trade.screenshots.length > 0) ? "text-trade-green hover:bg-[var(--trade-green-dim)]" : "text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)]"
-                            }`}>
-                            <Camera size={13} />
-                          </button>
-                          <button onClick={() => {
-                            setInlineEditingId(trade.id);
-                            setTradeForm({
-                              date: new Date(trade.date).toISOString().split("T")[0],
-                              remarks: trade.remarks || "", setup: trade.setup, type: trade.type, exitReason: trade.exitReason,
-                              notes: trade.notes || "", positionSize: trade.positionSize, direction: trade.direction,
-                              entryPrice: trade.entryPrice, stopLoss: trade.stopLoss !== null ? String(trade.stopLoss) : "",
-                              takeProfit: trade.takeProfit !== null ? String(trade.takeProfit) : "",
-                              exitPrice1: trade.exitPrice1, exitPrice2: trade.exitPrice2 !== null ? String(trade.exitPrice2) : "",
-                              errorReason: trade.errorReason || "", symbol: trade.symbol,
-                              process: trade.process || "",
-                              marketEnv: trade.marketEnv || ""
-                            });
-                          }} title="编辑"
-                            className="p-1.5 rounded hover:bg-[var(--color-bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                            <Edit size={13} />
-                          </button>
-                          <button onClick={() => handleDeleteTrade(trade.id)} title="删除"
-                            className="p-1.5 rounded hover:bg-[var(--trade-red-dim)] text-[var(--text-muted)] hover:text-trade-red">
-                            <Trash size={13} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedScreenshotId === trade.id && (
-                      <tr className="bg-[var(--color-bg-canvas)]/50 border-b border-[var(--color-border-subtle)]">
-                        <td colSpan={15} className="p-4">
-                          {screenshotBlock(trade, false)}
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
+                  <tr 
+                    key={trade.id} 
+                    onClick={() => handleRowClick(trade)}
+                    className={`cursor-pointer transition-all duration-150 border-b border-[var(--color-border-subtle)] ${rowBgClass} ${activeClass}`}
+                  >
+                    <td className="px-3 py-2 font-mono text-xs whitespace-nowrap tabular-nums text-[var(--text-secondary)]">
+                      {new Date(trade.date).toISOString().split("T")[0]}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded font-semibold bg-[var(--color-bg-elevated)] text-[var(--text-secondary)] text-[10px]">
+                        {trade.symbol || "-"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
+                        trade.direction === "Long" ? "bg-[var(--trade-green-dim)] text-trade-green" : "bg-[var(--trade-red-dim)] text-trade-red"
+                      }`}>{trade.direction}</span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded font-semibold bg-[var(--color-bg-elevated)] text-[var(--text-secondary)] text-[10px]">
+                        {trade.marketEnv || "-"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 font-semibold text-[var(--text-secondary)] whitespace-nowrap">{trade.setup}</td>
+                    <td className="px-3 py-2 text-[var(--text-muted)] whitespace-nowrap">{trade.type}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-right whitespace-nowrap tabular-nums text-[var(--text-secondary)]">
+                      {trade.rr !== null && trade.rr !== undefined ? `${trade.rr} R` : "-"}
+                    </td>
+                    <td className="px-3 py-2 text-[var(--text-muted)] whitespace-nowrap text-xs">{trade.exitReason}</td>
+                    <td className="px-3 py-2 text-[var(--text-muted)] whitespace-nowrap text-xs">{trade.process || "-"}</td>
+                    <td className="px-3 py-2 text-trade-red whitespace-nowrap text-xs font-medium">{trade.errorReason || "-"}</td>
+                  </tr>
                 );
               })}
               {filteredTrades.length === 0 && (
-                <tr><td colSpan={15} className="p-8 text-center text-[var(--text-muted)]">暂无交易记录。</td></tr>
+                <tr><td colSpan={10} className="p-8 text-center text-[var(--text-muted)]">暂无交易记录。</td></tr>
               )}
             </tbody>
           </table>
@@ -601,6 +377,268 @@ export default function Journal({
           </div>
         )}
       </div>
+
+      {/* Drawer Backdrop Overlay */}
+      {inlineEditingId !== null && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity duration-300"
+          onClick={() => { clearPendingScreenshots(); setInlineEditingId(null); }}
+        />
+      )}
+
+      {/* Drawer Panel */}
+      {inlineEditingId !== null && (
+        <div className="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-[var(--color-bg-surface)] border-l border-[var(--color-border-subtle)] shadow-2xl z-50 flex flex-col overflow-hidden animate-slide-in">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">
+              {inlineEditingId === "__new__" ? "新建交易日志" : "交易详情与编辑"}
+            </h3>
+            <button 
+              onClick={() => { clearPendingScreenshots(); setInlineEditingId(null); }}
+              className="p-1 rounded-lg hover:bg-[var(--color-bg-hover)] text-[var(--text-secondary)] transition-colors cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Form Content (scrollable) */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {/* Grid of basic fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">日期 *</label>
+                <input type="date" required value={tradeForm.date.substring(0, 10)}
+                  onChange={(e) => {
+                    const oldTime = tradeForm.date.includes("T") ? tradeForm.date.split("T")[1] : "12:00:00";
+                    setTradeForm(prev => ({ ...prev, date: `${e.target.value}T${oldTime}` }));
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">品类 *</label>
+                <select value={tradeForm.symbol}
+                  onChange={(e) => setTradeForm(prev => ({ ...prev, symbol: e.target.value }))}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none">
+                  {symbols.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">方向 *</label>
+                <select value={tradeForm.direction}
+                  onChange={(e) => setTradeForm(prev => ({ ...prev, direction: e.target.value }))}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none">
+                  <option value="Long">Long</option>
+                  <option value="Short">Short</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">环境</label>
+                <select value={tradeForm.marketEnv}
+                  onChange={(e) => setTradeForm(prev => ({ ...prev, marketEnv: e.target.value }))}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none">
+                  <option value="">-- 无 --</option>
+                  <option value="突破">突破</option>
+                  <option value="窄通道">窄通道</option>
+                  <option value="宽通道">宽通道</option>
+                  <option value="震荡区间">震荡区间</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">入场理由</label>
+                <select value={tradeForm.setup}
+                  onChange={(e) => setTradeForm(prev => ({ ...prev, setup: e.target.value }))}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none">
+                  {setups.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">交易类型</label>
+                <select value={tradeForm.type}
+                  onChange={(e) => setTradeForm(prev => ({ ...prev, type: e.target.value }))}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none">
+                  <option value="趋势延续">趋势延续</option>
+                  <option value="反转（Reversal）">反转</option>
+                  <option value="突破（BO）">突破</option>
+                  <option value="假突破（fBO）">假突破</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">仓位大小 *</label>
+                <input type="number" step="any" required value={tradeForm.positionSize}
+                  onChange={(e) => setTradeForm(prev => ({ ...prev, positionSize: parseFloat(e.target.value) || 0 }))}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
+              </div>
+            </div>
+
+            {/* Price Inputs Block */}
+            <div className="border-t border-[var(--color-border-subtle)] pt-4 mt-2">
+              <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-3">价格与止损/止盈</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">入场价格 *</label>
+                  <input type="number" step="any" required value={tradeForm.entryPrice}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: parseFloat(e.target.value) || 0 }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">离场价格1 *</label>
+                  <input type="number" step="any" required value={tradeForm.exitPrice1}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice1: parseFloat(e.target.value) || 0 }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">离场价格2 (选填)</label>
+                  <input type="number" step="any" value={tradeForm.exitPrice2}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice2: e.target.value }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">止损价 (SL)</label>
+                  <input type="number" step="any" value={tradeForm.stopLoss}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, stopLoss: e.target.value }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">止盈价 (TP)</label>
+                  <input type="number" step="any" value={tradeForm.takeProfit}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, takeProfit: e.target.value }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
+                </div>
+                
+                {/* Live RR Display */}
+                {(() => {
+                  const liveRR = calculateLiveRR();
+                  if (!liveRR) return null;
+                  return (
+                    <div className="flex flex-col gap-1 justify-end pb-1.5">
+                      <span className="text-xs font-semibold text-[var(--text-secondary)]">实时盈亏比 (RR)</span>
+                      <span className="text-sm font-bold text-trade-green font-mono">{liveRR}</span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Exit details & status */}
+            <div className="border-t border-[var(--color-border-subtle)] pt-4 mt-2">
+              <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-3">离场与执行评估</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">离场理由</label>
+                  <select value={tradeForm.exitReason}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, exitReason: e.target.value }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none">
+                    {exits.map(ex => <option key={ex.id} value={ex.name}>{ex.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">交易过程评估</label>
+                  <select value={tradeForm.process}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, process: e.target.value }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none">
+                    <option value="">-- 无 --</option>
+                    {processes.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1 col-span-2">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">离场错误原因</label>
+                  <select value={tradeForm.errorReason}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, errorReason: e.target.value }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none">
+                    <option value="">-- 无错误 --</option>
+                    {errors.map(err => <option key={err.id} value={err.name}>{err.name}</option>)}
+                  </select>
+                </div>
+
+                {/* Real-time calculated PnL & Status */}
+                {(() => {
+                  const livePnl = calculateLivePnl();
+                  const liveStatus = livePnl > 0 ? "win" : livePnl < 0 ? "lose" : "BE";
+                  return (
+                    <>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-[var(--text-secondary)]">实时计入盈亏</span>
+                        <span className={`text-sm font-bold font-mono ${
+                          livePnl > 0 ? "text-trade-green" : livePnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"
+                        }`}>
+                          {livePnl > 0 ? "+" : ""}{livePnl.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-[var(--text-secondary)]">实时盈亏状态</span>
+                        <div>
+                          <span className={`inline-block px-2 py-0.5 rounded font-bold uppercase text-[10px] tabular-nums ${
+                            liveStatus === "win" ? "bg-[var(--trade-green-dim)] text-trade-green" :
+                            liveStatus === "lose" ? "bg-[var(--trade-red-dim)] text-trade-red" : "bg-[var(--color-bg-elevated)] text-[var(--text-muted)]"
+                          }`}>
+                            {liveStatus}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Remarks & Notes */}
+            <div className="border-t border-[var(--color-border-subtle)] pt-4 mt-2 flex flex-col gap-3">
+              <h4 className="text-xs font-bold text-[var(--text-secondary)]">备注与复盘</h4>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">备注信息</label>
+                <textarea placeholder="输入交易备注（选填）..." value={tradeForm.remarks} rows={2}
+                  onChange={(e) => setTradeForm(prev => ({ ...prev, remarks: e.target.value }))}
+                  className="w-full px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none resize-y" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">自我复盘总结</label>
+                <textarea placeholder="输入自我复盘总结（选填）..." value={tradeForm.notes} rows={3}
+                  onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none resize-y" />
+              </div>
+            </div>
+
+            {/* Screenshots Block */}
+            <div className="border-t border-[var(--color-border-subtle)] pt-4 mt-2">
+              {inlineEditingId === "__new__"
+                ? screenshotBlock({ ...trades[0]!, screenshots: [] } as Trade, true)
+                : screenshotBlock(trades.find(t => t.id === inlineEditingId)!, true)}
+            </div>
+          </div>
+
+          {/* Sticky Footer */}
+          <div className="flex items-center justify-between px-5 py-4 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
+            {inlineEditingId !== "__new__" ? (
+              <button 
+                onClick={() => {
+                  if (confirm("确定要删除这笔交易吗？")) {
+                    handleDeleteTrade(inlineEditingId);
+                    setInlineEditingId(null);
+                  }
+                }} 
+                className="flex items-center gap-1 text-xs font-semibold text-trade-red hover:underline cursor-pointer"
+              >
+                <Trash size={14} />删除交易
+              </button>
+            ) : <div />}
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { clearPendingScreenshots(); setInlineEditingId(null); }}
+                className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors cursor-pointer"
+              >
+                取消
+              </button>
+              <button 
+                onClick={handleSaveTrade}
+                className="px-4 py-1.5 rounded-lg bg-trade-green text-white text-xs font-bold hover:bg-green-600 transition-colors cursor-pointer"
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
