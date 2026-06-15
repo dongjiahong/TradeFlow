@@ -21,7 +21,7 @@ interface SettingsProps {
   newSymbolName: string;
   setNewSymbolName: React.Dispatch<React.SetStateAction<string>>;
   onImportExcel: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onExportExcel: () => void;
+  onExportExcel: (startDate?: string, endDate?: string) => void;
   onAddSetup: () => Promise<void>;
   onDeleteSetup: (id: string | number) => Promise<void>;
   onAddError: () => Promise<void>;
@@ -93,6 +93,51 @@ export default function Settings({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteMsg, setDeleteMsg] = useState("");
+
+  // 辅助函数，获取今天本地的 YYYY-MM-DD
+  const getTodayString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [exportStartDate, setExportStartDate] = useState(getTodayString());
+  const [exportEndDate, setExportEndDate] = useState(getTodayString());
+
+  const setExportRangeToday = () => {
+    const today = getTodayString();
+    setExportStartDate(today);
+    setExportEndDate(today);
+  };
+
+  const setExportRangeThisWeek = () => {
+    const d = new Date();
+    const day = d.getDay(); // 0 is Sunday, 1 is Monday, etc.
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    
+    const y = monday.getFullYear();
+    const m = String(monday.getMonth() + 1).padStart(2, '0');
+    const dateStr = String(monday.getDate()).padStart(2, '0');
+    
+    setExportStartDate(`${y}-${m}-${dateStr}`);
+    setExportEndDate(getTodayString());
+  };
+
+  const setExportRangeThisMonth = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    setExportStartDate(`${y}-${m}-01`);
+    setExportEndDate(getTodayString());
+  };
+
+  const setExportRangeAll = () => {
+    setExportStartDate("");
+    setExportEndDate("");
+  };
 
   const getOldestDate = () => {
     if (trades && trades.length > 0) {
@@ -205,11 +250,61 @@ export default function Settings({
                 导出交易日志
               </h4>
               <p className="text-xxs text-[var(--text-muted)] mt-1.5">
-                将交易记录、日记和自定义选项完整导出为 `.xlsx` 文件。
+                下载经过精简的核心交易记录明细（支持日期范围过滤）。
               </p>
+
+              {/* 日期选择器 */}
+              <div className="flex flex-col gap-2 mt-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xxs text-[var(--text-muted)] w-14 shrink-0">开始日期:</span>
+                  <input 
+                    type="date" 
+                    value={exportStartDate} 
+                    onChange={(e) => setExportStartDate(e.target.value)}
+                    className="flex-1 px-2 py-1 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xxs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" 
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xxs text-[var(--text-muted)] w-14 shrink-0">结束日期:</span>
+                  <input 
+                    type="date" 
+                    value={exportEndDate} 
+                    onChange={(e) => setExportEndDate(e.target.value)}
+                    className="flex-1 px-2 py-1 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xxs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" 
+                  />
+                </div>
+              </div>
+
+              {/* 快捷按钮 */}
+              <div className="flex flex-wrap gap-1 mt-2.5">
+                <button 
+                  onClick={setExportRangeToday}
+                  className={`px-2 py-0.5 text-xxs rounded transition-colors ${exportStartDate === getTodayString() && exportEndDate === getTodayString() ? 'bg-trade-green/10 text-trade-green border border-trade-green/20' : 'bg-[var(--color-bg-surface)] text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)] border border-[var(--color-border-subtle)]'}`}
+                >
+                  今天
+                </button>
+                <button 
+                  onClick={setExportRangeThisWeek}
+                  className="px-2 py-0.5 text-xxs rounded bg-[var(--color-bg-surface)] text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)] border border-[var(--color-border-subtle)] transition-colors"
+                >
+                  本周
+                </button>
+                <button 
+                  onClick={setExportRangeThisMonth}
+                  className="px-2 py-0.5 text-xxs rounded bg-[var(--color-bg-surface)] text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)] border border-[var(--color-border-subtle)] transition-colors"
+                >
+                  本月
+                </button>
+                <button 
+                  onClick={setExportRangeAll}
+                  className={`px-2 py-0.5 text-xxs rounded transition-colors ${!exportStartDate && !exportEndDate ? 'bg-trade-green/10 text-trade-green border border-trade-green/20' : 'bg-[var(--color-bg-surface)] text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)] border border-[var(--color-border-subtle)]'}`}
+                >
+                  全部
+                </button>
+              </div>
             </div>
-            <button onClick={onExportExcel}
-              className="w-full inline-block px-4 py-2 bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--text-primary)] text-xs font-bold rounded-lg text-center active:scale-95 transition-all text-center cursor-pointer">
+            <button onClick={() => onExportExcel(exportStartDate, exportEndDate)}
+              className="w-full inline-block px-4 py-2 bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--text-primary)] text-xs font-bold rounded-lg text-center active:scale-95 transition-all cursor-pointer">
               下载 Excel 文件
             </button>
           </div>

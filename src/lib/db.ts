@@ -493,18 +493,59 @@ export async function importExcelData(base64Data: string) {
     }
 
     const logsJson: any[] = XLSX.utils.sheet_to_json(logsSheet, { header: 1 });
+    if (logsJson.length < 2) {
+      return { success: false, error: "Excel 文件中没有足够的数据行" };
+    }
+
+    // Find the header row (typically row 0 or row 1)
+    let headerRowIdx = -1;
+    let headers: string[] = [];
+
+    for (let r = 0; r < Math.min(logsJson.length, 5); r++) {
+      const row = logsJson[r];
+      if (row && row.some((cell: any) => String(cell).includes("日期"))) {
+        headerRowIdx = r;
+        headers = row.map((h: any) => String(h || "").trim());
+        break;
+      }
+    }
+
+    if (headerRowIdx === -1) {
+      return { success: false, error: "无法识别的 Excel 格式：未找到‘日期’列头" };
+    }
+
+    // Map column header name to its index
+    const headerMap: { [key: string]: number } = {};
+    headers.forEach((h, idx) => {
+      if (h) headerMap[h] = idx;
+    });
+
+    // Helper to extract value by matching field header names
+    const getVal = (row: any[], fieldNames: string[], defaultValue: any = null) => {
+      for (const name of fieldNames) {
+        if (headerMap[name] !== undefined) {
+          const val = row[headerMap[name]];
+          if (val !== undefined && val !== null) return val;
+        }
+        const key = Object.keys(headerMap).find(k => k.includes(name));
+        if (key !== undefined) {
+          const val = row[headerMap[key]];
+          if (val !== undefined && val !== null) return val;
+        }
+      }
+      return defaultValue;
+    };
+
     const tradesToInsert: Trade[] = [];
     const importedSetups = new Set<string>();
     const importedSymbols = new Set<string>();
 
-    // Row 1 is labels, Row 2 is headers, data starts from Row 3 (index 2)
-    for (let i = 2; i < logsJson.length; i++) {
+    for (let i = headerRowIdx + 1; i < logsJson.length; i++) {
       const row = logsJson[i];
       if (!row || row.length === 0) continue;
 
-      const dateVal = row[0]; // A
-      const entryPriceVal = row[8]; // I
-      const exitPrice1Val = row[9]; // J
+      const dateVal = getVal(row, ["日期"]);
+      const entryPriceVal = getVal(row, ["入场价格", "价格"]);
 
       if (!dateVal || entryPriceVal === undefined || entryPriceVal === null) {
         continue;
@@ -527,23 +568,39 @@ export async function importExcelData(base64Data: string) {
       const s = String(i % 60).padStart(2, '0');
       const parsedDateStr = `${parsedDateOnly}T${h}:${m}:${s}`;
 
-      const remarks = row[1] ? String(row[1]) : "";
-      const setup = row[2] ? String(row[2]) : "其他";
-      const type = row[3] ? String(row[3]) : "未知";
-      const exitReason = row[4] ? String(row[4]) : "止损";
-      const notes = row[5] ? String(row[5]) : "";
-      const positionSize = parseFloat(row[6]) || 0;
-      const direction = String(row[7]).trim(); // "Long" or "Short"
-      const entryPrice = parseFloat(row[8]) || 0;
-      const exitPrice1 = parseFloat(row[9]) || 0;
-      const exitPrice2 = row[10] !== undefined && row[10] !== null ? parseFloat(row[10]) : null;
-      const symbol = row[14] ? String(row[14]).trim() : "";
-      const errorReason = row[15] ? String(row[15]) : null;
+      const remarks = String(getVal(row, ["备注", "补充说明"], "")).trim();
+      const setup = String(getVal(row, ["入场理由", "入场原因"], "其他")).trim();
+      const type = String(getVal(row, ["类型"], "未知")).trim();
+      const exitReason = String(getVal(row, ["离场理由/方式", "离场理由"], "止损")).trim();
+      const notes = String(getVal(row, ["补充说明", "备注"], "")).trim();
+      const positionSize = parseFloat(getVal(row, ["仓位大小", "仓位"], 0)) || 0;
+      const direction = String(getVal(row, ["方向"], "Long")).trim();
+      const entryPrice = parseFloat(entryPriceVal) || 0;
+      const exitPrice1 = parseFloat(getVal(row, ["离场价格1", "离场价格"], 0)) || 0;
+      const exitPrice2 = getVal(row, ["离场价格2", "离场价格二"]) !== null 
+        ? parseFloat(getVal(row, ["离场价格2", "离场价格二"])) 
+        : null;
+      const stopLoss = getVal(row, ["止损"]) !== null ? parseFloat(getVal(row, ["止损"])) : null;
+      const takeProfit = getVal(row, ["止盈"]) !== null ? parseFloat(getVal(row, ["止盈"])) : null;
+      
+      const symbol = String(getVal(row, ["品类"], "")).trim();
+      const errorReason = getVal(row, ["错误原因", "离场错误"]) ? String(getVal(row, ["错误原因", "离场错误"])) : null;
 
-      // Calculate PnL and status
-      const pnl = calculateTradePnl(direction, positionSize, entryPrice, exitPrice1, exitPrice2);
-      const status = getTradeStatus(pnl);
-      const rr = calculateRR(direction, entryPrice, null, null); // Stop loss / take profit values are not in standard Excel cols directly, or we set them to null.
+      // Prioritize directly exported PnL and Status, fall back to calculation if missing
+      let pnl = parseFloat(getVal(row, ["盈亏", "盈亏情况"])) || 0;
+      let status = getVal(row, ["状态", "盈亏状态"]);
+
+      if (pnl === 0 && entryPrice > 0 && positionSize > 0) {
+        pnl = calculateTradePnl(direction, positionSize, entryPrice, exitPrice1, exitPrice2);
+      }
+      if (!status || (status !== "win" && status !== "lose" && status !== "BE")) {
+        status = getTradeStatus(pnl);
+      }
+
+      let rr = getVal(row, ["RR", "盈亏比"]) !== null ? parseFloat(getVal(row, ["RR", "盈亏比"])) : null;
+      if (rr === null || isNaN(rr)) {
+        rr = calculateRR(direction, entryPrice, stopLoss, takeProfit);
+      }
 
       if (setup && setup !== "其他") {
         importedSetups.add(setup);
@@ -563,13 +620,13 @@ export async function importExcelData(base64Data: string) {
         positionSize,
         direction,
         entryPrice,
-        stopLoss: null,
-        takeProfit: null,
+        stopLoss,
+        takeProfit,
         exitPrice1,
         exitPrice2,
         pnl,
         rr,
-        status,
+        status: status as "win" | "lose" | "BE",
         symbol,
         errorReason: errorReason || null,
       });
@@ -613,254 +670,103 @@ export async function importExcelData(base64Data: string) {
 }
 
 // --- FRONTEND EXCEL EXPORT ACTION ---
-export async function exportExcelData() {
+export async function exportExcelData(startDate?: string, endDate?: string) {
   try {
     // 1. Fetch data from DB
-    const trades = await db.trades.orderBy("date").toArray();
-    const configSetups = await db.setupOptions.orderBy("name").toArray();
-    const configErrors = await db.errorOptions.orderBy("name").toArray();
-    const configExits = await db.exitOptions.orderBy("name").toArray();
+    let trades = await db.trades.orderBy("date").toArray();
+
+    // Filter by date range if provided
+    if (startDate || endDate) {
+      trades = trades.filter(trade => {
+        const tradeDate = trade.date.split("T")[0]; // YYYY-MM-DD
+        if (startDate && tradeDate < startDate) return false;
+        if (endDate && tradeDate > endDate) return false;
+        return true;
+      });
+    }
+
+    if (trades.length === 0) {
+      return { success: true, count: 0 };
+    }
 
     // 2. Initialize new workbook
     const wb = XLSX.utils.book_new();
 
-    // --- SHEET 1: 日志 ---
+    // --- SHEET: 日志 ---
     const logsData: any[][] = [];
-    const maxRows = Math.max(trades.length + 3, 500); // Generate at least 500 rows to match original template bounds
     
-    // Row 1 (Index 0)
-    const row1: any[] = new Array(26).fill(null);
-    row1[1] = "若判断错误，只需等待。除非可反向操作";
-    row1[16] = "接受亏损，然后继续";
-    row1[21] = "总共胜率";
-    row1[22] = "总盈亏";
-    row1[23] = "平均盈利金额";
-    row1[24] = "平均亏损金额";
-    row1[25] = "盈亏比";
-    logsData.push(row1);
+    // Headers
+    const headers = [
+      "日期",
+      "品类",
+      "方向",
+      "入场理由",
+      "类型",
+      "仓位",
+      "入场价格",
+      "离场价格",
+      "离场价格二",
+      "止盈",
+      "止损",
+      "RR",
+      "盈亏",
+      "状态",
+      "离场错误",
+      "备注"
+    ];
+    logsData.push(headers);
 
-    // Row 2 (Index 1)
-    const row2: any[] = new Array(26).fill(null);
-    row2[0] = "日期";
-    row2[1] = "备注";
-    row2[2] = "入场理由";
-    row2[3] = "类型";
-    row2[4] = "离场理由/方式";
-    row2[5] = "补充说明";
-    row2[6] = "仓位大小\n（填数字）";
-    row2[7] = "方向";
-    row2[8] = "入场价格";
-    row2[9] = "离场价格1";
-    row2[10] = "离场价格2";
-    row2[11] = "盈亏情况\n（会自动计算）";
-    row2[12] = "盈亏状态\n（会自动计算）";
-    row2[13] = "累计盈亏\n（会自动计算）";
-    row2[14] = "品类";
-    row2[15] = "错误原因";
-    row2[16] = "隐";
-    row2[17] = "限";
-    row2[18] = "离";
-    row2[19] = "止";
-    row2[20] = "记";
-    // Formulas in row 2 (V2, W2, X2, Y2, Z2)
-    row2[21] = { t: "n", f: `COUNTIF($M$3:$M$${maxRows},"win")/(COUNTIF($M$3:$M$${maxRows},"win")+COUNTIF($M$3:$M$${maxRows},"lose"))` };
-    row2[22] = { t: "n", f: `SUM($L$3:$L$${maxRows})` };
-    row2[23] = { t: "n", f: `AVERAGEIF(L$3:L$${maxRows},">0")` };
-    row2[24] = { t: "n", f: `AVERAGEIF(L$3:L$${maxRows},"<0")` };
-    row2[25] = { t: "n", f: `V2/-W2` }; // Win rate stats
-    logsData.push(row2);
-
-    // Populate rows 3 to maxRows
-    for (let rIdx = 3; rIdx <= maxRows; rIdx++) {
-      const row: any[] = new Array(26).fill(null);
-      const tradeIdx = rIdx - 3;
-      const trade = trades[tradeIdx];
-
-      if (trade) {
-        row[0] = formatDate(trade.date);
-        row[1] = trade.remarks || "";
-        row[2] = trade.setup;
-        row[3] = trade.type;
-        row[4] = trade.exitReason;
-        row[5] = trade.notes || "";
-        row[6] = trade.positionSize;
-        row[7] = trade.direction;
-        row[8] = trade.entryPrice;
-        row[9] = trade.exitPrice1;
-        row[10] = trade.exitPrice2 || null;
-        row[14] = trade.symbol || "";
-        row[15] = trade.errorReason || "";
-      }
-
-      // Calculated cells (Col L=11, Col M=12, Col N=13)
-      row[11] = {
-        t: "n",
-        f: `IF(ISBLANK(K${rIdx}),IF(H${rIdx}="Long",(J${rIdx}-I${rIdx})*G${rIdx},(I${rIdx}-J${rIdx})*G${rIdx}),IF(H${rIdx}="Long",(J${rIdx}-I${rIdx})*(G${rIdx}/2)+(K${rIdx}-I${rIdx})*(G${rIdx}/2),(I${rIdx}-J${rIdx})*(G${rIdx}/2)+(I${rIdx}-K${rIdx})*(G${rIdx}/2)))`
-      };
-      row[12] = {
-        t: "s",
-        f: `_xlfn.IFS(L${rIdx}>0,"win",L${rIdx}<0,"lose",L${rIdx}=0,"BE")`
-      };
-      row[13] = rIdx === 3 
-        ? { t: "n", f: `L${rIdx}` } 
-        : { t: "n", f: `L${rIdx}+N${rIdx-1}` };
-
-      // --- SIDEBAR STRUCTURES (Col R to Z) ---
-      // Sidebar Row 4 (rIdx=4): Headers
-      if (rIdx === 4) {
-        row[17] = "入场原因\n（可以自己定义）"; // R
-        row[18] = "盈亏金额"; // S
-        row[19] = "胜率"; // T
-        row[20] = "使用次数"; // U
-      }
-
-      // Sidebar Rows 5 to 27 (rIdx=5..27): Setup statistics
-      if (rIdx >= 5 && rIdx <= 27) {
-        const setupIdx = rIdx - 5;
-        const setupName = configSetups[setupIdx]?.name || "";
-        if (setupName) {
-          row[17] = setupName; // R
-          row[18] = { t: "n", f: `SUMIF(C$3:C$${maxRows},R${rIdx},L$3:L$${maxRows})` }; // S
-          row[19] = { t: "n", f: `IFERROR(COUNTIFS(C$3:C$${maxRows},R${rIdx},M$3:M$${maxRows},"win")/COUNTIF(C$3:C$${maxRows},R${rIdx}),0)` }; // T
-          row[20] = { t: "n", f: `COUNTIF(C$3:C$${maxRows},R${rIdx})` }; // U
-        }
-      }
-
-      // Static classification notes in W24:Z35
-      if (rIdx === 24) {
-        row[23] = "做多"; // X
-        row[24] = "横盘"; // Y
-        row[25] = "做空"; // Z
-      }
-      if (rIdx === 25) {
-        row[22] = "上涨"; // W
-        row[23] = "回调后的第二次进场信号\n, 首次突破通道, 突破前高后产生了更高的高点, 第二次回踩缺口k线, 突破测试"; // X
-        row[24] = "交易区间"; // Y
-        row[25] = "W结构, W 结构突破后的首次回调"; // Z
-      }
-      if (rIdx === 26) {
-        row[22] = "横盘"; // W
-        row[23] = "突破"; // X
-        row[24] = "假突破"; // Y
-        row[25] = "突破"; // Z
-      }
-      if (rIdx === 27) {
-        row[22] = "下跌"; // W
-        row[23] = "W结构, W 结构突破后的首次回调"; // X
-        row[24] = "交易区间"; // Y
-        row[25] = "回调后的第二次进场信号\n, 首次突破通道, 突破前高后产生了更高的高点, 第二次回踩缺口k线, 突破测试"; // Z
-      }
-      if (rIdx === 29) {
-        row[22] = "突破"; // W
-        row[23] = "收敛三角旗形"; // X
-        row[24] = "当前趋势强势延续"; // Y
-        row[25] = "回调"; // Z
-      }
-      if (rIdx === 30) {
-        row[22] = "假突破"; // W
-        row[23] = "突破后反转"; // X
-        row[24] = "反转k"; // Y
-        row[25] = "深度回调"; // Z
-      }
-      if (rIdx === 31) {
-        row[22] = "趋势转换"; // W
-        row[23] = "双底/双顶"; // X
-        row[24] = "窄交易区间"; // Y
-        row[25] = "反转失败+第二次入场信号失效"; // Z
-      }
-      if (rIdx === 32) {
-        row[23] = "首次回调"; // X
-        row[25] = "首次反转"; // Z
-      }
-      if (rIdx === 33) {
-        row[25] = "假突破"; // Z
-      }
-
-      // Sidebar Row 34 (rIdx=34): Trade type statistics header
-      if (rIdx === 34) {
-        row[17] = "类型"; // R
-        row[18] = "盈亏金额"; // S
-        row[19] = "胜率"; // T
-        row[20] = "使用次数"; // U
-        row[23] = "突破失败"; // X
-        row[25] = "开盘区间"; // Z
-      }
-
-      // Sidebar Row 35 to 38: Trade type statistics
-      if (rIdx === 35) {
-        row[17] = "趋势延续"; // R
-        row[18] = { t: "n", f: `SUMIF(D$3:D$${maxRows},R35,L$3:L$${maxRows})` }; // S
-        row[19] = { t: "n", f: `IFERROR(COUNTIFS(D$3:D$${maxRows},R35,M$3:M$${maxRows},"win")/COUNTIF(D$3:D$${maxRows},R35),0)` }; // T
-        row[20] = { t: "n", f: `COUNTIF(D$3:D$${maxRows},R35)` }; // U
-        row[25] = "多周期共振"; // Z
-      }
-      if (rIdx === 36) {
-        row[17] = "反转（Reversal）"; // R
-        row[18] = { t: "n", f: `SUMIF(D$3:D$${maxRows},R36,L$3:L$${maxRows})` }; // S
-        row[19] = { t: "n", f: `IFERROR(COUNTIFS(D$3:D$${maxRows},R36,M$3:M$${maxRows},"win")/COUNTIF(D$3:D$${maxRows},R36),0)` }; // T
-        row[20] = { t: "n", f: `COUNTIF(D$3:D$${maxRows},R36)` }; // U
-      }
-      if (rIdx === 37) {
-        row[17] = "突破（BO）"; // R
-        row[18] = { t: "n", f: `SUMIF(D$3:D$${maxRows},R37,L$3:L$${maxRows})` }; // S
-        row[19] = { t: "n", f: `IFERROR(COUNTIFS(D$3:D$${maxRows},R37,M$3:M$${maxRows},"win")/COUNTIF(D$3:D$${maxRows},R37),0)` }; // T
-        row[20] = { t: "n", f: `COUNTIF(D$3:D$${maxRows},R37)` }; // U
-      }
-      if (rIdx === 38) {
-        row[17] = "假突破（fBO）"; // R
-        row[18] = { t: "n", f: `SUMIF(D$3:D$${maxRows},R38,L$3:L$${maxRows})` }; // S
-        row[19] = { t: "n", f: `IFERROR(COUNTIFS(D$3:D$${maxRows},R38,M$3:M$${maxRows},"win")/COUNTIF(D$3:D$${maxRows},R38),0)` }; // T
-        row[20] = { t: "n", f: `COUNTIF(D$3:D$${maxRows},R38)` }; // U
-      }
-
+    // Populate rows
+    for (const trade of trades) {
+      const row: any[] = [
+        formatDate(trade.date),
+        trade.symbol || "",
+        trade.direction || "",
+        trade.setup || "",
+        trade.type || "",
+        trade.positionSize,
+        trade.entryPrice,
+        trade.exitPrice1,
+        trade.exitPrice2 ?? "",
+        trade.takeProfit ?? "",
+        trade.stopLoss ?? "",
+        trade.rr ?? "",
+        trade.pnl,
+        trade.status || "",
+        trade.errorReason || "",
+        trade.remarks || ""
+      ];
       logsData.push(row);
     }
 
     const logsSheet = XLSX.utils.aoa_to_sheet(logsData);
     XLSX.utils.book_append_sheet(wb, logsSheet, "日志");
 
-    // --- SHEET 2: 错误类型 ---
-    const errorsData: any[][] = [];
-    errorsData.push(["错误原因", "计数", null, "离场理由"]); // Row 1
-
-    const errorCount = Math.max(configErrors.length, configExits.length, 10);
-    for (let i = 0; i < errorCount; i++) {
-      const row: any[] = [null, null, null, null];
-      
-      const err = configErrors[i];
-      if (err) {
-        const rIdx = i + 2;
-        row[0] = err.name;
-        row[1] = { t: "n", f: `COUNTIF(日志!$P$3:$P$${maxRows}, 错误类型!A${rIdx})` };
-      }
-      
-      const exitReason = configExits[i];
-      if (exitReason) {
-        row[3] = exitReason.name;
-      }
-      
-      errorsData.push(row);
-    }
-
-    const errorsSheet = XLSX.utils.aoa_to_sheet(errorsData);
-    XLSX.utils.book_append_sheet(wb, errorsSheet, "错误类型");
-
-    // 3. Write workbook to array and trigger client-side download
+    // 3. Write workbook and download
     const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const url = URL.createObjectURL(blob);
     
     const a = document.createElement("a");
     a.href = url;
-    a.download = "trading-log-export.xlsx";
+    
+    let filename = "trading-log-export.xlsx";
+    if (startDate && endDate) {
+      filename = `trading-log-export_${startDate}_to_${endDate}.xlsx`;
+    } else if (startDate) {
+      filename = `trading-log-export_from_${startDate}.xlsx`;
+    } else if (endDate) {
+      filename = `trading-log-export_to_${endDate}.xlsx`;
+    }
+    
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     
-    // Clean up
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    return { success: true };
+    return { success: true, count: trades.length };
   } catch (error: any) {
     console.error("Excel export failed:", error);
     return { success: false, error: error.message };

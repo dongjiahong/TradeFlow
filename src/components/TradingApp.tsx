@@ -350,9 +350,30 @@ export default function TradingApp({
     reader.readAsDataURL(file);
   };
 
-  const handleExportExcel = async () => {
+  const handleExportExcel = async (startDate?: string, endDate?: string) => {
     setImportStatus("正在从浏览器 IndexedDB 组装数据并导出...");
-    const res = await exportExcelData();
+    let res = await exportExcelData(startDate, endDate);
+    
+    if (res.success && res.count === 0) {
+      const dateRangeMsg = (startDate && endDate) 
+        ? `在所选时间范围（${startDate} 至 ${endDate}）` 
+        : "在所选时间范围内";
+      
+      const confirmAll = confirm(`${dateRangeMsg}没有交易记录。是否要导出全部历史记录？`);
+      if (confirmAll) {
+        setImportStatus("正在导出全部历史记录...");
+        res = await exportExcelData();
+        if (res.success) {
+          setImportStatus("导出成功，已触发全部文件下载！");
+        } else {
+          setImportStatus(`导出失败: ${res.error}`);
+        }
+      } else {
+        setImportStatus("已取消导出。");
+      }
+      return;
+    }
+
     if (res.success) {
       setImportStatus("导出成功，已触发浏览器文件下载！");
     } else {
