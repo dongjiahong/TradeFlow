@@ -1,5 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 // --- TYPES ---
 export interface Trade {
@@ -706,63 +707,132 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
       return { success: true, count: 0 };
     }
 
-    // 2. Initialize new workbook
-    const wb = XLSX.utils.book_new();
-
-    // --- SHEET: 日志 ---
-    const logsData: any[][] = [];
+    // Fetch screenshots associated with these trades and group by tradeId
+    const tradeIds = trades.map(t => t.id);
+    const allScreenshots = await db.screenshots.where("tradeId").anyOf(tradeIds).toArray();
     
-    // Headers
-    const headers = [
-      "日期",
-      "品类",
-      "方向",
-      "入场理由",
-      "类型",
-      "仓位",
-      "入场价格",
-      "离场价格",
-      "离场价格二",
-      "止盈",
-      "止损",
-      "RR",
-      "盈亏",
-      "状态",
-      "离场错误",
-      "备注",
-      "复盘说明"
+    let maxImgCount = 0;
+    const tradeScreenshotsMap = new Map<string, Blob[]>();
+    
+    allScreenshots.forEach(s => {
+      if (s.tradeId && s.blob) {
+        const list = tradeScreenshotsMap.get(s.tradeId) || [];
+        list.push(s.blob);
+        tradeScreenshotsMap.set(s.tradeId, list);
+        if (list.length > maxImgCount) {
+          maxImgCount = list.length;
+        }
+      }
+    });
+
+    // 2. Initialize new workbook using exceljs
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("日志");
+
+    // Base column headers (17 columns)
+    const columnsDef = [
+      { header: "日期", key: "date", width: 15 },
+      { header: "品类", key: "symbol", width: 12 },
+      { header: "方向", key: "direction", width: 10 },
+      { header: "入场理由", key: "setup", width: 15 },
+      { header: "类型", key: "type", width: 12 },
+      { header: "仓位", key: "positionSize", width: 10 },
+      { header: "入场价格", key: "entryPrice", width: 12 },
+      { header: "离场价格", key: "exitPrice1", width: 12 },
+      { header: "离场价格二", key: "exitPrice2", width: 12 },
+      { header: "止盈", key: "takeProfit", width: 12 },
+      { header: "止损", key: "stopLoss", width: 12 },
+      { header: "RR", key: "rr", width: 10 },
+      { header: "盈亏", key: "pnl", width: 12 },
+      { header: "状态", key: "status", width: 10 },
+      { header: "离场错误", key: "errorReason", width: 15 },
+      { header: "备注", key: "remarks", width: 20 },
+      { header: "复盘说明", key: "notes", width: 25 }
     ];
-    logsData.push(headers);
+
+    // Add dynamic screenshot columns based on maximum screenshot count
+    for (let j = 0; j < maxImgCount; j++) {
+      columnsDef.push({
+        header: `截图 ${j + 1}`,
+        key: `screenshot_${j}`,
+        width: 20
+      });
+    }
+
+    ws.columns = columnsDef;
+
+    // Style headers
+    const headerRow = ws.getRow(1);
+    headerRow.font = { bold: true, size: 10 };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+    headerRow.height = 24;
 
     // Populate rows
     for (const trade of trades) {
-      const row: any[] = [
-        formatDate(trade.date),
-        trade.symbol || "",
-        trade.direction || "",
-        trade.setup || "",
-        trade.type || "",
-        trade.positionSize,
-        trade.entryPrice,
-        trade.exitPrice1,
-        trade.exitPrice2 ?? "",
-        trade.takeProfit ?? "",
-        trade.stopLoss ?? "",
-        trade.rr ?? "",
-        trade.pnl,
-        trade.status || "",
-        trade.errorReason || "",
-        trade.remarks || "",
-        trade.notes || ""
-      ];
-      logsData.push(row);
+      const rowData: any = {
+        date: formatDate(trade.date),
+        symbol: trade.symbol || "",
+        direction: trade.direction || "",
+        setup: trade.setup || "",
+        type: trade.type || "",
+        positionSize: trade.positionSize,
+        entryPrice: trade.entryPrice,
+        exitPrice1: trade.exitPrice1,
+        exitPrice2: trade.exitPrice2 ?? "",
+        takeProfit: trade.takeProfit ?? "",
+        stopLoss: trade.stopLoss ?? "",
+        rr: trade.rr ?? "",
+        pnl: trade.pnl,
+        status: trade.status || "",
+        errorReason: trade.errorReason || "",
+        remarks: trade.remarks || "",
+        notes: trade.notes || ""
+      };
+
+      // Set placeholder values for screenshots
+      for (let j = 0; j < maxImgCount; j++) {
+        rowData[`screenshot_${j}`] = "";
+      }
+
+      const row = ws.addRow(rowData);
+      row.alignment = { vertical: 'middle' };
+
+      // Embed images if they exist
+      const imgBlobs = tradeScreenshotsMap.get(trade.id);
+      if (imgBlobs && imgBlobs.length > 0) {
+        // Set height once for the row to accommodate images
+        row.height = 70;
+
+        for (let j = 0; j < imgBlobs.length; j++) {
+          const imgBlob = imgBlobs[j];
+          try {
+            const arrayBuffer = await imgBlob.arrayBuffer();
+            let ext: 'png' | 'jpeg' = 'png';
+            if (imgBlob.type.includes("jpg") || imgBlob.type.includes("jpeg")) {
+              ext = 'jpeg';
+            }
+            
+            const imageId = wb.addImage({
+              buffer: arrayBuffer,
+              extension: ext,
+            });
+
+            // Insert each image in its respective column (Col 18+ is index 17+j)
+            const rIdx = row.number - 1; // 0-indexed row number
+            ws.addImage(imageId, {
+              tl: { col: 17 + j, row: rIdx + 0.05 },
+              br: { col: 18 + j, row: rIdx + 0.95 },
+              editAs: 'oneCell'
+            } as any);
+          } catch (imgError) {
+            console.error(`Failed to add image index ${j} to Excel row:`, imgError);
+          }
+        }
+      }
     }
 
-    const logsSheet = XLSX.utils.aoa_to_sheet(logsData);
-    XLSX.utils.book_append_sheet(wb, logsSheet, "日志");
-
-    // 3. Write workbook and download
-    const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+    // Write workbook and download
+    const buf = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const url = URL.createObjectURL(blob);
     
