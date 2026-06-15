@@ -180,6 +180,58 @@ export default function TradingApp({
   const avgLoss = loseTrades.length > 0 ? totalLossesAmount / loseTrades.length : 0;
   const pnlRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
 
+  // --- PERIOD STATS FOR HEADER ---
+  const getPeriodStats = (filterFn: (tradeDateStr: string) => boolean) => {
+    const periodTrades = trades.filter(t => {
+      const dateVal = t.date;
+      const tDate = dateVal instanceof Date 
+        ? dateVal.toISOString().split("T")[0] 
+        : String(dateVal).split("T")[0];
+      return filterFn(tDate);
+    });
+
+    const winTrades = periodTrades.filter(t => t.status === "win");
+    const loseTrades = periodTrades.filter(t => t.status === "lose");
+    const pnl = periodTrades.reduce((acc, t) => acc + t.pnl, 0);
+    const count = periodTrades.length;
+    
+    const winRate = winTrades.length > 0 || loseTrades.length > 0
+      ? (winTrades.length / (winTrades.length + loseTrades.length || 1)) * 100 
+      : 0;
+
+    const totalWinsAmount = winTrades.reduce((acc, t) => acc + t.pnl, 0);
+    const totalLossesAmount = Math.abs(loseTrades.reduce((acc, t) => acc + t.pnl, 0));
+    const avgWin = winTrades.length > 0 ? totalWinsAmount / winTrades.length : 0;
+    const avgLoss = loseTrades.length > 0 ? totalLossesAmount / loseTrades.length : 0;
+    const rr = avgLoss > 0 ? avgWin / avgLoss : 0;
+
+    return { pnl, count, winRate, rr };
+  };
+
+  const getTodayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const getThisWeekStartStr = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+  };
+
+  const getThisMonthStartStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  };
+
+  const todayStr = getTodayStr();
+  const todayStats = getPeriodStats(date => date === todayStr);
+  const thisWeekStats = getPeriodStats(date => date >= getThisWeekStartStr());
+  const thisMonthStats = getPeriodStats(date => date >= getThisMonthStartStr());
+  const totalStats = getPeriodStats(() => true);
+
   // --- CHART DATA ---
   let currentCap = 0;
   const capitalCurveData = trades.map((t, idx) => {
@@ -510,10 +562,58 @@ export default function TradingApp({
           <h1 className="text-base font-bold tracking-tight text-[var(--text-primary)]">TradeFlow Pro</h1>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-            <span className="text-xs font-semibold text-[var(--text-secondary)]">
-              总盈亏: <span className={netProfit >= 0 ? "text-trade-green" : "text-trade-red"}>{netProfit >= 0 ? "+" : ""}{netProfit.toFixed(2)}</span>
-            </span>
+          <div className="flex items-center gap-2">
+            {/* 今日 */}
+            <div className="hidden lg:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] min-w-[105px] leading-tight">
+              <div className="flex items-center justify-between w-full gap-2">
+                <span className="text-[10px] text-[var(--text-muted)] font-medium">今日</span>
+                <span className={`text-xs font-bold ${todayStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
+                  {todayStats.pnl >= 0 ? "+" : ""}{todayStats.pnl.toFixed(2)}
+                </span>
+              </div>
+              <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                {todayStats.count}笔 | 胜率:{todayStats.winRate.toFixed(0)}% | RR:{todayStats.rr.toFixed(1)}
+              </div>
+            </div>
+
+            {/* 本周 */}
+            <div className="hidden md:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] min-w-[105px] leading-tight">
+              <div className="flex items-center justify-between w-full gap-2">
+                <span className="text-[10px] text-[var(--text-muted)] font-medium">本周</span>
+                <span className={`text-xs font-bold ${thisWeekStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
+                  {thisWeekStats.pnl >= 0 ? "+" : ""}{thisWeekStats.pnl.toFixed(2)}
+                </span>
+              </div>
+              <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                {thisWeekStats.count}笔 | 胜率:{thisWeekStats.winRate.toFixed(0)}% | RR:{thisWeekStats.rr.toFixed(1)}
+              </div>
+            </div>
+
+            {/* 本月 */}
+            <div className="hidden md:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] min-w-[105px] leading-tight">
+              <div className="flex items-center justify-between w-full gap-2">
+                <span className="text-[10px] text-[var(--text-muted)] font-medium">本月</span>
+                <span className={`text-xs font-bold ${thisMonthStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
+                  {thisMonthStats.pnl >= 0 ? "+" : ""}{thisMonthStats.pnl.toFixed(2)}
+                </span>
+              </div>
+              <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                {thisMonthStats.count}笔 | 胜率:{thisMonthStats.winRate.toFixed(0)}% | RR:{thisMonthStats.rr.toFixed(1)}
+              </div>
+            </div>
+
+            {/* 总计 */}
+            <div className="flex flex-col justify-center items-end h-10 px-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] min-w-[105px] leading-tight">
+              <div className="flex items-center justify-between w-full gap-2">
+                <span className="text-[10px] text-[var(--text-muted)] font-medium">总计</span>
+                <span className={`text-xs font-bold ${totalStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
+                  {totalStats.pnl >= 0 ? "+" : ""}{totalStats.pnl.toFixed(2)}
+                </span>
+              </div>
+              <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                {totalStats.count}笔 | 胜率:{totalStats.winRate.toFixed(0)}% | RR:{totalStats.rr.toFixed(1)}
+              </div>
+            </div>
           </div>
           <button onClick={() => setDarkMode(!darkMode)}
             className="p-2 rounded-lg border border-[var(--color-border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors">
