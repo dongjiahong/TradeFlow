@@ -40,14 +40,22 @@ export default function ScreenshotImage({ screenshotId, className, ...props }: S
 
   if (error) {
     return (
-      <div className={`flex items-center justify-center bg-[var(--color-bg-hover)] text-xxs text-[var(--text-muted)] w-full h-[60px] rounded-lg border border-[var(--color-border-subtle)] ${className || ""}`}>
+      <div 
+        className={`flex items-center justify-center text-xxs w-full h-[60px] rounded-lg ${className || ""}`}
+        style={{ backgroundColor: "#f3f4f6", color: "#9ca3af", border: "1px solid #e5e7eb" }}
+      >
         加载失败
       </div>
     );
   }
 
   if (!url) {
-    return <div className={`animate-pulse bg-[var(--color-bg-hover)] w-full h-[60px] rounded-lg ${className || ""}`} />;
+    return (
+      <div 
+        className={`animate-pulse w-full h-[60px] rounded-lg ${className || ""}`} 
+        style={{ backgroundColor: "#f3f4f6" }}
+      />
+    );
   }
 
   return (
