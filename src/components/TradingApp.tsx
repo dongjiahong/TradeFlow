@@ -33,6 +33,7 @@ import Dashboard from "./Dashboard";
 import Journal from "./Journal";
 import Analysis from "./Analysis";
 import Rules from "./Rules";
+import AiReviewModal from "./AiReviewModal";
 import SettingsTab from "./Settings";
 import type { Trade, OptionItem, TradingRule } from "./types";
 
@@ -73,6 +74,7 @@ export default function TradingApp({
   const [symbols, setSymbols] = useState<OptionItem[]>(initialSymbols);
   const [rules, setRules] = useState<TradingRule[]>([]);
   const [showRulesDropdown, setShowRulesDropdown] = useState(false);
+  const [activeReviewPeriod, setActiveReviewPeriod] = useState<"today" | "week" | "month" | "all" | null>(null);
 
   // Journal UI states
   const [searchQuery, setSearchQuery] = useState("");
@@ -662,54 +664,118 @@ export default function TradingApp({
 
           <div className="flex items-center gap-2">
             {/* 今日 */}
-            <div className="hidden lg:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] min-w-[105px] leading-tight">
-              <div className="flex items-center justify-between w-full gap-2">
-                <span className="text-[10px] text-[var(--text-muted)] font-medium">今日</span>
-                <span className={`text-xs font-bold ${todayStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
-                  {todayStats.pnl >= 0 ? "+" : ""}{todayStats.pnl.toFixed(2)}
-                </span>
+            <div 
+              onClick={() => todayStats.count > 0 && setActiveReviewPeriod("today")}
+              className={`hidden lg:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg border leading-tight group relative overflow-hidden transition-all duration-200 ${
+                todayStats.count > 0 
+                  ? "bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] cursor-pointer" 
+                  : "bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] cursor-not-allowed"
+              }`}
+            >
+              <div className="flex flex-col justify-center w-full h-full transition-all duration-200 group-hover:opacity-0 group-hover:-translate-y-2">
+                <div className="flex items-center justify-between w-full gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] font-medium">今日</span>
+                  <span className={`text-xs font-bold ${todayStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
+                    {todayStats.pnl >= 0 ? "+" : ""}{todayStats.pnl.toFixed(2)}
+                  </span>
+                </div>
+                <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                  {todayStats.count}笔 | 胜率:{todayStats.winRate.toFixed(0)}% | RR:{todayStats.rr.toFixed(1)}
+                </div>
               </div>
-              <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
-                {todayStats.count}笔 | 胜率:{todayStats.winRate.toFixed(0)}% | RR:{todayStats.rr.toFixed(1)}
+              <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold transition-all duration-200 translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 ${
+                todayStats.count > 0 
+                  ? "bg-gradient-to-r from-red-500 to-rose-600 text-white" 
+                  : "bg-[var(--color-bg-elevated)] text-[var(--text-muted)]"
+              }`}>
+                {todayStats.count > 0 ? "导出 AI 总结" : "今日无交易"}
               </div>
             </div>
 
             {/* 本周 */}
-            <div className="hidden md:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] min-w-[105px] leading-tight">
-              <div className="flex items-center justify-between w-full gap-2">
-                <span className="text-[10px] text-[var(--text-muted)] font-medium">本周</span>
-                <span className={`text-xs font-bold ${thisWeekStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
-                  {thisWeekStats.pnl >= 0 ? "+" : ""}{thisWeekStats.pnl.toFixed(2)}
-                </span>
+            <div 
+              onClick={() => thisWeekStats.count > 0 && setActiveReviewPeriod("week")}
+              className={`hidden md:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg border leading-tight group relative overflow-hidden transition-all duration-200 ${
+                thisWeekStats.count > 0 
+                  ? "bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] cursor-pointer" 
+                  : "bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] cursor-not-allowed"
+              }`}
+            >
+              <div className="flex flex-col justify-center w-full h-full transition-all duration-200 group-hover:opacity-0 group-hover:-translate-y-2">
+                <div className="flex items-center justify-between w-full gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] font-medium">本周</span>
+                  <span className={`text-xs font-bold ${thisWeekStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
+                    {thisWeekStats.pnl >= 0 ? "+" : ""}{thisWeekStats.pnl.toFixed(2)}
+                  </span>
+                </div>
+                <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                  {thisWeekStats.count}笔 | 胜率:{thisWeekStats.winRate.toFixed(0)}% | RR:{thisWeekStats.rr.toFixed(1)}
+                </div>
               </div>
-              <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
-                {thisWeekStats.count}笔 | 胜率:{thisWeekStats.winRate.toFixed(0)}% | RR:{thisWeekStats.rr.toFixed(1)}
+              <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold transition-all duration-200 translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 ${
+                thisWeekStats.count > 0 
+                  ? "bg-gradient-to-r from-red-500 to-rose-600 text-white" 
+                  : "bg-[var(--color-bg-elevated)] text-[var(--text-muted)]"
+              }`}>
+                {thisWeekStats.count > 0 ? "导出 AI 总结" : "本周无交易"}
               </div>
             </div>
 
             {/* 本月 */}
-            <div className="hidden md:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] min-w-[105px] leading-tight">
-              <div className="flex items-center justify-between w-full gap-2">
-                <span className="text-[10px] text-[var(--text-muted)] font-medium">本月</span>
-                <span className={`text-xs font-bold ${thisMonthStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
-                  {thisMonthStats.pnl >= 0 ? "+" : ""}{thisMonthStats.pnl.toFixed(2)}
-                </span>
+            <div 
+              onClick={() => thisMonthStats.count > 0 && setActiveReviewPeriod("month")}
+              className={`hidden md:flex flex-col justify-center items-end h-10 px-2.5 rounded-lg border leading-tight group relative overflow-hidden transition-all duration-200 ${
+                thisMonthStats.count > 0 
+                  ? "bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] cursor-pointer" 
+                  : "bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] cursor-not-allowed"
+              }`}
+            >
+              <div className="flex flex-col justify-center w-full h-full transition-all duration-200 group-hover:opacity-0 group-hover:-translate-y-2">
+                <div className="flex items-center justify-between w-full gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] font-medium">本月</span>
+                  <span className={`text-xs font-bold ${thisMonthStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
+                    {thisMonthStats.pnl >= 0 ? "+" : ""}{thisMonthStats.pnl.toFixed(2)}
+                  </span>
+                </div>
+                <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                  {thisMonthStats.count}笔 | 胜率:{thisMonthStats.winRate.toFixed(0)}% | RR:{thisMonthStats.rr.toFixed(1)}
+                </div>
               </div>
-              <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
-                {thisMonthStats.count}笔 | 胜率:{thisMonthStats.winRate.toFixed(0)}% | RR:{thisMonthStats.rr.toFixed(1)}
+              <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold transition-all duration-200 translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 ${
+                thisMonthStats.count > 0 
+                  ? "bg-gradient-to-r from-red-500 to-rose-600 text-white" 
+                  : "bg-[var(--color-bg-elevated)] text-[var(--text-muted)]"
+              }`}>
+                {thisMonthStats.count > 0 ? "导出 AI 总结" : "本月无交易"}
               </div>
             </div>
 
             {/* 总计 */}
-            <div className="flex flex-col justify-center items-end h-10 px-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] min-w-[105px] leading-tight">
-              <div className="flex items-center justify-between w-full gap-2">
-                <span className="text-[10px] text-[var(--text-muted)] font-medium">总计</span>
-                <span className={`text-xs font-bold ${totalStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
-                  {totalStats.pnl >= 0 ? "+" : ""}{totalStats.pnl.toFixed(2)}
-                </span>
+            <div 
+              onClick={() => totalStats.count > 0 && setActiveReviewPeriod("all")}
+              className={`flex flex-col justify-center items-end h-10 px-2.5 rounded-lg border leading-tight group relative overflow-hidden transition-all duration-200 ${
+                totalStats.count > 0 
+                  ? "bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] cursor-pointer" 
+                  : "bg-[var(--color-bg-surface)] border-[var(--color-border-subtle)] cursor-not-allowed"
+              }`}
+            >
+              <div className="flex flex-col justify-center w-full h-full transition-all duration-200 group-hover:opacity-0 group-hover:-translate-y-2">
+                <div className="flex items-center justify-between w-full gap-2">
+                  <span className="text-[10px] text-[var(--text-muted)] font-medium">总计</span>
+                  <span className={`text-xs font-bold ${totalStats.pnl >= 0 ? "text-trade-green" : "text-trade-red"}`}>
+                    {totalStats.pnl >= 0 ? "+" : ""}{totalStats.pnl.toFixed(2)}
+                  </span>
+                </div>
+                <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                  {totalStats.count}笔 | 胜率:{totalStats.winRate.toFixed(0)}% | RR:{totalStats.rr.toFixed(1)}
+                </div>
               </div>
-              <div className="text-[9px] text-[var(--text-muted)] mt-0.5">
-                {totalStats.count}笔 | 胜率:{totalStats.winRate.toFixed(0)}% | RR:{totalStats.rr.toFixed(1)}
+              <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold transition-all duration-200 translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 ${
+                totalStats.count > 0 
+                  ? "bg-gradient-to-r from-red-500 to-rose-600 text-white" 
+                  : "bg-[var(--color-bg-elevated)] text-[var(--text-muted)]"
+              }`}>
+                {totalStats.count > 0 ? "导出 AI 总结" : "暂无交易"}
               </div>
             </div>
           </div>
@@ -824,6 +890,14 @@ export default function TradingApp({
           )}
         </main>
       </div>
+      {activeReviewPeriod && (
+        <AiReviewModal
+          period={activeReviewPeriod}
+          trades={trades}
+          rules={rules}
+          onClose={() => setActiveReviewPeriod(null)}
+        />
+      )}
     </div>
   );
 }

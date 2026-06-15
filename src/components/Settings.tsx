@@ -94,6 +94,21 @@ export default function Settings({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteMsg, setDeleteMsg] = useState("");
 
+  // AI 交易教练配置状态
+  const [aiApiKey, setAiApiKey] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("tf_ai_api_key") || "" : ""));
+  const [aiBaseUrl, setAiBaseUrl] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("tf_ai_base_url") || "https://api.openai.com/v1" : "https://api.openai.com/v1"));
+  const [aiModelName, setAiModelName] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("tf_ai_model_name") || "gpt-4o" : "gpt-4o"));
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  const handleSaveAiConfig = () => {
+    localStorage.setItem("tf_ai_api_key", aiApiKey.trim());
+    localStorage.setItem("tf_ai_base_url", aiBaseUrl.trim());
+    localStorage.setItem("tf_ai_model_name", aiModelName.trim());
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
   // 辅助函数，获取今天本地的 YYYY-MM-DD
   const getTodayString = () => {
     const d = new Date();
@@ -390,6 +405,80 @@ export default function Settings({
           addKey="exit" addVal={newExitName} onChangeAdd={setNewExitName} onAdd={onAddExit} onDelete={onDeleteExit} />
         <OptionPanel title="交易品类" count={symbols.length} items={symbols} placeholder="新品类 (如 BTC)..."
           addKey="symbol" addVal={newSymbolName} onChangeAdd={setNewSymbolName} onAdd={onAddSymbol} onDelete={onDeleteSymbol} />
+      </div>
+
+      {/* AI 交易教练配置 */}
+      <div className="p-5 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] flex flex-col gap-4 shadow-sm">
+        <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+          <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <RefreshCw size={16} className="text-trade-green animate-spin-slow" />
+            <span>AI 交易教练配置 (兼容 OpenAI 协议)</span>
+          </h3>
+          <span className="text-[10px] text-[var(--text-muted)] bg-[var(--color-bg-elevated)] px-2 py-0.5 rounded-full">
+            提供智能数据分析与整体交易总结
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[var(--text-secondary)]">API Key</label>
+            <div className="relative flex items-center">
+              <input
+                type={showApiKey ? "text" : "password"}
+                placeholder="sk-..."
+                value={aiApiKey}
+                onChange={(e) => setAiApiKey(e.target.value)}
+                className="w-full text-xs bg-[var(--color-bg-canvas)] border border-[var(--color-border-standard)] rounded-lg pl-3 pr-10 py-2 text-[var(--text-primary)] focus:border-trade-green focus:ring-1 focus:ring-trade-green outline-none transition-all placeholder:text-[var(--text-muted)] font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute right-2 text-xxs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] px-1.5 py-0.5 rounded transition-colors"
+              >
+                {showApiKey ? "隐藏" : "显示"}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[var(--text-secondary)]">API Base URL</label>
+            <input
+              type="text"
+              placeholder="https://api.openai.com/v1"
+              value={aiBaseUrl}
+              onChange={(e) => setAiBaseUrl(e.target.value)}
+              className="w-full text-xs bg-[var(--color-bg-canvas)] border border-[var(--color-border-standard)] rounded-lg px-3 py-2 text-[var(--text-primary)] focus:border-trade-green focus:ring-1 focus:ring-trade-green outline-none transition-all placeholder:text-[var(--text-muted)] font-mono"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[var(--text-secondary)]">模型名称 (Model Name)</label>
+            <input
+              type="text"
+              placeholder="gpt-4o"
+              value={aiModelName}
+              onChange={(e) => setAiModelName(e.target.value)}
+              className="w-full text-xs bg-[var(--color-bg-canvas)] border border-[var(--color-border-standard)] rounded-lg px-3 py-2 text-[var(--text-primary)] focus:border-trade-green focus:ring-1 focus:ring-trade-green outline-none transition-all placeholder:text-[var(--text-muted)] font-mono"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+          <p className="text-xxs text-[var(--text-muted)] max-w-xl leading-relaxed">
+            * 密钥信息仅保存在本机的 LocalStorage 中，直接发起客户端请求，安全私密。
+          </p>
+          <div className="flex items-center gap-2">
+            {saveSuccess && (
+              <span className="text-xs text-trade-green font-medium animate-fade-in">✓ 配置已保存</span>
+            )}
+            <button
+              onClick={handleSaveAiConfig}
+              className="px-4 py-2 bg-trade-green text-white text-xs font-bold rounded-lg hover:bg-green-600 transition-colors cursor-pointer"
+            >
+              保存配置
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}
