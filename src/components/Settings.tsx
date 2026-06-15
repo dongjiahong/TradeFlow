@@ -10,6 +10,7 @@ interface SettingsProps {
   errors: OptionItem[];
   exits: OptionItem[];
   symbols: OptionItem[];
+  processes: OptionItem[];
   isImporting: boolean;
   importStatus: string;
   newSetupName: string;
@@ -20,6 +21,8 @@ interface SettingsProps {
   setNewExitName: React.Dispatch<React.SetStateAction<string>>;
   newSymbolName: string;
   setNewSymbolName: React.Dispatch<React.SetStateAction<string>>;
+  newProcessName: string;
+  setNewProcessName: React.Dispatch<React.SetStateAction<string>>;
   onImportExcel: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onExportExcel: (startDate?: string, endDate?: string) => void;
   onAddSetup: () => Promise<void>;
@@ -30,6 +33,8 @@ interface SettingsProps {
   onDeleteExit: (id: string | number) => Promise<void>;
   onAddSymbol: () => Promise<void>;
   onDeleteSymbol: (id: string | number) => Promise<void>;
+  onAddProcess: () => Promise<void>;
+  onDeleteProcess: (id: string | number) => Promise<void>;
   onDeleteTradesByDateRange: (startDate: string, endDate: string) => Promise<{ success: boolean; count?: number; error?: string }>;
 }
 
@@ -76,15 +81,17 @@ const OptionPanel = ({
 );
 
 export default function Settings({
-  trades, setups, errors, exits, symbols,
+  trades, setups, errors, exits, symbols, processes,
   isImporting, importStatus,
   newSetupName, setNewSetupName,
   newErrorName, setNewErrorName,
   newExitName, setNewExitName,
   newSymbolName, setNewSymbolName,
+  newProcessName, setNewProcessName,
   onImportExcel, onExportExcel, onAddSetup, onDeleteSetup,
   onAddError, onDeleteError,
   onAddExit, onDeleteExit, onAddSymbol, onDeleteSymbol,
+  onAddProcess, onDeleteProcess,
   onDeleteTradesByDateRange
 }: SettingsProps) {
   // 日志管理删除状态
@@ -381,7 +388,7 @@ export default function Settings({
       </div>
 
       {/* Option Panels Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <OptionPanel title="入场理由" count={setups.length} items={setups} placeholder="新入场理由..."
           addKey="setup" addVal={newSetupName} onChangeAdd={setNewSetupName} onAdd={onAddSetup} onDelete={onDeleteSetup} />
         <OptionPanel title="错误原因" count={errors.length} items={errors} placeholder="新错误原因..."
@@ -390,6 +397,8 @@ export default function Settings({
           addKey="exit" addVal={newExitName} onChangeAdd={setNewExitName} onAdd={onAddExit} onDelete={onDeleteExit} />
         <OptionPanel title="交易品类" count={symbols.length} items={symbols} placeholder="新品类 (如 BTC)..."
           addKey="symbol" addVal={newSymbolName} onChangeAdd={setNewSymbolName} onAdd={onAddSymbol} onDelete={onDeleteSymbol} />
+        <OptionPanel title="交易过程" count={processes.length} items={processes} placeholder="新交易过程..."
+          addKey="process" addVal={newProcessName} onChangeAdd={setNewProcessName} onAdd={onAddProcess} onDelete={onDeleteProcess} />
       </div>
 
       {/* Delete Confirmation Modal */}

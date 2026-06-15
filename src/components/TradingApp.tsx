@@ -19,6 +19,8 @@ import {
   deleteExitOption,
   deleteSymbolOption,
   addSymbolOption,
+  addProcessOption,
+  deleteProcessOption,
   importExcelData,
   exportExcelData,
   uploadScreenshot,
@@ -41,13 +43,15 @@ export default function TradingApp({
   initialSetups = [],
   initialErrors = [],
   initialExits = [],
-  initialSymbols = []
+  initialSymbols = [],
+  initialProcesses = []
 }: {
   initialTrades?: Trade[];
   initialSetups?: OptionItem[];
   initialErrors?: OptionItem[];
   initialExits?: OptionItem[];
   initialSymbols?: OptionItem[];
+  initialProcesses?: OptionItem[];
 } = {}) {
   const getLocalISOString = () => {
     const d = new Date();
@@ -71,6 +75,7 @@ export default function TradingApp({
   const [errors, setErrors] = useState<OptionItem[]>(initialErrors);
   const [exits, setExits] = useState<OptionItem[]>(initialExits);
   const [symbols, setSymbols] = useState<OptionItem[]>(initialSymbols);
+  const [processes, setProcesses] = useState<OptionItem[]>(initialProcesses);
   const [rules, setRules] = useState<TradingRule[]>([]);
   const [showRulesDropdown, setShowRulesDropdown] = useState(false);
 
@@ -81,6 +86,7 @@ export default function TradingApp({
   const [setupFilter, setSetupFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [symbolFilter, setSymbolFilter] = useState("all");
+  const [processFilter, setProcessFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<"30" | "today" | "week" | "month" | "all" | "custom">("30");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
@@ -98,7 +104,7 @@ export default function TradingApp({
     remarks: "", setup: "", type: "趋势延续", exitReason: "", notes: "",
     positionSize: 1, direction: "Long", entryPrice: 0,
     stopLoss: "", takeProfit: "", exitPrice1: 0, exitPrice2: "",
-    errorReason: "", symbol: ""
+    errorReason: "", symbol: "", process: ""
   });
 
   // Settings custom items
@@ -106,6 +112,7 @@ export default function TradingApp({
   const [newErrorName, setNewErrorName] = useState("");
   const [newExitName, setNewExitName] = useState("");
   const [newSymbolName, setNewSymbolName] = useState("");
+  const [newProcessName, setNewProcessName] = useState("");
 
   // Excel loader
   const [isImporting, setIsImporting] = useState(false);
@@ -120,6 +127,7 @@ export default function TradingApp({
     setErrors(localOptions.errors);
     setExits(localOptions.exits);
     setSymbols(localOptions.symbols);
+    setProcesses(localOptions.processes || []);
     setRules(localRules);
     return localOptions;
   };
@@ -341,7 +349,8 @@ export default function TradingApp({
       direction: tradeForm.direction, entryPrice: Number(tradeForm.entryPrice),
       stopLoss: parsedStopLoss, takeProfit: parsedTakeProfit,
       exitPrice1: Number(tradeForm.exitPrice1), exitPrice2: parsedExit2,
-      symbol: tradeForm.symbol, errorReason: tradeForm.errorReason || undefined
+      symbol: tradeForm.symbol, errorReason: tradeForm.errorReason || undefined,
+      process: tradeForm.process || undefined
     };
 
     const sortTradesAsc = (a: Trade, b: Trade) => new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -508,6 +517,18 @@ export default function TradingApp({
       if (res.success) setSymbols(prev => prev.filter(s => s.id !== id));
     }
   };
+  const handleAddProcess = async () => {
+    if (!newProcessName.trim()) return;
+    const res = await addProcessOption(newProcessName.trim());
+    if (res.success && res.option) { setProcesses(prev => [...prev, res.option!].sort((a, b) => a.name.localeCompare(b.name))); setNewProcessName(""); }
+    else { alert("添加失败: " + res.error); }
+  };
+  const handleDeleteProcess = async (id: string | number) => {
+    if (confirm("确定要删除此过程选项吗？")) {
+      const res = await deleteProcessOption(id);
+      if (res.success) setProcesses(prev => prev.filter(p => p.id !== id));
+    }
+  };
 
   // --- FILTERS LOGIC ---
   const getLocalDateStr = () => {
@@ -545,12 +566,14 @@ export default function TradingApp({
       (t.notes && t.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
       t.setup.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.process && t.process.toLowerCase().includes(searchQuery.toLowerCase())) ||
       t.symbol.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch &&
       (directionFilter === "all" || t.direction === directionFilter) &&
       (statusFilter === "all" || t.status === statusFilter) &&
       (setupFilter === "all" || t.setup === setupFilter) &&
       (typeFilter === "all" || t.type === typeFilter) &&
+      (processFilter === "all" || t.process === processFilter) &&
       (symbolFilter === "all" || t.symbol === symbolFilter);
   }).reverse();
 
@@ -763,6 +786,7 @@ export default function TradingApp({
             <Journal
               trades={trades} filteredTrades={filteredTrades}
               setups={setups} errors={errors} exits={exits} symbols={symbols}
+              processes={processes} processFilter={processFilter} setProcessFilter={setProcessFilter}
               inlineEditingId={inlineEditingId} setInlineEditingId={setInlineEditingId}
               tradeForm={tradeForm} setTradeForm={setTradeForm}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
@@ -791,19 +815,20 @@ export default function TradingApp({
           {activeTab === "settings" && (
             <SettingsTab
               trades={trades}
-              setups={setups} errors={errors} exits={exits} symbols={symbols}
+              setups={setups} errors={errors} exits={exits} symbols={symbols} processes={processes}
               isImporting={isImporting} importStatus={importStatus}
               newSetupName={newSetupName} setNewSetupName={setNewSetupName}
               newErrorName={newErrorName} setNewErrorName={setNewErrorName}
               newExitName={newExitName} setNewExitName={setNewExitName}
               newSymbolName={newSymbolName} setNewSymbolName={setNewSymbolName}
+              newProcessName={newProcessName} setNewProcessName={setNewProcessName}
               onImportExcel={handleImportExcel}
               onExportExcel={handleExportExcel}
               onAddSetup={handleAddSetup} onDeleteSetup={handleDeleteSetup}
               onAddError={handleAddError} onDeleteError={handleDeleteError}
               onAddExit={handleAddExit} onDeleteExit={handleDeleteExit}
-              onAddSymbol={handleAddSymbol}
-              onDeleteSymbol={handleDeleteSymbol}
+              onAddSymbol={handleAddSymbol} onDeleteSymbol={handleDeleteSymbol}
+              onAddProcess={handleAddProcess} onDeleteProcess={handleDeleteProcess}
               onDeleteTradesByDateRange={handleDeleteTradesByDateRange}
             />
           )}

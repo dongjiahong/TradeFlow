@@ -18,6 +18,7 @@ export interface Trade {
   status: string;
   symbol: string;
   errorReason: string | null;
+  process: string | null;
   screenshots?: { id: string; filename: string }[];
 }
 
@@ -39,4 +40,5 @@ export interface TradingAppProps {
   initialErrors: OptionItem[];
   initialExits: OptionItem[];
   initialSymbols: OptionItem[];
+  initialProcesses: OptionItem[];
 }

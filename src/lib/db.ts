@@ -23,6 +23,7 @@ export interface Trade {
   status: "win" | "lose" | "BE";
   symbol: string;
   errorReason: string | null;
+  process: string | null;
   screenshots?: { id: string; filename: string }[];
 }
 
@@ -52,6 +53,7 @@ class TradingLogDatabase extends Dexie {
   errorOptions!: Table<OptionItem, number>;
   exitOptions!: Table<OptionItem, number>;
   symbolOptions!: Table<OptionItem, number>;
+  processOptions!: Table<OptionItem, number>;
   screenshots!: Table<ScreenshotRecord, string>;
   tradingRules!: Table<TradingRule, number>;
 
@@ -73,6 +75,26 @@ class TradingLogDatabase extends Dexie {
       symbolOptions: "++id, &name",
       screenshots: "id, tradeId",
       tradingRules: "++id, type, createdAt"
+    });
+    this.version(3).stores({
+      trades: "id, date",
+      setupOptions: "++id, &name",
+      errorOptions: "++id, &name",
+      exitOptions: "++id, &name",
+      symbolOptions: "++id, &name",
+      processOptions: "++id, &name",
+      screenshots: "id, tradeId",
+      tradingRules: "++id, type, createdAt"
+    }).upgrade(async tx => {
+      const defaultProcesses = [
+        "先浮盈后亏损",
+        "先损后盈",
+        "方向错误直接打损",
+        "顺利一气止盈",
+        "在盈亏之间震荡止盈",
+        "在盈亏之间震荡止损"
+      ];
+      await tx.table("processOptions").bulkAdd(defaultProcesses.map(name => ({ name })));
     });
   }
 }
@@ -139,12 +161,22 @@ const defaultSymbols = [
   "ES1"
 ];
 
+const defaultProcesses = [
+  "先浮盈后亏损",
+  "先损后盈",
+  "方向错误直接打损",
+  "顺利一气止盈",
+  "在盈亏之间震荡止盈",
+  "在盈亏之间震荡止损"
+];
+
 // Seed default data on database population
 db.on("populate", () => {
   db.setupOptions.bulkAdd(defaultSetups.map(name => ({ name })));
   db.errorOptions.bulkAdd(defaultErrors.map(name => ({ name })));
   db.exitOptions.bulkAdd(defaultExits.map(name => ({ name })));
   db.symbolOptions.bulkAdd(defaultSymbols.map(name => ({ name })));
+  db.processOptions.bulkAdd(defaultProcesses.map(name => ({ name })));
 });
 
 // --- HELPER FUNCTIONS (MATCHING ORIGINAL FORMULAS) ---
@@ -249,6 +281,7 @@ export async function createTrade(data: {
   notes?: string;
   errorReason?: string;
   symbol?: string;
+  process?: string;
 }) {
   try {
     const pnl = calculateTradePnl(
@@ -281,6 +314,7 @@ export async function createTrade(data: {
       remarks: data.remarks || null,
       notes: data.notes || null,
       errorReason: data.errorReason || null,
+      process: data.process || null,
       symbol: data.symbol || "",
     };
 
@@ -310,6 +344,7 @@ export async function updateTrade(
     notes?: string;
     errorReason?: string;
     symbol?: string;
+    process?: string;
   }
 ) {
   try {
@@ -347,6 +382,10 @@ export async function updateTrade(
       updateData.symbol = data.symbol;
     }
 
+    if (data.process !== undefined) {
+      updateData.process = data.process || null;
+    }
+
     await db.trades.update(id, updateData);
     const trade = await db.trades.get(id);
     return { success: true, trade };
@@ -378,10 +417,11 @@ export async function getConfigOptions() {
     const errors = await db.errorOptions.orderBy("name").toArray();
     const exits = await db.exitOptions.orderBy("name").toArray();
     const symbols = await db.symbolOptions.orderBy("name").toArray();
-    return { setups, errors, exits, symbols };
+    const processes = await db.processOptions.orderBy("name").toArray();
+    return { setups, errors, exits, symbols, processes };
   } catch (error) {
     console.error("Error fetching config options:", error);
-    return { setups: [], errors: [], exits: [], symbols: [] };
+    return { setups: [], errors: [], exits: [], symbols: [], processes: [] };
   }
 }
 
@@ -399,6 +439,26 @@ export async function deleteSymbolOption(id: string | number) {
   try {
     const numericId = typeof id === "string" ? parseInt(id, 10) : id;
     await db.symbolOptions.delete(numericId);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function addProcessOption(name: string) {
+  try {
+    const id = await db.processOptions.add({ name });
+    const option = { id, name };
+    return { success: true, option };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteProcessOption(id: string | number) {
+  try {
+    const numericId = typeof id === "string" ? parseInt(id, 10) : id;
+    await db.processOptions.delete(numericId);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -557,6 +617,7 @@ export async function importExcelData(base64Data: string) {
     const tradesToInsert: Trade[] = [];
     const importedSetups = new Set<string>();
     const importedSymbols = new Set<string>();
+    const importedProcesses = new Set<string>();
 
     for (let i = headerRowIdx + 1; i < logsJson.length; i++) {
       const row = logsJson[i];
@@ -603,6 +664,7 @@ export async function importExcelData(base64Data: string) {
       
       const symbol = String(getVal(row, ["品类"], "")).trim();
       const errorReason = getVal(row, ["错误原因", "离场错误"]) ? String(getVal(row, ["错误原因", "离场错误"])) : null;
+      const process = getVal(row, ["过程"]) ? String(getVal(row, ["过程"])).trim() : null;
 
       // Prioritize directly exported PnL and Status, fall back to calculation if missing
       let pnl = parseFloat(getVal(row, ["盈亏", "盈亏情况"])) || 0;
@@ -626,6 +688,9 @@ export async function importExcelData(base64Data: string) {
       if (symbol) {
         importedSymbols.add(symbol);
       }
+      if (process) {
+        importedProcesses.add(process);
+      }
 
       tradesToInsert.push({
         id: self.crypto.randomUUID(),
@@ -647,11 +712,12 @@ export async function importExcelData(base64Data: string) {
         status: status as "win" | "lose" | "BE",
         symbol,
         errorReason: errorReason || null,
+        process: process || null,
       });
     }
 
     // 3. Write imported data to DB inside transaction
-    await db.transaction("rw", [db.trades, db.setupOptions, db.symbolOptions, db.screenshots], async () => {
+    await db.transaction("rw", [db.trades, db.setupOptions, db.symbolOptions, db.processOptions, db.screenshots], async () => {
       // Save setup options if they are not in DB
       for (const setupName of importedSetups) {
         const exist = await db.setupOptions.where("name").equals(setupName).first();
@@ -665,6 +731,14 @@ export async function importExcelData(base64Data: string) {
         const exist = await db.symbolOptions.where("name").equals(symbolName).first();
         if (!exist) {
           await db.symbolOptions.add({ name: symbolName });
+        }
+      }
+
+      // Save process options if they are not in DB
+      for (const processName of importedProcesses) {
+        const exist = await db.processOptions.where("name").equals(processName).first();
+        if (!exist) {
+          await db.processOptions.add({ name: processName });
         }
       }
 
@@ -729,7 +803,7 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("日志");
 
-    // Base column headers (17 columns)
+    // Base column headers (18 columns)
     const columnsDef = [
       { header: "日期", key: "date", width: 15 },
       { header: "品类", key: "symbol", width: 12 },
@@ -745,6 +819,7 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
       { header: "RR", key: "rr", width: 10 },
       { header: "盈亏", key: "pnl", width: 12 },
       { header: "状态", key: "status", width: 10 },
+      { header: "过程", key: "process", width: 15 },
       { header: "离场错误", key: "errorReason", width: 15 },
       { header: "备注", key: "remarks", width: 20 },
       { header: "复盘说明", key: "notes", width: 25 }
@@ -784,6 +859,7 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
         rr: trade.rr ?? "",
         pnl: trade.pnl,
         status: trade.status || "",
+        process: trade.process || "",
         errorReason: trade.errorReason || "",
         remarks: trade.remarks || "",
         notes: trade.notes || ""
@@ -817,11 +893,11 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
               extension: ext,
             });
 
-            // Insert each image in its respective column (Col 18+ is index 17+j)
+            // Insert each image in its respective column (Col 19+ is index 18+j)
             const rIdx = row.number - 1; // 0-indexed row number
             ws.addImage(imageId, {
-              tl: { col: 17 + j, row: rIdx + 0.05 },
-              br: { col: 18 + j, row: rIdx + 0.95 },
+              tl: { col: 18 + j, row: rIdx + 0.05 },
+              br: { col: 19 + j, row: rIdx + 0.95 },
               editAs: 'oneCell'
             } as any);
           } catch (imgError) {
