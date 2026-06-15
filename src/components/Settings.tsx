@@ -227,91 +227,86 @@ export default function Settings({
           数据导入导出
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-lg bg-[var(--color-bg-canvas)]/50 border border-[var(--color-border-subtle)] flex flex-col justify-between gap-4">
-            <div>
+          {/* Import */}
+          <div className="p-4 rounded-lg bg-[var(--color-bg-canvas)]/50 border border-[var(--color-border-subtle)] flex flex-col justify-between gap-3 min-h-[170px]">
+            <div className="flex flex-col gap-1.5">
               <h4 className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Upload size={14} className="text-trade-green" />
                 导入交易日志
               </h4>
-              <p className="text-xxs text-[var(--text-muted)] mt-1.5">
-                上传 Excel 文件。系统将解析您的交易记录。<strong>注意：会清空当前交易记录！</strong>
+              <p className="text-xxs text-[var(--text-muted)] leading-relaxed">
+                上传 Excel 文件以导入交易记录。系统将自动解析您的交易明细数据。
+                <strong className="text-trade-red block mt-1">警告：导入操作会清空当前本地所有交易记录与截图！</strong>
               </p>
             </div>
-            <label className="px-4 py-2 bg-trade-green hover:bg-green-600 text-white text-xs font-bold rounded-lg cursor-pointer text-center transition-colors">
+            <label className="w-full px-3 py-1.5 bg-trade-green hover:bg-green-600 text-white text-xs font-bold rounded-lg cursor-pointer text-center active:scale-95 transition-all block">
               {isImporting ? "处理中..." : "选择并导入"}
               <input type="file" accept=".xlsx" onChange={onImportExcel} disabled={isImporting} className="hidden" />
             </label>
           </div>
 
-          <div className="p-4 rounded-lg bg-[var(--color-bg-canvas)]/50 border border-[var(--color-border-subtle)] flex flex-col justify-between gap-4">
-            <div>
+          {/* Export */}
+          <div className="p-4 rounded-lg bg-[var(--color-bg-canvas)]/50 border border-[var(--color-border-subtle)] flex flex-col justify-between gap-3 min-h-[170px]">
+            <div className="flex flex-col gap-2">
               <h4 className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Download size={14} className="text-[var(--text-muted)]" />
                 导出交易日志
               </h4>
-              <p className="text-xxs text-[var(--text-muted)] mt-1.5">
-                下载经过精简的核心交易记录明细（支持日期范围过滤）。
-              </p>
-
-              {/* 日期选择器 */}
-              <div className="flex flex-col gap-2 mt-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xxs text-[var(--text-muted)] w-14 shrink-0">开始日期:</span>
-                  <input 
-                    type="date" 
-                    value={exportStartDate} 
-                    onChange={(e) => setExportStartDate(e.target.value)}
-                    className="flex-1 px-2 py-1 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xxs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" 
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xxs text-[var(--text-muted)] w-14 shrink-0">结束日期:</span>
-                  <input 
-                    type="date" 
-                    value={exportEndDate} 
-                    onChange={(e) => setExportEndDate(e.target.value)}
-                    className="flex-1 px-2 py-1 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xxs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green" 
-                  />
-                </div>
+              
+              {/* 日期选择器（横向并排） */}
+              <div className="flex items-center gap-1.5">
+                <input 
+                  type="date" 
+                  value={exportStartDate} 
+                  onChange={(e) => setExportStartDate(e.target.value)}
+                  className="px-2 py-1 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xxs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green w-[115px]" 
+                />
+                <span className="text-xxs text-[var(--text-muted)]">至</span>
+                <input 
+                  type="date" 
+                  value={exportEndDate} 
+                  onChange={(e) => setExportEndDate(e.target.value)}
+                  className="px-2 py-1 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xxs text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-1 focus:ring-trade-green w-[115px]" 
+                />
               </div>
 
               {/* 快捷按钮 */}
-              <div className="flex flex-wrap gap-1 mt-2.5">
+              <div className="flex flex-wrap gap-1">
                 <button 
                   onClick={setExportRangeToday}
-                  className={`px-2 py-0.5 text-xxs rounded transition-colors ${exportStartDate === getTodayString() && exportEndDate === getTodayString() ? 'bg-trade-green/10 text-trade-green border border-trade-green/20' : 'bg-[var(--color-bg-surface)] text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)] border border-[var(--color-border-subtle)]'}`}
+                  className={`px-2 py-0.5 border text-xxs rounded-lg transition-colors ${exportStartDate === getTodayString() && exportEndDate === getTodayString() ? 'bg-trade-green/10 text-trade-green border-trade-green/30 font-medium' : 'border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)]'}`}
                 >
                   今天
                 </button>
                 <button 
                   onClick={setExportRangeThisWeek}
-                  className="px-2 py-0.5 text-xxs rounded bg-[var(--color-bg-surface)] text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)] border border-[var(--color-border-subtle)] transition-colors"
+                  className="px-2 py-0.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] text-xxs rounded-lg transition-colors"
                 >
                   本周
                 </button>
                 <button 
                   onClick={setExportRangeThisMonth}
-                  className="px-2 py-0.5 text-xxs rounded bg-[var(--color-bg-surface)] text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)] border border-[var(--color-border-subtle)] transition-colors"
+                  className="px-2 py-0.5 border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] text-xxs rounded-lg transition-colors"
                 >
                   本月
                 </button>
                 <button 
                   onClick={setExportRangeAll}
-                  className={`px-2 py-0.5 text-xxs rounded transition-colors ${!exportStartDate && !exportEndDate ? 'bg-trade-green/10 text-trade-green border border-trade-green/20' : 'bg-[var(--color-bg-surface)] text-[var(--text-muted)] hover:bg-[var(--color-bg-hover)] border border-[var(--color-border-subtle)]'}`}
+                  className={`px-2 py-0.5 border text-xxs rounded-lg transition-colors ${!exportStartDate && !exportEndDate ? 'bg-trade-green/10 text-trade-green border-trade-green/30 font-medium' : 'border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)]'}`}
                 >
                   全部
                 </button>
               </div>
             </div>
             <button onClick={() => onExportExcel(exportStartDate, exportEndDate)}
-              className="w-full inline-block px-4 py-2 bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--text-primary)] text-xs font-bold rounded-lg text-center active:scale-95 transition-all cursor-pointer">
+              className="w-full px-3 py-1.5 bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--text-primary)] text-xs font-bold rounded-lg text-center active:scale-95 transition-all cursor-pointer border border-[var(--color-border-subtle)] block">
               下载 Excel 文件
             </button>
           </div>
         </div>
 
         {importStatus && (
-          <div className="p-3 rounded-lg bg-[var(--color-bg-hover)] text-[var(--text-secondary)] text-xs flex items-center gap-2 font-medium">
+          <div className="p-2.5 rounded-lg bg-[var(--color-bg-hover)] text-[var(--text-secondary)] text-xxs flex items-center gap-2 font-medium">
             <span className="h-1.5 w-1.5 rounded-full bg-trade-green animate-ping shrink-0"></span>
             {importStatus}
           </div>

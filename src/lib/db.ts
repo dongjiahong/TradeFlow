@@ -572,7 +572,7 @@ export async function importExcelData(base64Data: string) {
       const setup = String(getVal(row, ["入场理由", "入场原因"], "其他")).trim();
       const type = String(getVal(row, ["类型"], "未知")).trim();
       const exitReason = String(getVal(row, ["离场理由/方式", "离场理由"], "止损")).trim();
-      const notes = String(getVal(row, ["补充说明", "备注"], "")).trim();
+      const notes = String(getVal(row, ["复盘说明", "补充说明", "备注"], "")).trim();
       const positionSize = parseFloat(getVal(row, ["仓位大小", "仓位"], 0)) || 0;
       const direction = String(getVal(row, ["方向"], "Long")).trim();
       const entryPrice = parseFloat(entryPriceVal) || 0;
@@ -712,7 +712,8 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
       "盈亏",
       "状态",
       "离场错误",
-      "备注"
+      "备注",
+      "复盘说明"
     ];
     logsData.push(headers);
 
@@ -734,7 +735,8 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
         trade.pnl,
         trade.status || "",
         trade.errorReason || "",
-        trade.remarks || ""
+        trade.remarks || "",
+        trade.notes || ""
       ];
       logsData.push(row);
     }
