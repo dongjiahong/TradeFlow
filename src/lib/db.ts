@@ -24,6 +24,7 @@ export interface Trade {
   symbol: string;
   errorReason: string | null;
   process: string | null;
+  marketEnv: string | null;
   screenshots?: { id: string; filename: string }[];
 }
 
@@ -282,6 +283,7 @@ export async function createTrade(data: {
   errorReason?: string;
   symbol?: string;
   process?: string;
+  marketEnv?: string;
 }) {
   try {
     const pnl = calculateTradePnl(
@@ -315,6 +317,7 @@ export async function createTrade(data: {
       notes: data.notes || null,
       errorReason: data.errorReason || null,
       process: data.process || null,
+      marketEnv: data.marketEnv || null,
       symbol: data.symbol || "",
     };
 
@@ -345,6 +348,7 @@ export async function updateTrade(
     errorReason?: string;
     symbol?: string;
     process?: string;
+    marketEnv?: string;
   }
 ) {
   try {
@@ -384,6 +388,10 @@ export async function updateTrade(
 
     if (data.process !== undefined) {
       updateData.process = data.process || null;
+    }
+
+    if (data.marketEnv !== undefined) {
+      updateData.marketEnv = data.marketEnv || null;
     }
 
     await db.trades.update(id, updateData);
@@ -666,6 +674,11 @@ export async function importExcelData(base64Data: string) {
       const errorReason = getVal(row, ["错误原因", "离场错误"]) ? String(getVal(row, ["错误原因", "离场错误"])) : null;
       const process = getVal(row, ["过程"]) ? String(getVal(row, ["过程"])).trim() : null;
 
+      const rawMarketEnv = getVal(row, ["市场环境", "环境"]);
+      const marketEnv = rawMarketEnv && ["突破", "窄通道", "宽通道", "震荡区间"].includes(String(rawMarketEnv).trim())
+        ? String(rawMarketEnv).trim()
+        : null;
+
       // Prioritize directly exported PnL and Status, fall back to calculation if missing
       let pnl = parseFloat(getVal(row, ["盈亏", "盈亏情况"])) || 0;
       let status = getVal(row, ["状态", "盈亏状态"]);
@@ -713,6 +726,7 @@ export async function importExcelData(base64Data: string) {
         symbol,
         errorReason: errorReason || null,
         process: process || null,
+        marketEnv: marketEnv || null,
       });
     }
 
@@ -808,6 +822,7 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
       { header: "日期", key: "date", width: 15 },
       { header: "品类", key: "symbol", width: 12 },
       { header: "方向", key: "direction", width: 10 },
+      { header: "市场环境", key: "marketEnv", width: 12 },
       { header: "入场理由", key: "setup", width: 15 },
       { header: "类型", key: "type", width: 12 },
       { header: "仓位", key: "positionSize", width: 10 },
@@ -848,6 +863,7 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
         date: formatDate(trade.date),
         symbol: trade.symbol || "",
         direction: trade.direction || "",
+        marketEnv: trade.marketEnv || "",
         setup: trade.setup || "",
         type: trade.type || "",
         positionSize: trade.positionSize,
@@ -893,11 +909,11 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
               extension: ext,
             });
 
-            // Insert each image in its respective column (Col 19+ is index 18+j)
+            // Insert each image in its respective column (Col 20+ is index 19+j)
             const rIdx = row.number - 1; // 0-indexed row number
             ws.addImage(imageId, {
-              tl: { col: 18 + j, row: rIdx + 0.05 },
-              br: { col: 19 + j, row: rIdx + 0.95 },
+              tl: { col: 19 + j, row: rIdx + 0.05 },
+              br: { col: 20 + j, row: rIdx + 0.95 },
               editAs: 'oneCell'
             } as any);
           } catch (imgError) {

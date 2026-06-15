@@ -100,6 +100,7 @@ export default function TradingApp({
   const [typeFilter, setTypeFilter] = useState("all");
   const [symbolFilter, setSymbolFilter] = useState("all");
   const [processFilter, setProcessFilter] = useState("all");
+  const [marketEnvFilter, setMarketEnvFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<"30" | "today" | "week" | "month" | "all" | "custom">("30");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
@@ -117,7 +118,7 @@ export default function TradingApp({
     remarks: "", setup: "", type: "趋势延续", exitReason: "", notes: "",
     positionSize: 1, direction: "Long", entryPrice: 0,
     stopLoss: "", takeProfit: "", exitPrice1: 0, exitPrice2: "",
-    errorReason: "", symbol: "", process: ""
+    errorReason: "", symbol: "", process: "", marketEnv: ""
   });
 
   // Settings custom items
@@ -364,7 +365,8 @@ export default function TradingApp({
       stopLoss: parsedStopLoss, takeProfit: parsedTakeProfit,
       exitPrice1: Number(tradeForm.exitPrice1), exitPrice2: parsedExit2,
       symbol: tradeForm.symbol, errorReason: tradeForm.errorReason || undefined,
-      process: tradeForm.process || undefined
+      process: tradeForm.process || undefined,
+      marketEnv: tradeForm.marketEnv || undefined
     };
 
     const sortTradesAsc = (a: Trade, b: Trade) => new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -581,6 +583,7 @@ export default function TradingApp({
       t.setup.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (t.process && t.process.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (t.marketEnv && t.marketEnv.toLowerCase().includes(searchQuery.toLowerCase())) ||
       t.symbol.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch &&
       (directionFilter === "all" || t.direction === directionFilter) &&
@@ -588,6 +591,7 @@ export default function TradingApp({
       (setupFilter === "all" || t.setup === setupFilter) &&
       (typeFilter === "all" || t.type === typeFilter) &&
       (processFilter === "all" || t.process === processFilter) &&
+      (marketEnvFilter === "all" || t.marketEnv === marketEnvFilter) &&
       (symbolFilter === "all" || t.symbol === symbolFilter);
   }).reverse();
 
@@ -878,6 +882,7 @@ export default function TradingApp({
               trades={trades} filteredTrades={filteredTrades}
               setups={setups} errors={errors} exits={exits} symbols={symbols}
               processes={processes} processFilter={processFilter} setProcessFilter={setProcessFilter}
+              marketEnvFilter={marketEnvFilter} setMarketEnvFilter={setMarketEnvFilter}
               inlineEditingId={inlineEditingId} setInlineEditingId={setInlineEditingId}
               tradeForm={tradeForm} setTradeForm={setTradeForm}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}

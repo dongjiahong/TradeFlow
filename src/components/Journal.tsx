@@ -22,13 +22,13 @@ interface JournalProps {
     date: string; remarks: string; setup: string; type: string; exitReason: string;
     notes: string; positionSize: number; direction: string; entryPrice: number;
     stopLoss: string; takeProfit: string; exitPrice1: number; exitPrice2: string;
-    errorReason: string; symbol: string; process: string;
+    errorReason: string; symbol: string; process: string; marketEnv: string;
   };
   setTradeForm: React.Dispatch<React.SetStateAction<{
     date: string; remarks: string; setup: string; type: string; exitReason: string;
     notes: string; positionSize: number; direction: string; entryPrice: number;
     stopLoss: string; takeProfit: string; exitPrice1: number; exitPrice2: string;
-    errorReason: string; symbol: string; process: string;
+    errorReason: string; symbol: string; process: string; marketEnv: string;
   }>>;
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
@@ -44,6 +44,8 @@ interface JournalProps {
   setSymbolFilter: React.Dispatch<React.SetStateAction<string>>;
   processFilter: string;
   setProcessFilter: React.Dispatch<React.SetStateAction<string>>;
+  marketEnvFilter: string;
+  setMarketEnvFilter: React.Dispatch<React.SetStateAction<string>>;
   dateFilter: "30" | "today" | "week" | "month" | "all" | "custom";
   setDateFilter: React.Dispatch<React.SetStateAction<"30" | "today" | "week" | "month" | "all" | "custom">>;
   customStartDate: string;
@@ -74,6 +76,7 @@ export default function Journal({
   statusFilter, setStatusFilter, setupFilter, setSetupFilter,
   typeFilter, setTypeFilter, symbolFilter, setSymbolFilter,
   processFilter, setProcessFilter,
+  marketEnvFilter, setMarketEnvFilter,
   dateFilter, setDateFilter, customStartDate, setCustomStartDate, customEndDate, setCustomEndDate,
   pendingScreenshots, isUploadingScreenshot,
   lightboxImage, setLightboxImage, expandedScreenshotId, setExpandedScreenshotId,
@@ -125,6 +128,17 @@ export default function Journal({
             className="inline-cell-input bg-transparent text-[var(--text-primary)]">
             <option value="Long">Long</option>
             <option value="Short">Short</option>
+          </select>
+        </td>
+        <td className="p-2">
+          <select value={tradeForm.marketEnv}
+            onChange={(e) => setTradeForm(prev => ({ ...prev, marketEnv: e.target.value }))}
+            className="inline-cell-input bg-transparent text-[var(--text-primary)]">
+            <option value="">-- 无 --</option>
+            <option value="突破">突破</option>
+            <option value="窄通道">窄通道</option>
+            <option value="宽通道">宽通道</option>
+            <option value="震荡区间">震荡区间</option>
           </select>
         </td>
         <td className="p-2">
@@ -324,7 +338,8 @@ export default function Journal({
               exitReason: exits[0]?.name || "", notes: "", positionSize: 1,
               direction: "Long", entryPrice: 0, stopLoss: "", takeProfit: "",
               exitPrice1: 0, exitPrice2: "", errorReason: "",
-              symbol: symbols[0]?.name || "", process: processes[0]?.name || ""
+              symbol: symbols[0]?.name || "", process: processes[0]?.name || "",
+              marketEnv: ""
             });
           }}
           className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-trade-green text-white font-bold text-sm hover:bg-green-600 transition-colors">
@@ -375,6 +390,14 @@ export default function Journal({
           <option value="lose">亏损</option>
           <option value="BE">保本</option>
         </select>
+        <select value={marketEnvFilter} onChange={(e) => setMarketEnvFilter(e.target.value)}
+          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
+          <option value="all">所有环境</option>
+          <option value="突破">突破</option>
+          <option value="窄通道">窄通道</option>
+          <option value="宽通道">宽通道</option>
+          <option value="震荡区间">震荡区间</option>
+        </select>
         <select value={setupFilter} onChange={(e) => setSetupFilter(e.target.value)}
           className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] max-w-xs focus:outline-none">
           <option value="all">所有入场</option>
@@ -393,8 +416,8 @@ export default function Journal({
           <option value="all">所有过程</option>
           {processes.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
         </select>
-        {(searchQuery || directionFilter !== "all" || statusFilter !== "all" || setupFilter !== "all" || typeFilter !== "all" || symbolFilter !== "all" || processFilter !== "all" || dateFilter !== "30" || customStartDate || customEndDate) && (
-          <button onClick={() => { setSearchQuery(""); setDirectionFilter("all"); setStatusFilter("all"); setSetupFilter("all"); setTypeFilter("all"); setSymbolFilter("all"); setProcessFilter("all"); setDateFilter("30"); setCustomStartDate(""); setCustomEndDate(""); }}
+        {(searchQuery || directionFilter !== "all" || statusFilter !== "all" || setupFilter !== "all" || typeFilter !== "all" || symbolFilter !== "all" || processFilter !== "all" || marketEnvFilter !== "all" || dateFilter !== "30" || customStartDate || customEndDate) && (
+          <button onClick={() => { setSearchQuery(""); setDirectionFilter("all"); setStatusFilter("all"); setSetupFilter("all"); setTypeFilter("all"); setSymbolFilter("all"); setProcessFilter("all"); setMarketEnvFilter("all"); setDateFilter("30"); setCustomStartDate(""); setCustomEndDate(""); }}
             className="text-xs text-trade-red hover:underline ml-auto">重置</button>
         )}
       </div>
@@ -408,6 +431,7 @@ export default function Journal({
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">日期</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">品类</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">方向</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">环境</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">入场理由</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">类型</th>
                 <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">仓位</th>
@@ -433,7 +457,7 @@ export default function Journal({
                           {renderInlineEditCells()}
                         </tr>
                         <tr className="bg-[var(--color-bg-canvas)]/50 border-b border-[var(--color-border-subtle)]">
-                          <td colSpan={14} className="p-3">
+                          <td colSpan={15} className="p-3">
                             {inlineEditingId === "__new__"
                               ? screenshotBlock({ ...trades[0]!, screenshots: [] } as Trade, true)
                               : screenshotBlock(editingTrade!, true)}
@@ -462,6 +486,11 @@ export default function Journal({
                         <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] ${
                           trade.direction === "Long" ? "bg-[var(--trade-green-dim)] text-trade-green" : "bg-[var(--trade-red-dim)] text-trade-red"
                         }`}>{trade.direction}</span>
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded font-semibold bg-[var(--color-bg-elevated)] text-[var(--text-secondary)] text-[10px]">
+                          {trade.marketEnv || "-"}
+                        </span>
                       </td>
                       <td className="px-3 py-2 font-semibold text-[var(--text-secondary)] whitespace-nowrap">{trade.setup}</td>
                       <td className="px-3 py-2 text-[var(--text-muted)] whitespace-nowrap">{trade.type}</td>
@@ -511,7 +540,8 @@ export default function Journal({
                               takeProfit: trade.takeProfit !== null ? String(trade.takeProfit) : "",
                               exitPrice1: trade.exitPrice1, exitPrice2: trade.exitPrice2 !== null ? String(trade.exitPrice2) : "",
                               errorReason: trade.errorReason || "", symbol: trade.symbol,
-                              process: trade.process || ""
+                              process: trade.process || "",
+                              marketEnv: trade.marketEnv || ""
                             });
                           }} title="编辑"
                             className="p-1.5 rounded hover:bg-[var(--color-bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)]">
@@ -526,7 +556,7 @@ export default function Journal({
                     </tr>
                     {expandedScreenshotId === trade.id && (
                       <tr className="bg-[var(--color-bg-canvas)]/50 border-b border-[var(--color-border-subtle)]">
-                        <td colSpan={14} className="p-4">
+                        <td colSpan={15} className="p-4">
                           {screenshotBlock(trade, false)}
                         </td>
                       </tr>
@@ -535,7 +565,7 @@ export default function Journal({
                 );
               })}
               {filteredTrades.length === 0 && (
-                <tr><td colSpan={14} className="p-8 text-center text-[var(--text-muted)]">暂无交易记录。</td></tr>
+                <tr><td colSpan={15} className="p-8 text-center text-[var(--text-muted)]">暂无交易记录。</td></tr>
               )}
             </tbody>
           </table>
