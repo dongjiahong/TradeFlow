@@ -445,7 +445,7 @@ export default function TradingApp({
       (setupFilter === "all" || t.setup === setupFilter) &&
       (typeFilter === "all" || t.type === typeFilter) &&
       (symbolFilter === "all" || t.symbol === symbolFilter);
-  });
+  }).reverse();
 
   const overallComplianceRate = 0;
 
