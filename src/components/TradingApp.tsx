@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import {
   TrendingUp, BookOpen, Settings, PieChart,
-  Moon, Sun, BarChart3, ScrollText
+  Moon, Sun, BarChart3, ScrollText,
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 import {
   getTrades,
@@ -65,6 +66,16 @@ export default function TradingApp({
   const [analysisReady, setAnalysisReady] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "journal" | "settings" | "analysis" | "rules">("journal");
   const [darkMode, setDarkMode] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebar_collapsed") === "true";
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("sidebar_collapsed", String(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
 
   // Analysis date filter
   const [quickRange, setQuickRange] = useState<"today" | "week" | "month" | "all">("all");
@@ -580,7 +591,7 @@ export default function TradingApp({
       (symbolFilter === "all" || t.symbol === symbolFilter);
   }).reverse();
 
-  const overallComplianceRate = 0;
+
 
   // --- SIDEBAR NAV ITEMS ---
   const navItems = [
@@ -813,33 +824,46 @@ export default function TradingApp({
       {/* Main Workspace */}
       <div className="flex flex-1 overflow-hidden pt-14">
         {/* Sidebar */}
-        <aside className="w-64 border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-canvas)] flex flex-col justify-between py-6 px-4 shrink-0 fixed top-14 left-0 bottom-0 z-30">
+        <aside className={`border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-canvas)] flex flex-col justify-between py-6 shrink-0 fixed top-14 left-0 bottom-0 z-30 transition-all duration-300 ${
+          isSidebarCollapsed ? "w-16 px-2" : "w-64 px-4"
+        }`}>
           <nav className="flex flex-col gap-1">
             {navItems.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
+                title={isSidebarCollapsed ? tab.label : undefined}
+                className={`flex items-center rounded-lg text-sm font-medium transition-all text-left ${
+                  isSidebarCollapsed 
+                    ? "justify-center p-2.5" 
+                    : "gap-3 px-3 py-2"
+                } ${
                   activeTab === tab.key
                     ? "bg-[var(--color-bg-elevated)] text-[var(--text-primary)]"
                     : "text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--text-primary)]"
                 }`}>
-                {tab.icon}{tab.label}
+                {tab.icon}
+                {!isSidebarCollapsed && <span>{tab.label}</span>}
               </button>
             ))}
           </nav>
-          <div className="p-3 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">本月自律评分</h3>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-trade-green">{overallComplianceRate.toFixed(1)}%</span>
-              <span className="text-xs text-[var(--text-muted)]">执行率</span>
-            </div>
-            <div className="mt-1.5 w-full bg-[var(--color-bg-elevated)] h-1 rounded-full overflow-hidden">
-              <div className="bg-trade-green h-full rounded-full transition-all duration-500" style={{ width: `${overallComplianceRate}%` }}></div>
-            </div>
-          </div>
+
+          <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            title={isSidebarCollapsed ? "展开侧边栏" : undefined}
+            className={`flex items-center rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--text-primary)] transition-all text-left ${
+              isSidebarCollapsed 
+                ? "justify-center p-2.5" 
+                : "gap-3 px-3 py-2"
+            }`}
+          >
+            {isSidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            {!isSidebarCollapsed && <span>收起侧边栏</span>}
+          </button>
         </aside>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 ml-64">
+        <main className={`flex-1 overflow-y-auto p-4 md:p-6 transition-all duration-300 ${
+          isSidebarCollapsed ? "ml-16" : "ml-64"
+        }`}>
           {activeTab === "dashboard" && (
             <Dashboard
               netProfit={netProfit} winRate={winRate} profitFactor={profitFactor}
