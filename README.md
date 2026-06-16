@@ -2,6 +2,34 @@
 
 个人交易复盘与自律分析系统。记录交易细节、多维度行为分析、发现交易模式。本系统为**纯前端单页应用 (SPA)**，所有数据与截图完全存储在用户浏览器的本地 **IndexedDB** 数据库中，不依赖任何后端服务器，保护交易数据私密安全。
 
+## 📸 系统截图
+
+<table align="center" width="100%">
+  <thead>
+    <tr>
+      <th colspan="2">系统核心界面概览</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td colspan="2" align="center">
+        <p><b>首页看板 (多维度 KPI 与资金曲线)</b></p>
+        <img src="./screenshots/1.首页看板.jpg" alt="首页看板" width="100%" />
+      </td>
+    </tr>
+    <tr valign="top">
+      <td width="50%" align="center">
+        <p><b>交易日志 (图文记录与内联编辑)</b></p>
+        <img src="./screenshots/2.交易日志.jpg" alt="交易日志" width="100%" />
+      </td>
+      <td width="50%" align="center">
+        <p><b>行为分析 (胜率与错误类型多维统计)</b></p>
+        <img src="./screenshots/2.行为分析.jpg" alt="行为分析" width="100%" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
 ## 🌟 功能
 
 - **仪表盘** — 总盈亏、胜率、盈利因子等 KPI 概览，资金曲线走势。
