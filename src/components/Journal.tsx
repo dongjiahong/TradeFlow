@@ -60,6 +60,7 @@ interface JournalProps {
   setExpandedScreenshotId: React.Dispatch<React.SetStateAction<string | null>>;
   calculateLivePnl: () => number;
   calculateLiveRR: () => number | null;
+  calculateLiveActualRR: () => number | null;
   handleSaveTrade: () => Promise<void>;
   handleDeleteTrade: (id: string) => Promise<void>;
   handleUploadScreenshots: (tradeId: string, files: FileList | null) => Promise<void>;
@@ -118,7 +119,7 @@ export default function Journal({
   dateFilter, setDateFilter, customStartDate, setCustomStartDate, customEndDate, setCustomEndDate,
   pendingScreenshots, isUploadingScreenshot,
   lightboxImage, setLightboxImage, expandedScreenshotId, setExpandedScreenshotId,
-  calculateLivePnl, calculateLiveRR,
+  calculateLivePnl, calculateLiveRR, calculateLiveActualRR,
   handleSaveTrade, handleDeleteTrade, handleUploadScreenshots, handleDeleteScreenshot,
   handlePendingFileSelect, removePendingScreenshot, clearPendingScreenshots
 }: JournalProps) {
@@ -545,11 +546,24 @@ export default function Journal({
                 {/* Live RR Display */}
                 {(() => {
                   const liveRR = calculateLiveRR();
-                  if (!liveRR) return null;
+                  const liveActualRR = calculateLiveActualRR();
+                  if (!liveRR && !liveActualRR) return null;
                   return (
-                    <div className="flex flex-col gap-1 justify-end pb-1.5">
-                      <span className="text-xs font-semibold text-[var(--text-secondary)]">实时盈亏比 (RR)</span>
-                      <span className="text-sm font-bold text-trade-green font-mono">{liveRR}</span>
+                    <div className="flex gap-4 justify-end pb-1.5 col-span-2 sm:col-span-1">
+                      {liveRR && (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-semibold text-[var(--text-secondary)]">计划盈亏比 (Planned R)</span>
+                          <span className="text-sm font-bold text-trade-green font-mono">{liveRR}R</span>
+                        </div>
+                      )}
+                      {liveActualRR !== null && !isNaN(liveActualRR) && (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-semibold text-[var(--text-secondary)]">实际盈亏比 (Actual R)</span>
+                          <span className={`text-sm font-bold font-mono ${liveActualRR >= 0 ? "text-trade-green" : "text-trade-red"}`}>
+                            {liveActualRR > 0 ? `+${liveActualRR}` : liveActualRR}R
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}

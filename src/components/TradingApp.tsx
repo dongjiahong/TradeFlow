@@ -334,6 +334,17 @@ export default function TradingApp({
     return parseFloat((reward / risk).toFixed(2));
   };
 
+  const calculateLiveActualRR = (): number | null => {
+    const entry = Number(tradeForm.entryPrice) || 0;
+    const sl = Number(tradeForm.stopLoss) || 0;
+    const size = Number(tradeForm.positionSize) || 0;
+    if (!sl || !entry || !size || size <= 0) return null;
+    const riskAmount = Math.abs(entry - sl) * size;
+    if (riskAmount <= 0) return null;
+    const pnl = calculateLivePnl();
+    return parseFloat((pnl / riskAmount).toFixed(2));
+  };
+
   const handlePendingFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -898,7 +909,7 @@ export default function TradingApp({
               isUploadingScreenshot={isUploadingScreenshot}
               lightboxImage={lightboxImage} setLightboxImage={handleSetLightbox}
               expandedScreenshotId={expandedScreenshotId} setExpandedScreenshotId={setExpandedScreenshotId}
-              calculateLivePnl={calculateLivePnl} calculateLiveRR={calculateLiveRR}
+              calculateLivePnl={calculateLivePnl} calculateLiveRR={calculateLiveRR} calculateLiveActualRR={calculateLiveActualRR}
               handleSaveTrade={handleSaveTrade}
               handleDeleteTrade={handleDeleteTrade}
               handleUploadScreenshots={handleUploadScreenshots}

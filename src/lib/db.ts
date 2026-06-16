@@ -107,6 +107,25 @@ class TradingLogDatabase extends Dexie {
       screenshots: "id, tradeId",
       tradingRules: "++id, createdAt"
     });
+    this.version(5).stores({
+      trades: "id, date",
+      setupOptions: "++id, &name",
+      errorOptions: "++id, &name",
+      exitOptions: "++id, &name",
+      symbolOptions: "++id, &name",
+      processOptions: "++id, &name",
+      screenshots: "id, tradeId",
+      tradingRules: "++id, createdAt"
+    }).upgrade(async tx => {
+      await tx.table("trades").toCollection().modify(trade => {
+        trade.rr = calculateRR(
+          trade.entryPrice,
+          trade.stopLoss,
+          trade.positionSize,
+          trade.pnl
+        );
+      });
+    });
   }
 }
 
@@ -227,24 +246,17 @@ const getTradeStatus = (pnl: number): "win" | "lose" | "BE" => {
 };
 
 const calculateRR = (
-  direction: string,
   entryPrice: number,
   stopLoss: number | null | undefined,
-  takeProfit: number | null | undefined
+  positionSize: number,
+  pnl: number
 ): number | null => {
-  if (!stopLoss || !takeProfit || !entryPrice) return null;
+  if (!stopLoss || !entryPrice || !positionSize || positionSize <= 0) return null;
 
-  let risk: number, reward: number;
-  if (direction === "Long") {
-    risk = entryPrice - stopLoss;
-    reward = takeProfit - entryPrice;
-  } else {
-    risk = stopLoss - entryPrice;
-    reward = entryPrice - takeProfit;
-  }
+  const riskAmount = Math.abs(entryPrice - stopLoss) * positionSize;
+  if (riskAmount <= 0) return null;
 
-  if (risk <= 0 || reward <= 0) return null;
-  return parseFloat((reward / risk).toFixed(2));
+  return parseFloat((pnl / riskAmount).toFixed(2));
 };
 
 // Helper: Convert JS Date or ISO String to Excel Date time string YYYY-MM-DD HH:mm:ss
@@ -321,7 +333,7 @@ export async function createTrade(data: {
       data.exitPrice2
     );
     const status = getTradeStatus(pnl);
-    const rr = calculateRR(data.direction, data.entryPrice, data.stopLoss, data.takeProfit);
+    const rr = calculateRR(data.entryPrice, data.stopLoss, data.positionSize, pnl);
     const id = self.crypto.randomUUID();
 
     const trade: Trade = {
@@ -387,7 +399,7 @@ export async function updateTrade(
       data.exitPrice2
     );
     const status = getTradeStatus(pnl);
-    const rr = calculateRR(data.direction, data.entryPrice, data.stopLoss, data.takeProfit);
+    const rr = calculateRR(data.entryPrice, data.stopLoss, data.positionSize, pnl);
 
     const updateData: Partial<Trade> = {
       date: data.date,
@@ -717,9 +729,12 @@ export async function importExcelData(base64Data: string) {
         status = getTradeStatus(pnl);
       }
 
-      let rr = getVal(row, ["RR", "盈亏比"]) !== null ? parseFloat(getVal(row, ["RR", "盈亏比"])) : null;
-      if (rr === null || isNaN(rr)) {
-        rr = calculateRR(direction, entryPrice, stopLoss, takeProfit);
+      let rr = calculateRR(entryPrice, stopLoss, positionSize, pnl);
+      if (rr === null) {
+        const excelRr = getVal(row, ["RR", "盈亏比"]) !== null ? parseFloat(getVal(row, ["RR", "盈亏比"])) : null;
+        if (excelRr !== null && !isNaN(excelRr)) {
+          rr = excelRr;
+        }
       }
 
       if (setup && setup !== "其他") {
