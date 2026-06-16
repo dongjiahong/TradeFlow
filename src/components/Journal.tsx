@@ -69,6 +69,44 @@ interface JournalProps {
   clearPendingScreenshots: () => void;
 }
 
+// Helper: Ensure the date string is in YYYY-MM-DDTHH:mm:ss format for datetime-local input
+const ensureLocalDatetime = (dateStr: string | Date | undefined | null): string => {
+  if (!dateStr) return "";
+  if (dateStr instanceof Date) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${dateStr.getFullYear()}-${pad(dateStr.getMonth() + 1)}-${pad(dateStr.getDate())}T${pad(dateStr.getHours())}:${pad(dateStr.getMinutes())}:${pad(dateStr.getSeconds())}`;
+  }
+  const str = String(dateStr);
+  if (str.includes("T")) {
+    const [datePart, timePart] = str.split("T");
+    const timePieces = timePart.split("Z")[0].split(":");
+    const h = (timePieces[0] || "00").padStart(2, "0");
+    const m = (timePieces[1] || "00").padStart(2, "0");
+    const s = (timePieces[2] || "00").substring(0, 2).padStart(2, "0");
+    return `${datePart}T${h}:${m}:${s}`;
+  }
+  return `${str}T00:00:00`;
+};
+
+// Helper: Format date for display in the table (YYYY-MM-DD HH:mm:ss)
+const formatDisplayDate = (dateStr: string | Date | undefined | null): string => {
+  if (!dateStr) return "-";
+  if (dateStr instanceof Date) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${dateStr.getFullYear()}-${pad(dateStr.getMonth() + 1)}-${pad(dateStr.getDate())} ${pad(dateStr.getHours())}:${pad(dateStr.getMinutes())}:${pad(dateStr.getSeconds())}`;
+  }
+  const str = String(dateStr);
+  const cleaned = str.replace("T", " ");
+  if (cleaned.length === 10) return cleaned + " 00:00:00";
+  if (cleaned.length === 16) return cleaned + ":00";
+  const plusIdx = cleaned.indexOf("+");
+  if (plusIdx !== -1) return cleaned.substring(0, plusIdx);
+  const zIdx = cleaned.indexOf("Z");
+  if (zIdx !== -1) return cleaned.substring(0, zIdx);
+  return cleaned;
+};
+
+
 export default function Journal({
   trades, filteredTrades, setups, errors, exits, symbols, processes,
   inlineEditingId, setInlineEditingId, tradeForm, setTradeForm,
@@ -104,7 +142,7 @@ export default function Journal({
   const handleRowClick = (trade: Trade) => {
     setInlineEditingId(trade.id);
     setTradeForm({
-      date: new Date(trade.date).toISOString().split("T")[0],
+      date: ensureLocalDatetime(trade.date),
       remarks: trade.remarks || "",
       setup: trade.setup,
       type: trade.type,
@@ -312,7 +350,7 @@ export default function Journal({
                     className={`cursor-pointer transition-all duration-150 border-b border-[var(--color-border-subtle)] ${rowBgClass} ${activeClass}`}
                   >
                     <td className="px-3 py-2 font-mono text-xs whitespace-nowrap tabular-nums text-[var(--text-secondary)]">
-                      {new Date(trade.date).toISOString().split("T")[0]}
+                      {formatDisplayDate(trade.date)}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className="px-2 py-0.5 rounded font-semibold bg-[var(--color-bg-elevated)] text-[var(--text-secondary)] text-[10px]">
@@ -408,12 +446,11 @@ export default function Journal({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-[var(--text-secondary)]">日期 *</label>
-                <input type="date" required value={tradeForm.date.substring(0, 10)}
+                <input type="datetime-local" step="1" required value={ensureLocalDatetime(tradeForm.date)}
                   onChange={(e) => {
-                    const oldTime = tradeForm.date.includes("T") ? tradeForm.date.split("T")[1] : "12:00:00";
-                    setTradeForm(prev => ({ ...prev, date: `${e.target.value}T${oldTime}` }));
+                    setTradeForm(prev => ({ ...prev, date: e.target.value }));
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none" />
+                  className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none w-full" />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-[var(--text-secondary)]">品类 *</label>

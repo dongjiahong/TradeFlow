@@ -236,15 +236,31 @@ const calculateRR = (
   return parseFloat((reward / risk).toFixed(2));
 };
 
-// Helper: Convert JS Date to Excel Date string YYYY-MM-DD
+// Helper: Convert JS Date or ISO String to Excel Date time string YYYY-MM-DD HH:mm:ss
 function formatDate(dateVal: Date | string): string {
+  if (typeof dateVal === "string") {
+    const cleaned = dateVal.replace("T", " ");
+    if (cleaned.length === 10) return cleaned + " 00:00:00";
+    if (cleaned.length === 16) return cleaned + ":00";
+    if (cleaned.length >= 19) {
+      const plusIdx = cleaned.indexOf("+");
+      if (plusIdx !== -1) return cleaned.substring(0, plusIdx);
+      const zIdx = cleaned.indexOf("Z");
+      if (zIdx !== -1) return cleaned.substring(0, zIdx);
+      return cleaned.substring(0, 19);
+    }
+  }
   const date = typeof dateVal === "string" ? new Date(dateVal) : dateVal;
   if (isNaN(date.getTime())) return "";
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  const ss = String(date.getSeconds()).padStart(2, "0");
+  return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
 }
+
 
 // --- TRADES ACTIONS ---
 export async function getTrades(): Promise<Trade[]> {

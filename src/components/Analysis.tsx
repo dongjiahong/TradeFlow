@@ -26,7 +26,7 @@ export default function Analysis({
 }: AnalysisProps) {
   const filtered = trades.filter(t => {
     if (!dateRange.start && !dateRange.end) return true;
-    const d = new Date(t.date).toISOString().split("T")[0];
+    const d = String(t.date).split("T")[0];
     return d >= dateRange.start && d <= dateRange.end;
   });
 

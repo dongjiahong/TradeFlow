@@ -123,7 +123,7 @@ export default function AiReviewModal({ period, trades, rules, onClose }: AiRevi
       // 提取核心数据，不传输多余的本地图片二进制
       const serializedTrades = periodTrades.map((t, idx) => ({
         index: idx + 1,
-        date: String(t.date).split("T")[0],
+        date: String(t.date).replace("T", " "),
         symbol: t.symbol,
         direction: t.direction,
         setup: t.setup,
@@ -443,7 +443,7 @@ ${dontRulesStr ? "- " + dontRulesStr : "暂无"}
                       <div key={trade.id} className="p-4 rounded-lg flex flex-col gap-3" style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
                         <div className="flex items-center justify-between flex-wrap gap-2 pb-2" style={{ borderBottom: "1px solid #e5e7eb" }}>
                           <span className="text-xs font-bold" style={{ color: "#1f2937" }}>
-                            #{idx + 1} | {String(trade.date).split("T")[0]} | {trade.symbol} ({trade.direction})
+                            #{idx + 1} | {String(trade.date).replace("T", " ")} | {trade.symbol} ({trade.direction})
                           </span>
                           <span className="text-xs font-bold px-2 py-0.5 rounded" style={{
                             backgroundColor: trade.pnl > 0 ? "#dcfce7" : trade.pnl < 0 ? "#fee2e2" : "#f3f4f6",
