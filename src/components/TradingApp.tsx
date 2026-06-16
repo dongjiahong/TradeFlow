@@ -555,23 +555,34 @@ export default function TradingApp({
     return `${y}-${m}-${day}`;
   };
 
+  const getTradeDateOnly = (t: Trade) => {
+    if (t.date instanceof Date) {
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${t.date.getFullYear()}-${pad(t.date.getMonth() + 1)}-${pad(t.date.getDate())}`;
+    }
+    return String(t.date).split("T")[0];
+  };
+
   let dateFilteredTrades = [...trades];
   if (dateFilter === "today") {
     const todayStr = getLocalDateStr();
-    dateFilteredTrades = trades.filter(t => t.date === todayStr);
+    dateFilteredTrades = trades.filter(t => getTradeDateOnly(t) === todayStr);
   } else if (dateFilter === "week") {
     const today = new Date();
     const day = today.getDay();
     const diff = today.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(today.setDate(diff));
     const mondayStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
-    dateFilteredTrades = trades.filter(t => t.date >= mondayStr);
+    dateFilteredTrades = trades.filter(t => getTradeDateOnly(t) >= mondayStr);
   } else if (dateFilter === "month") {
     const today = new Date();
     const firstDayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-    dateFilteredTrades = trades.filter(t => t.date >= firstDayStr);
+    dateFilteredTrades = trades.filter(t => getTradeDateOnly(t) >= firstDayStr);
   } else if (dateFilter === "custom") {
-    dateFilteredTrades = trades.filter(t => (!customStartDate || t.date >= customStartDate) && (!customEndDate || t.date <= customEndDate));
+    dateFilteredTrades = trades.filter(t => {
+      const tDateOnly = getTradeDateOnly(t);
+      return (!customStartDate || tDateOnly >= customStartDate) && (!customEndDate || tDateOnly <= customEndDate);
+    });
   } else if (dateFilter === "30") {
     dateFilteredTrades = trades.slice(-30);
   }
