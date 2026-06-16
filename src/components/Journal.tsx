@@ -55,7 +55,7 @@ interface JournalProps {
   pendingScreenshots: { file: File; preview: string }[];
   isUploadingScreenshot: boolean;
   lightboxImage: string | null;
-  setLightboxImage: React.Dispatch<React.SetStateAction<string | null>>;
+  setLightboxImage: (id: string | null, note?: string | null) => void;
   expandedScreenshotId: string | null;
   setExpandedScreenshotId: React.Dispatch<React.SetStateAction<string | null>>;
   calculateLivePnl: () => number;
@@ -172,9 +172,8 @@ export default function Journal({
         <div className="flex flex-wrap gap-2">
           {trade.screenshots.map(pic => (
             <div key={pic.id} className="relative group rounded-lg overflow-hidden border border-[var(--color-border-subtle)] w-[100px]">
-              <ScreenshotImage screenshotId={pic.id} alt={pic.filename}
-                onClick={() => setLightboxImage(pic.id)}
-                className="screenshot-thumb w-full cursor-pointer" />
+              <ScreenshotImage screenshotId={pic.id} alt="Screenshot" className="w-full h-full object-cover cursor-zoom-in"
+                onClick={() => setLightboxImage(pic.id, trade.remarks || `${trade.direction === "long" ? "做多" : "做空"} ${trade.symbol} | 盈亏: ${trade.pnl} 元`)} />
               <button onClick={() => handleDeleteScreenshot(trade.id, pic.id)}
                 className="absolute top-1 right-1 p-1 rounded-full bg-trade-red text-white opacity-0 group-hover:opacity-100 transition-opacity" title="删除">
                 <X size={10} />

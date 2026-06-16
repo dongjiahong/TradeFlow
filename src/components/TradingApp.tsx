@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
   TrendingUp, BookOpen, Settings, PieChart,
   Moon, Sun, BarChart3, ScrollText,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, BookMarked, X
 } from "lucide-react";
 import {
   getTrades,
@@ -29,13 +29,12 @@ import {
   deleteTradesByDateRange,
   getTradingRules,
   addTradingRule,
-  deleteTradingRule
+  deleteTradingRule,
 } from "../lib/db";
 import ScreenshotImage from "./ScreenshotImage";
 import Dashboard from "./Dashboard";
 import Journal from "./Journal";
 import Analysis from "./Analysis";
-import Rules from "./Rules";
 import AiReviewModal from "./AiReviewModal";
 import SettingsTab from "./Settings";
 import type { Trade, OptionItem, TradingRule } from "./types";
@@ -109,6 +108,12 @@ export default function TradingApp({
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [expandedScreenshotId, setExpandedScreenshotId] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightboxNote, setLightboxNote] = useState<string | null>(null);
+
+  const handleSetLightbox = (id: string | null, note?: string | null) => {
+    setLightboxImage(id);
+    setLightboxNote(note || null);
+  };
   const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false);
   const [pendingScreenshots, setPendingScreenshots] = useState<{ file: File; preview: string }[]>([]);
 
@@ -146,9 +151,9 @@ export default function TradingApp({
     return localOptions;
   };
 
-  const handleAddRule = async (content: string, type: "do" | "dont") => {
+  const handleAddRule = async (content: string) => {
     try {
-      const newRule = await addTradingRule(content, type);
+      const newRule = await addTradingRule(content);
       setRules(prev => [...prev, newRule]);
     } catch (err: any) {
       alert("添加原则失败: " + err.message);
@@ -163,6 +168,8 @@ export default function TradingApp({
       alert("删除原则失败: " + err.message);
     }
   };
+
+
 
   useEffect(() => {
     setMounted(true);
@@ -613,7 +620,6 @@ export default function TradingApp({
     { key: "dashboard" as const, icon: <PieChart size={18} />, label: "仪表盘" },
     { key: "journal" as const, icon: <BookOpen size={18} />, label: "交易日志" },
     { key: "analysis" as const, icon: <BarChart3 size={18} />, label: "行为分析" },
-    { key: "rules" as const, icon: <ScrollText size={18} />, label: "做单原则" },
     { key: "settings" as const, icon: <Settings size={18} />, label: "设置" }
   ];
 
@@ -622,13 +628,18 @@ export default function TradingApp({
 
       {/* LIGHTBOX OVERLAY */}
       {lightboxImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => setLightboxImage(null)}>
-          <div className="relative max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            <ScreenshotImage screenshotId={lightboxImage} alt="Preview" className="max-w-full max-h-[90vh] object-contain rounded-lg" />
-            <button onClick={() => setLightboxImage(null)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors">
-              <Settings size={20} />
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-fade-in"
+          onClick={() => { setLightboxImage(null); setLightboxNote(null); }}>
+          <div className="relative max-w-[90vw] max-h-[85vh] flex flex-col items-center gap-3 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <ScreenshotImage screenshotId={lightboxImage} alt="Preview" className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl border border-white/10" />
+            {lightboxNote && (
+              <div className="px-4 py-2 rounded-xl bg-black/75 backdrop-blur-md text-white text-xs font-semibold max-w-xl text-center leading-normal border border-white/10 shadow-lg">
+                {lightboxNote}
+              </div>
+            )}
+            <button onClick={() => { setLightboxImage(null); setLightboxNote(null); }}
+              className="absolute -top-12 right-0 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/10">
+              <X size={18} />
             </button>
           </div>
         </div>
@@ -656,7 +667,7 @@ export default function TradingApp({
             {showRulesDropdown && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowRulesDropdown(false)} />
-                <div className="absolute left-0 mt-2 w-[480px] sm:w-[560px] max-h-[80vh] overflow-y-auto z-50 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] shadow-2xl p-4 flex flex-col gap-4 animate-fade-in text-left">
+                <div className="absolute left-0 mt-2 w-80 max-h-[80vh] overflow-y-auto z-50 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] shadow-2xl p-4 flex flex-col gap-4 animate-fade-in text-left">
                   <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2">
                     <h3 className="font-bold text-xs text-[var(--color-text-primary)] flex items-center gap-1.5">
                       <ScrollText size={14} className="text-trade-green animate-pulse" />交易做单原则
@@ -665,44 +676,22 @@ export default function TradingApp({
                       共 {rules.length} 条
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 divide-x divide-[var(--color-border-subtle)]">
-                    <div className="pr-2">
-                      <h4 className="text-xs font-bold text-trade-green flex items-center gap-1.5 mb-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-trade-green" />应做交易 (DO)
-                      </h4>
-                      {rules.filter(r => r.type === "do").length === 0 ? (
-                        <p className="text-xs text-[var(--text-muted)] italic pl-3">暂未设定应做原则</p>
-                      ) : (
-                        <ul className="flex flex-col gap-1.5 pl-3">
-                          {rules.filter(r => r.type === "do").map(r => (
-                            <li key={r.id} className="text-xs text-[var(--color-text-primary)] flex items-start gap-1.5 leading-relaxed">
-                              <span className="text-trade-green shrink-0 mt-1">•</span>
-                              <span>{r.content}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                    <div className="pl-4">
-                      <h4 className="text-xs font-bold text-trade-red flex items-center gap-1.5 mb-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-trade-red" />忌做交易 (DON'T)
-                      </h4>
-                      {rules.filter(r => r.type === "dont").length === 0 ? (
-                        <p className="text-xs text-[var(--text-muted)] italic pl-3">暂未设定忌做原则</p>
-                      ) : (
-                        <ul className="flex flex-col gap-1.5 pl-3">
-                          {rules.filter(r => r.type === "dont").map(r => (
-                            <li key={r.id} className="text-xs text-[var(--color-text-primary)] flex items-start gap-1.5 leading-relaxed">
-                              <span className="text-trade-red shrink-0 mt-1">•</span>
-                              <span>{r.content}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
+                  <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
+                    {rules.length === 0 ? (
+                      <p className="text-xs text-[var(--text-muted)] italic py-4 text-center">暂未设定做单原则</p>
+                    ) : (
+                      <ul className="flex flex-col gap-2 pl-1">
+                        {rules.map(r => (
+                          <li key={r.id} className="text-xs text-[var(--color-text-primary)] flex items-start gap-2 leading-relaxed">
+                            <span className="text-trade-green shrink-0 mt-1">•</span>
+                            <span>{r.content}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                   <div className="border-t border-[var(--color-border-subtle)] pt-2.5 flex justify-end">
-                    <button onClick={() => { setActiveTab("rules"); setShowRulesDropdown(false); }}
+                    <button onClick={() => { setActiveTab("settings"); setShowRulesDropdown(false); }}
                       className="text-xs text-trade-green font-semibold hover:underline cursor-pointer">
                       管理原则 &rarr;
                     </button>
@@ -907,7 +896,7 @@ export default function TradingApp({
               customEndDate={customEndDate} setCustomEndDate={setCustomEndDate}
               pendingScreenshots={pendingScreenshots}
               isUploadingScreenshot={isUploadingScreenshot}
-              lightboxImage={lightboxImage} setLightboxImage={setLightboxImage}
+              lightboxImage={lightboxImage} setLightboxImage={handleSetLightbox}
               expandedScreenshotId={expandedScreenshotId} setExpandedScreenshotId={setExpandedScreenshotId}
               calculateLivePnl={calculateLivePnl} calculateLiveRR={calculateLiveRR}
               handleSaveTrade={handleSaveTrade}
@@ -937,10 +926,6 @@ export default function TradingApp({
               onAddSymbol={handleAddSymbol} onDeleteSymbol={handleDeleteSymbol}
               onAddProcess={handleAddProcess} onDeleteProcess={handleDeleteProcess}
               onDeleteTradesByDateRange={handleDeleteTradesByDateRange}
-            />
-          )}
-          {activeTab === "rules" && (
-            <Rules
               rules={rules}
               onAddRule={handleAddRule}
               onDeleteRule={handleDeleteRule}

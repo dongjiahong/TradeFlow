@@ -142,22 +142,18 @@ export default function AiReviewModal({ period, trades, rules, onClose }: AiRevi
         notes: t.notes
       }));
 
-      const doRulesStr = rules.filter(r => r.type === "do").map(r => r.content).join("\n- ");
-      const dontRulesStr = rules.filter(r => r.type === "dont").map(r => r.content).join("\n- ");
+      const rulesStr = rules.map(r => r.content).join("\n- ");
 
       const systemPrompt = `你是一个资深的专业交易教练。请根据下面提供的交易日志数据（包含总体盈亏、各笔交易的明细及交易员的自我复盘），以及交易员自己定下的“做单原则”，撰写一份专业的交易复盘总结报告。
 
 做单原则包括：
-- 应做交易原则 (DO):
-${doRulesStr ? "- " + doRulesStr : "暂无"}
-- 忌做交易原则 (DON'T):
-${dontRulesStr ? "- " + dontRulesStr : "暂无"}
+${rulesStr ? "- " + rulesStr : "暂无"}
 
 重要审查守则：
 数据中的 \`remarks\`（备注）和 \`notes\`（自我复盘）是交易员本人撰写的，可能存在主观合理化、心理偏见或对自己违规行为的掩饰。作为教练，你必须保持高度的客观和警惕，切勿将其当作无可争辩的事实。你要交叉比对其实际交易参数（如环境、入场/离场理由、类型、过程、盈亏状况、离场错误等）与做单原则，严格审视其描述是否真实合理。特别是要结合当时的「市场环境」（突破/窄通道/宽通道/震荡区间）来交叉审视交易员的入场理由与交易类型是否合理（例如：在窄通道内逆势操作，或在震荡区间中部追突破等行为是否符合纪律）。如果发现交易员的表述存在狡辩、避重就轻或与数据矛盾，请予以指出并揭示其纪律盲点。
 
 报告格式要求（请严格使用清晰的 Markdown 格式输出，内容不要超过 1500 字）：
-1. 整体交易状况总结：分析整体表现、胜率、盈亏比、主要错误归因。特别是核对交易员在整体上是否遵守了上面列出的“应做”与“忌做”做单原则，并给出系统性的纪律改进建议。
+1. 整体交易状况总结：分析整体表现、胜率、盈亏比、主要错误归因。特别是核对交易员在整体上是否遵守了上面列出的“做单原则”，并给出系统性的纪律改进建议。
 2. 逐笔交易深度点评：对交易日志中的每一笔交易（交易1、交易2等）进行简短有力的点评，重点指出该笔交易是否遵守了做单原则（结合其 remarks 备注和 notes 复盘，指明具体遵循或违背了哪一条原则），肯定好的纪律，警告违规操作。`;
 
       const userPrompt = `这里是本时段【${periodLabel}】的交易数据：\n${JSON.stringify(serializedTrades, null, 2)}`;

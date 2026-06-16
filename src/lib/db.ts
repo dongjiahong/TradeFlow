@@ -43,9 +43,9 @@ export interface ScreenshotRecord {
 export interface TradingRule {
   id?: number;
   content: string;
-  type: "do" | "dont";
   createdAt: number;
 }
+
 
 // --- DATABASE CLASS ---
 class TradingLogDatabase extends Dexie {
@@ -97,10 +97,21 @@ class TradingLogDatabase extends Dexie {
       ];
       await tx.table("processOptions").bulkAdd(defaultProcesses.map(name => ({ name })));
     });
+    this.version(4).stores({
+      trades: "id, date",
+      setupOptions: "++id, &name",
+      errorOptions: "++id, &name",
+      exitOptions: "++id, &name",
+      symbolOptions: "++id, &name",
+      processOptions: "++id, &name",
+      screenshots: "id, tradeId",
+      tradingRules: "++id, createdAt"
+    });
   }
 }
 
 export const db = new TradingLogDatabase();
+
 
 // --- INITIAL SEED DATA ---
 const defaultSetups = [
@@ -1007,10 +1018,9 @@ export async function getTradingRules(): Promise<TradingRule[]> {
   }
 }
 
-export async function addTradingRule(content: string, type: "do" | "dont"): Promise<TradingRule> {
+export async function addTradingRule(content: string): Promise<TradingRule> {
   const rule: TradingRule = {
     content,
-    type,
     createdAt: Date.now()
   };
   const id = await db.tradingRules.add(rule);
@@ -1020,4 +1030,6 @@ export async function addTradingRule(content: string, type: "do" | "dont"): Prom
 export async function deleteTradingRule(id: number): Promise<void> {
   await db.tradingRules.delete(id);
 }
+
+
 
