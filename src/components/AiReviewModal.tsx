@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, ScrollText, Download, RefreshCw, AlertTriangle, Image as ImageIcon } from "lucide-react";
+import { X, ScrollText, Download, RefreshCw, AlertTriangle, Image as ImageIcon, ArrowLeft, Sparkles, FileText } from "lucide-react";
 import { db } from "../lib/db";
 import ScreenshotImage from "./ScreenshotImage";
 import type { Trade, TradingRule } from "./types";
@@ -17,7 +17,8 @@ interface AiReviewModalProps {
 }
 
 export default function AiReviewModal({ period, trades, rules, onClose }: AiReviewModalProps) {
-  const [loading, setLoading] = useState(true);
+  const [reviewMode, setReviewMode] = useState<"ai" | "simple" | null>(null);
+  const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
   const [reportText, setReportText] = useState("");
@@ -77,7 +78,41 @@ export default function AiReviewModal({ period, trades, rules, onClose }: AiRevi
     all: "全部历史"
   }[period];
 
-  // 2. 模拟 loading 文字切换并在组件载入时请求 AI
+  // 计算统计指标
+  const winTrades = periodTrades.filter((t) => t.status === "win");
+  const loseTrades = periodTrades.filter((t) => t.status === "lose");
+  const totalPnl = periodTrades.reduce((acc, t) => acc + t.pnl, 0);
+  const totalCount = periodTrades.length;
+
+  const winRate = winTrades.length > 0 || loseTrades.length > 0
+    ? (winTrades.length / (winTrades.length + loseTrades.length || 1)) * 100 
+    : 0;
+
+  const totalWinsAmount = winTrades.reduce((acc, t) => acc + t.pnl, 0);
+  const totalLossesAmount = Math.abs(loseTrades.reduce((acc, t) => acc + t.pnl, 0));
+  const avgWin = winTrades.length > 0 ? totalWinsAmount / winTrades.length : 0;
+  const avgLoss = loseTrades.length > 0 ? totalLossesAmount / loseTrades.length : 0;
+  const rr = avgLoss > 0 ? avgWin / avgLoss : 0;
+  const profitFactor = totalLossesAmount > 0 ? totalWinsAmount / totalLossesAmount : totalWinsAmount > 0 ? 99.9 : 0;
+
+  const getDateRangeStr = () => {
+    if (periodTrades.length === 0) return "";
+    const dates = periodTrades.map(t => {
+      const d = t.date;
+      return d instanceof Date ? d : new Date(d);
+    }).filter(d => !isNaN(d.getTime()));
+    
+    if (dates.length === 0) return "";
+    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    
+    const formatDate = (d: Date) => {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    return `${formatDate(minDate)} 至 ${formatDate(maxDate)}`;
+  };
+
+  // 2. 模拟 loading 文字切换并在启用 AI 总结模式时请求 AI
   useEffect(() => {
     let stepTimer: NodeJS.Timeout;
     if (loading) {
@@ -97,6 +132,13 @@ export default function AiReviewModal({ period, trades, rules, onClose }: AiRevi
   }, []);
 
   useEffect(() => {
+    if (reviewMode !== "ai") return;
+
+    setLoading(true);
+    setLoadingStep(0);
+    setErrorMsg("");
+    setReportText("");
+
     let active = true;
     async function requestAiReport() {
       // 从 localStorage 中读取 AI 密钥配置
@@ -200,9 +242,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
 
     requestAiReport();
     return () => { active = false; };
-  }, [period]);
-
-
+  }, [period, reviewMode]);
 
   // 4. 调用 html2canvas + jsPDF 导出 PDF 
   const handleExportPdf = async () => {
@@ -241,7 +281,10 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
       }
 
       const todayStr = new Date().toISOString().split("T")[0];
-      pdf.save(`TradeFlow_AI_Review_${period}_${todayStr}.pdf`);
+      const filename = reviewMode === "ai"
+        ? `TradeFlow_AI智能诊断报告_${periodLabel}_${todayStr}.pdf`
+        : `TradeFlow_交易复盘清单_${periodLabel}_${todayStr}.pdf`;
+      pdf.save(filename);
     } catch (err) {
       console.error("Failed to generate PDF:", err);
       alert("生成 PDF 出错，请检查截图或重试。");
@@ -257,9 +300,23 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-6 py-4 bg-[var(--color-bg-canvas)]/30 shrink-0">
           <div className="flex items-center gap-2">
+            {reviewMode !== null && (
+              <button 
+                onClick={() => {
+                  setReviewMode(null);
+                  setErrorMsg("");
+                  setReportText("");
+                  setLoading(false);
+                }}
+                className="mr-2 p-1 rounded-lg hover:bg-[var(--color-bg-hover)] text-[var(--text-secondary)] transition-colors cursor-pointer"
+                title="返回选择"
+              >
+                <ArrowLeft size={16} />
+              </button>
+            )}
             <ScrollText className="text-trade-green" size={18} />
             <h3 className="text-sm font-bold text-[var(--text-primary)]">
-              {periodLabel}交易 AI 诊断点评报告
+              {periodLabel}交易{reviewMode === "ai" ? " AI 诊断点评" : reviewMode === "simple" ? " 复盘清单" : ""}报告
             </h3>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--color-bg-hover)] text-[var(--text-secondary)] transition-colors cursor-pointer">
@@ -268,9 +325,90 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
         </div>
 
         {/* Content Main Area */}
-        <div className={`flex-1 overflow-y-auto p-6 flex flex-col items-center ${loading || errorMsg ? "justify-center" : "justify-start"}`}>
+        <div className={`flex-1 overflow-y-auto p-6 flex flex-col items-center ${loading || errorMsg || reviewMode === null ? "justify-center" : "justify-start"}`}>
           
-          {loading && (
+          {reviewMode === null && (
+            <div className="max-w-2xl w-full flex flex-col items-center">
+              <div className="text-center mb-8">
+                <h4 className="text-base font-extrabold text-[var(--color-text-primary)] tracking-tight">
+                  选择复盘报告导出方式
+                </h4>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
+                  请选择适用于【{periodLabel}】时段（共 {periodTrades.length} 笔交易）的复盘生成方案
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                {/* Option 1: AI review */}
+                <div 
+                  onClick={() => {
+                    const apiKey = localStorage.getItem("tf_ai_api_key") || "";
+                    if (!apiKey) {
+                      setErrorMsg("未配置 AI 接口密钥。请关闭当前窗口，前往「设置」页面最下方，填写并保存您的 AI API Key 配置。");
+                    }
+                    setReviewMode("ai");
+                  }}
+                  className="group border border-[var(--color-border-standard)] hover:border-trade-green/50 bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] p-6 rounded-2xl flex flex-col gap-4 cursor-pointer transition-all duration-300 hover:shadow-xl relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-trade-green/5 rounded-full blur-2xl group-hover:bg-trade-green/10 transition-colors" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-trade-green/10 text-trade-green rounded-xl group-hover:scale-110 transition-transform">
+                      <Sparkles size={24} />
+                    </div>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-trade-green/10 text-trade-green font-mono uppercase tracking-wider scale-90">
+                      Recommended
+                    </span>
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-[var(--color-text-primary)] group-hover:text-trade-green transition-colors">
+                      AI 智能深度诊断报告
+                    </h5>
+                    <p className="text-xxs text-[var(--color-text-secondary)] mt-2 leading-relaxed">
+                      AI 导师深度分析胜率与做单纪律，核对各项红线原则，结合当时市场环境，进行逐笔客观点评，警告违规操作并寻找纪律盲点。
+                    </p>
+                  </div>
+                  <div className="mt-auto pt-4 border-t border-[var(--color-border-subtle)] text-[10px] text-[var(--color-text-muted)] flex justify-between items-center">
+                    <span>需配置 AI 密钥</span>
+                    <span className="font-semibold text-trade-green group-hover:translate-x-1 transition-transform">
+                      生成约需 10-20 秒 &rarr;
+                    </span>
+                  </div>
+                </div>
+
+                {/* Option 2: Simple review */}
+                <div 
+                  onClick={() => setReviewMode("simple")}
+                  className="group border border-[var(--color-border-standard)] hover:border-blue-500/50 bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] p-6 rounded-2xl flex flex-col gap-4 cursor-pointer transition-all duration-300 hover:shadow-xl relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl group-hover:scale-110 transition-transform">
+                      <FileText size={24} />
+                    </div>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 font-mono uppercase tracking-wider scale-90">
+                      Instant
+                    </span>
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-[var(--color-text-primary)] group-hover:text-blue-500 transition-colors">
+                      纯交易清单与截图复盘
+                    </h5>
+                    <p className="text-xxs text-[var(--color-text-secondary)] mt-2 leading-relaxed">
+                      快速生成本时段的精美交易报告，包含详细交易数据看板、预设做单纪律原则、每笔订单的详细参数以及完整的做单复盘截图。
+                    </p>
+                  </div>
+                  <div className="mt-auto pt-4 border-t border-[var(--color-border-subtle)] text-[10px] text-[var(--color-text-muted)] flex justify-between items-center">
+                    <span>无需 API 密钥与网络</span>
+                    <span className="font-semibold text-blue-500 group-hover:translate-x-1 transition-transform">
+                      即时生成 &rarr;
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {reviewMode !== null && loading && (
             <div className="flex flex-col items-center justify-center gap-4 py-16 animate-pulse">
               <RefreshCw className="animate-spin text-trade-green" size={32} />
               <div className="flex flex-col items-center gap-1.5">
@@ -284,7 +422,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
             </div>
           )}
 
-          {errorMsg && (
+          {reviewMode !== null && errorMsg && (
             <div className="flex flex-col items-center justify-center gap-3 py-16 max-w-md text-center">
               <div className="p-3 rounded-full bg-[var(--trade-red-dim)] text-trade-red">
                 <AlertTriangle size={24} />
@@ -293,13 +431,22 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
               <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 {errorMsg}
               </p>
-              <button onClick={onClose} className="mt-2 px-4 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--text-secondary)] text-xs font-bold rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors cursor-pointer">
-                关闭返回
-              </button>
+              <div className="flex gap-3 mt-2">
+                <button onClick={() => {
+                  setReviewMode(null);
+                  setErrorMsg("");
+                  setReportText("");
+                }} className="px-4 py-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--text-secondary)] text-xs font-bold rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors cursor-pointer">
+                  返回重新选择
+                </button>
+                <button onClick={onClose} className="px-4 py-1.5 bg-trade-red text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors cursor-pointer">
+                  关闭返回
+                </button>
+              </div>
             </div>
           )}
 
-          {!loading && !errorMsg && (
+          {reviewMode !== null && !loading && !errorMsg && (
             <div className="w-full flex flex-col gap-6 items-center">
               
               {/* PDF EXPORT TARGET CONTAINER (Needs custom white background and padding for clean canvas print) */}
@@ -307,22 +454,102 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                 {/* PDF Header Section */}
                 <div className="flex items-center justify-between pb-3" style={{ borderBottom: "2px solid #16a34a" }}>
                   <div className="flex flex-col">
-                    <h2 className="text-lg font-bold tracking-wide uppercase" style={{ color: "#111827" }}>TradeFlow Pro AI 诊断复盘报告</h2>
-                    <span className="text-[10px] font-medium mt-0.5" style={{ color: "#6b7280" }}>诊断时段：{periodLabel} ({getLocalDateStr()})</span>
+                    <h2 className="text-lg font-bold tracking-wide uppercase" style={{ color: "#111827", margin: 0 }}>
+                      {reviewMode === "ai" ? "TradeFlow Pro AI 诊断复盘报告" : "TradeFlow Pro 交易复盘清单报告"}
+                    </h2>
+                    <span className="text-[10px] font-medium mt-0.5" style={{ color: "#6b7280" }}>
+                      诊断时段：{periodLabel} {getDateRangeStr() ? `(${getDateRangeStr()})` : `(${getLocalDateStr()})`}
+                    </span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase" style={{ color: "#15803d", backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-                      Trading Coach V1
+                      {reviewMode === "ai" ? "Trading Coach V1" : "TradeFlow Reporter"}
                     </span>
                   </div>
                 </div>
 
+                {/* Conditional Rules Section for Non-AI mode */}
+                {reviewMode === "simple" && (
+                  <div className="p-4 rounded-lg flex flex-col gap-2 text-left" style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                    <h3 className="text-xs font-bold flex items-center gap-1.5" style={{ color: "#111827", margin: 0, padding: 0, border: "none" }}>
+                      <span style={{ display: "inline-block", width: "3px", height: "10px", backgroundColor: "#16a34a", borderRadius: "99px" }} />
+                      我的交易做单纪律原则
+                    </h3>
+                    <ul className="list-disc pl-4 text-[10px] leading-relaxed" style={{ color: "#4b5563", margin: 0 }}>
+                      {rules.length > 0 ? (
+                        rules.map((rule, idx) => (
+                          <li key={rule.id || idx} className="mt-0.5">{rule.content}</li>
+                        ))
+                      ) : (
+                        <li className="list-none" style={{ color: "#9ca3af" }}>暂未配置做单纪律原则</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Conditional Stats Section for Non-AI mode */}
+                {reviewMode === "simple" && (
+                  <div className="grid grid-cols-2 gap-4 pb-1">
+                    {/* First Row of Stats: Core KPIs */}
+                    <div className="col-span-2 grid grid-cols-4 gap-3">
+                      <div className="p-3 rounded-lg flex flex-col justify-center items-center text-center" style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                        <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#6b7280" }}>交易笔数</span>
+                        <span className="text-sm font-bold mt-1" style={{ color: "#111827" }}>{totalCount} 笔</span>
+                      </div>
+                      <div className="p-3 rounded-lg flex flex-col justify-center items-center text-center" style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                        <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#6b7280" }}>净盈亏</span>
+                        <span className="text-sm font-bold mt-1" style={{ color: totalPnl >= 0 ? "#16a34a" : "#dc2626" }}>
+                          {totalPnl >= 0 ? "+" : ""}{totalPnl.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="p-3 rounded-lg flex flex-col justify-center items-center text-center" style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                        <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#6b7280" }}>胜率</span>
+                        <span className="text-sm font-bold mt-1" style={{ color: "#111827" }}>{winRate.toFixed(1)}%</span>
+                      </div>
+                      <div className="p-3 rounded-lg flex flex-col justify-center items-center text-center" style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                        <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#6b7280" }}>盈亏比 (RR)</span>
+                        <span className="text-sm font-bold mt-1" style={{ color: "#111827" }}>{rr.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    {/* Second Row of Stats: Details */}
+                    <div className="col-span-2 grid grid-cols-4 gap-3">
+                      <div className="p-2.5 rounded-lg flex flex-col justify-center items-center text-center" style={{ backgroundColor: "#ffffff", border: "1px solid #f3f4f6" }}>
+                        <span className="text-[8px] uppercase tracking-wider" style={{ color: "#9ca3af" }}>赢 / 输</span>
+                        <span className="text-xs font-semibold mt-0.5" style={{ color: "#4b5563" }}>
+                          <span style={{ color: "#16a34a" }}>{winTrades.length}</span> <span style={{ color: "#9ca3af" }}>/</span> <span style={{ color: "#dc2626" }}>{loseTrades.length}</span>
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg flex flex-col justify-center items-center text-center" style={{ backgroundColor: "#ffffff", border: "1px solid #f3f4f6" }}>
+                        <span className="text-[8px] uppercase tracking-wider" style={{ color: "#9ca3af" }}>平均盈利</span>
+                        <span className="text-xs font-semibold mt-0.5" style={{ color: "#16a34a" }}>
+                          +{avgWin.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg flex flex-col justify-center items-center text-center" style={{ backgroundColor: "#ffffff", border: "1px solid #f3f4f6" }}>
+                        <span className="text-[8px] uppercase tracking-wider" style={{ color: "#9ca3af" }}>平均亏损</span>
+                        <span className="text-xs font-semibold mt-0.5" style={{ color: "#dc2626" }}>
+                          -{avgLoss.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg flex flex-col justify-center items-center text-center" style={{ backgroundColor: "#ffffff", border: "1px solid #f3f4f6" }}>
+                        <span className="text-[8px] uppercase tracking-wider" style={{ color: "#9ca3af" }}>获利因子</span>
+                        <span className="text-xs font-semibold mt-0.5" style={{ color: "#4b5563" }}>
+                          {profitFactor.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* AI Review Text Area */}
-                <div 
-                  className="flex flex-col gap-1.5 text-xs pr-1" 
-                  style={{ color: "#1f2937" }}
-                  dangerouslySetInnerHTML={{ __html: marked.parse(reportText) as string }}
-                />
+                {reviewMode === "ai" && (
+                  <div 
+                    className="flex flex-col gap-1.5 text-xs pr-1 text-left" 
+                    style={{ color: "#1f2937" }}
+                    dangerouslySetInnerHTML={{ __html: marked.parse(reportText) as string }}
+                  />
+                )}
 
                 {/* Scoped CSS Styles for Markdown Elements in PDF print area (using Hex colors exclusively) */}
                 <style dangerouslySetInnerHTML={{ __html: `
@@ -334,6 +561,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     padding-bottom: 6px;
                     margin-top: 16px;
                     margin-bottom: 8px;
+                    text-align: left;
                   }
                   #pdf-report-content h2 {
                     font-size: 14px;
@@ -344,6 +572,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     display: flex;
                     align-items: center;
                     gap: 6px;
+                    text-align: left;
                   }
                   #pdf-report-content h2::before {
                     content: '';
@@ -361,6 +590,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     margin-bottom: 6px;
                     padding-left: 4px;
                     border-left: 2px solid #4b5563;
+                    text-align: left;
                   }
                   #pdf-report-content h4 {
                     font-size: 12px;
@@ -369,6 +599,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     margin-top: 8px;
                     margin-bottom: 4px;
                     padding-left: 4px;
+                    text-align: left;
                   }
                   #pdf-report-content p {
                     font-size: 12px;
@@ -376,6 +607,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     line-height: 1.6;
                     margin-top: 4px;
                     margin-bottom: 4px;
+                    text-align: left;
                   }
                   #pdf-report-content strong {
                     font-weight: bold;
@@ -387,6 +619,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     margin-left: 8px;
                     margin-top: 4px;
                     margin-bottom: 4px;
+                    text-align: left;
                   }
                   #pdf-report-content ol {
                     list-style-type: decimal;
@@ -394,6 +627,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     margin-left: 8px;
                     margin-top: 4px;
                     margin-bottom: 4px;
+                    text-align: left;
                   }
                   #pdf-report-content li {
                     font-size: 12px;
@@ -401,6 +635,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     line-height: 1.6;
                     margin-top: 2px;
                     margin-bottom: 2px;
+                    text-align: left;
                   }
                   #pdf-report-content table {
                     width: 100%;
@@ -409,6 +644,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     margin-bottom: 12px;
                     font-size: 11px;
                     color: #374151;
+                    text-align: left;
                   }
                   #pdf-report-content th {
                     background-color: #f3f4f6;
@@ -422,6 +658,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     border: 1px solid #e5e7eb;
                     padding: 6px 8px;
                     background-color: #ffffff;
+                    text-align: left;
                   }
                   #pdf-report-content tr:nth-child(even) td {
                     background-color: #f9fafb;
@@ -429,8 +666,8 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                 `}} />
 
                 {/* PDF Screenshots & Trade details section */}
-                <div className="pt-5 mt-4" style={{ borderTop: "1px solid #e5e7eb" }}>
-                  <h2 className="text-sm font-bold flex items-center gap-1.5 mb-4" style={{ color: "#111827" }}>
+                <div className="pt-5 mt-4 text-left" style={{ borderTop: "1px solid #e5e7eb" }}>
+                  <h2 className="text-sm font-bold flex items-center gap-1.5 mb-4" style={{ color: "#111827", margin: 0 }}>
                     <ImageIcon size={14} style={{ color: "#16a34a" }} />
                     本期交易清单 & 截图回顾
                   </h2>
@@ -438,25 +675,28 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     {periodTrades.map((trade, idx) => (
                       <div key={trade.id} className="p-4 rounded-lg flex flex-col gap-3" style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
                         <div className="flex items-center justify-between flex-wrap gap-2 pb-2" style={{ borderBottom: "1px solid #e5e7eb" }}>
-                          <span className="text-xs font-bold" style={{ color: "#1f2937" }}>
+                          <span className="text-sm font-bold" style={{ color: "#1f2937" }}>
                             #{idx + 1} | {String(trade.date).replace("T", " ")} | {trade.symbol} ({trade.direction})
                           </span>
-                          <span className="text-xs font-bold px-2 py-0.5 rounded" style={{
+                          <span className="text-sm font-bold px-2 py-0.5 rounded" style={{
                             backgroundColor: trade.pnl > 0 ? "#dcfce7" : trade.pnl < 0 ? "#fee2e2" : "#f3f4f6",
                             color: trade.pnl > 0 ? "#166534" : trade.pnl < 0 ? "#991b1b" : "#1f2937"
                           }}>
                             盈亏: {trade.pnl > 0 ? "+" : ""}{trade.pnl.toFixed(2)}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]" style={{ color: "#4b5563" }}>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs leading-relaxed" style={{ color: "#4b5563" }}>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>入场理由:</span> {trade.setup}</div>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>交易类型:</span> {trade.type}</div>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>市场环境:</span> {trade.marketEnv || "无"}</div>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>交易过程:</span> {trade.process || "无"}</div>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>离场理由:</span> {trade.exitReason}</div>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>离场错误:</span> {trade.errorReason || "无"}</div>
+                          <div className="col-span-2 mt-1.5 leading-relaxed">
+                            <span className="font-semibold" style={{ color: "#1f2937" }}>交易备注:</span> {trade.remarks || "无"}
+                          </div>
                           <div className="col-span-2 mt-1 leading-relaxed">
-                            <span className="font-semibold" style={{ color: "#1f2937" }}>备注与复盘:</span> {trade.remarks || "无备注"} {trade.notes ? `| ${trade.notes}` : ""}
+                            <span className="font-semibold" style={{ color: "#1f2937" }}>自我复盘:</span> {trade.notes || "无"}
                           </div>
                         </div>
 
@@ -507,9 +747,13 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                     </>
                   )}
                 </button>
-                <button onClick={onClose}
+                <button onClick={() => {
+                  setReviewMode(null);
+                  setErrorMsg("");
+                  setReportText("");
+                }}
                   className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--text-secondary)] font-bold text-xs hover:bg-[var(--color-bg-hover)] transition-colors cursor-pointer">
-                  关闭报告
+                  返回
                 </button>
               </div>
             </div>
