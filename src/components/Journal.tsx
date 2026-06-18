@@ -326,9 +326,9 @@ export default function Journal({
   );
 
   return (
-    <div className="flex flex-col gap-4 animate-fade-in relative min-h-full">
-      {/* Sticky Header & Filters Container */}
-      <div className="sticky top-0 z-30 bg-[var(--color-bg-canvas)] pb-4 -mt-4 -mx-4 px-4 md:-mt-6 md:-mx-6 md:px-6 flex flex-col gap-4 border-b border-[var(--color-border-subtle)]">
+    <div className="flex flex-col flex-1 min-h-0 gap-4 animate-fade-in relative">
+      {/* Header & Filters Container */}
+      <div className="flex-shrink-0 bg-[var(--color-bg-canvas)] pb-4 -mt-4 -mx-4 px-4 md:-mt-6 md:-mx-6 md:px-6 flex flex-col gap-4 border-b border-[var(--color-border-subtle)]">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -434,22 +434,22 @@ export default function Journal({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-lg border border-[var(--color-border-subtle)] overflow-hidden bg-[var(--color-bg-surface)] transition-colors">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
+      {/* Table Card */}
+      <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] transition-colors overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-auto">
+          <table className="w-full text-left text-sm relative">
+            <thead className="sticky top-0 z-10 bg-[var(--color-bg-surface)] shadow-[0_1px_0_0_var(--color-border-subtle)]">
               <tr className="border-b border-[var(--color-border-subtle)]">
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">日期</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">品类</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">方向</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">环境</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">入场理由</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">类型</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-right">RR</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">离场</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">过程</th>
-                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">错误</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider bg-[var(--color-bg-surface)]">日期</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider bg-[var(--color-bg-surface)]">品类</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider bg-[var(--color-bg-surface)]">方向</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider bg-[var(--color-bg-surface)]">环境</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider bg-[var(--color-bg-surface)]">入场理由</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider bg-[var(--color-bg-surface)]">类型</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-right bg-[var(--color-bg-surface)]">RR</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider bg-[var(--color-bg-surface)]">离场</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider bg-[var(--color-bg-surface)]">过程</th>
+                <th className="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider bg-[var(--color-bg-surface)]">错误</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
@@ -504,7 +504,7 @@ export default function Journal({
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-bg-surface)] border-t border-[var(--color-border-subtle)] flex-wrap gap-2">
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-[var(--color-bg-surface)] border-t border-[var(--color-border-subtle)] flex-wrap gap-2">
             <div className="text-xs text-[var(--text-muted)]">
               显示 {startIndex + 1} - {Math.min(endIndex, filteredTrades.length)} 条，共 <span className="font-bold">{filteredTrades.length}</span> 条交易记录
             </div>
