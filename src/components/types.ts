@@ -33,3 +33,29 @@ export interface TradingRule {
   content: string;
   createdAt: number;
 }
+
+export function getRuleStyle(content: string) {
+  if (/禁止|不要|不能|严禁|别做|别看|忌/.test(content)) {
+    return {
+      bg: "bg-red-500/5 dark:bg-red-500/10 hover:bg-red-500/10",
+      borderColor: "border-l-trade-red",
+      icon: "🚨",
+      badge: "忌"
+    };
+  }
+  if (/必须|需要|确认|设定|先.*再|要/.test(content)) {
+    return {
+      bg: "bg-amber-500/5 dark:bg-amber-500/10 hover:bg-amber-500/10",
+      borderColor: "border-l-amber-500",
+      icon: "⚠️",
+      badge: "律"
+    };
+  }
+  return {
+    bg: "bg-emerald-500/5 dark:bg-emerald-500/10 hover:bg-emerald-500/10",
+    borderColor: "border-l-trade-green",
+    icon: "💡",
+    badge: "策"
+  };
+}
+

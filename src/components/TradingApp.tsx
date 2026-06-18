@@ -37,7 +37,7 @@ import Journal from "./Journal";
 import Analysis from "./Analysis";
 import AiReviewModal from "./AiReviewModal";
 import SettingsTab from "./Settings";
-import type { Trade, OptionItem, TradingRule } from "./types";
+import { getRuleStyle, type Trade, type OptionItem, type TradingRule } from "./types";
 
 export default function TradingApp({
   initialTrades = [],
@@ -678,7 +678,7 @@ export default function TradingApp({
             {showRulesDropdown && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowRulesDropdown(false)} />
-                <div className="absolute left-0 mt-2 w-80 max-h-[80vh] overflow-y-auto z-50 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] shadow-2xl p-4 flex flex-col gap-4 animate-fade-in text-left">
+                <div className="absolute left-0 mt-2 w-[480px] max-w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto z-50 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] shadow-2xl p-4 flex flex-col gap-4 animate-fade-in text-left">
                   <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2">
                     <h3 className="font-bold text-xs text-[var(--color-text-primary)] flex items-center gap-1.5">
                       <ScrollText size={14} className="text-trade-green animate-pulse" />交易做单原则
@@ -691,14 +691,19 @@ export default function TradingApp({
                     {rules.length === 0 ? (
                       <p className="text-xs text-[var(--text-muted)] italic py-4 text-center">暂未设定做单原则</p>
                     ) : (
-                      <ul className="flex flex-col gap-2 pl-1">
-                        {rules.map(r => (
-                          <li key={r.id} className="text-xs text-[var(--color-text-primary)] flex items-start gap-2 leading-relaxed">
-                            <span className="text-trade-green shrink-0 mt-1">•</span>
-                            <span>{r.content}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="flex flex-col gap-2 pr-0.5">
+                        {rules.map(r => {
+                          const style = getRuleStyle(r.content);
+                          return (
+                            <div key={r.id} className={`flex items-start gap-1.5 px-3 py-2.5 rounded-r-lg border-y border-r border-l-[3px] border-[var(--color-border-subtle)] ${style.borderColor} ${style.bg} text-xs leading-normal transition-all duration-150 hover:shadow-xs`}>
+                              <span className="shrink-0 mt-0.5 text-[13px]">{style.icon}</span>
+                              <p className="flex-1 text-[12px] font-semibold text-[var(--color-text-primary)] leading-relaxed">
+                                {r.content}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                   <div className="border-t border-[var(--color-border-subtle)] pt-2.5 flex justify-end">

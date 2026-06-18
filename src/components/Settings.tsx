@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RefreshCw, Upload, Download, X, AlertTriangle, Trash2, ScrollText } from "lucide-react";
-import type { OptionItem, Trade, TradingRule } from "./types";
+import { getRuleStyle, type OptionItem, type Trade, type TradingRule } from "./types";
 
 interface SettingsProps {
   trades: Trade[];
@@ -470,19 +470,24 @@ export default function Settings({
               </button>
             </div>
 
-            <div className="flex flex-col gap-1 h-[148px] overflow-y-auto pr-1">
-              {rules.map((rule, idx) => (
-                <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg bg-[var(--color-bg-canvas)]/50 hover:bg-[var(--color-bg-hover)] text-xs text-[var(--text-secondary)] transition-colors gap-2">
-                  <span className="font-mono text-[var(--text-muted)] shrink-0">{idx + 1}.</span>
-                  <span className="flex-1 leading-normal break-all">{rule.content}</span>
-                  <button
-                    onClick={() => rule.id !== undefined && onDeleteRule(rule.id)}
-                    className="text-[var(--text-muted)] hover:text-trade-red transition-colors p-0.5 shrink-0 cursor-pointer"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
+            <div className="flex flex-col gap-1.5 h-[148px] overflow-y-auto pr-1">
+              {rules.map((rule, idx) => {
+                const style = getRuleStyle(rule.content);
+                return (
+                  <div key={rule.id} className={`flex items-start gap-1.5 px-2.5 py-1.5 rounded-r-lg border-y border-r border-l-[3px] border-[var(--color-border-subtle)] ${style.borderColor} ${style.bg} text-xs leading-normal transition-all duration-150`}>
+                    <span className="shrink-0 mt-0.5 text-xs">{style.icon}</span>
+                    <span className="flex-1 text-[11px] font-semibold text-[var(--color-text-primary)] leading-normal break-all">
+                      {rule.content}
+                    </span>
+                    <button
+                      onClick={() => rule.id !== undefined && onDeleteRule(rule.id)}
+                      className="text-[var(--text-muted)] hover:text-trade-red transition-colors p-0.5 shrink-0 cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                );
+              })}
               {rules.length === 0 && (
                 <p className="text-xs text-[var(--text-muted)] text-center py-6 italic">暂未设定任何做单原则</p>
               )}
