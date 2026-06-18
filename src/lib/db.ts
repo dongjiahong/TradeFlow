@@ -1,5 +1,4 @@
 import Dexie, { type Table } from "dexie";
-import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 
 // --- TYPES ---
@@ -608,16 +607,52 @@ export async function deleteScreenshot(screenshotId: string) {
 // --- FRONTEND EXCEL IMPORT ACTION ---
 export async function importExcelData(base64Data: string) {
   try {
-    // 1. Read the base64 Excel data
-    const workbook = XLSX.read(base64Data, { type: "base64", cellDates: true });
+    // 1. Read the base64 Excel data using ExcelJS
+    const binaryString = atob(base64Data);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(bytes.buffer);
 
     // 2. Process "日志" sheet (Trades)
-    const logsSheet = workbook.Sheets["日志"];
+    const logsSheet = workbook.getWorksheet("日志");
     if (!logsSheet) {
       return { success: false, error: "未找到名称为 '日志' 的工作表" };
     }
 
-    const logsJson: any[] = XLSX.utils.sheet_to_json(logsSheet, { header: 1 });
+    const logsJson: any[][] = [];
+    logsSheet.eachRow({ includeEmpty: true }, (row) => {
+      const values: any[] = [];
+      if (Array.isArray(row.values)) {
+        for (let idx = 1; idx < row.values.length; idx++) {
+          values.push(row.values[idx]);
+        }
+      } else if (row.values && typeof row.values === "object") {
+        const rowVals = row.values as Record<number, any>;
+        const maxIdx = Math.max(...Object.keys(rowVals).map(Number).filter(n => !isNaN(n)), 0);
+        for (let idx = 1; idx <= maxIdx; idx++) {
+          values.push(rowVals[idx] ?? null);
+        }
+      }
+      
+      const mappedValues = values.map(val => {
+        if (val === null || val === undefined) return null;
+        if (val instanceof Date) return val;
+        if (typeof val === "object") {
+          if ("result" in val) return val.result;
+          if ("text" in val) return val.text;
+          if ("hyperlink" in val) return val.text || val.hyperlink;
+        }
+        return val;
+      });
+      
+      logsJson.push(mappedValues);
+    });
+
     if (logsJson.length < 2) {
       return { success: false, error: "Excel 文件中没有足够的数据行" };
     }

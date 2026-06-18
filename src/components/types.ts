@@ -33,14 +33,3 @@ export interface TradingRule {
   content: string;
   createdAt: number;
 }
-
-
-
-export interface TradingAppProps {
-  initialTrades: Trade[];
-  initialSetups: OptionItem[];
-  initialErrors: OptionItem[];
-  initialExits: OptionItem[];
-  initialSymbols: OptionItem[];
-  initialProcesses: OptionItem[];
-}

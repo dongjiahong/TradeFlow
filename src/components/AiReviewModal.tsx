@@ -5,8 +5,6 @@ import { X, ScrollText, Download, RefreshCw, AlertTriangle, Image as ImageIcon, 
 import { db } from "../lib/db";
 import ScreenshotImage from "./ScreenshotImage";
 import type { Trade, TradingRule } from "./types";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { marked } from "marked";
 
 interface AiReviewModalProps {
@@ -22,7 +20,6 @@ export default function AiReviewModal({ period, trades, rules, onClose }: AiRevi
   const [loadingStep, setLoadingStep] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
   const [reportText, setReportText] = useState("");
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [zoomedImageId, setZoomedImageId] = useState<string | null>(null);
 
   const reportContainerRef = useRef<HTMLDivElement>(null);
@@ -244,53 +241,101 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
     return () => { active = false; };
   }, [period, reviewMode]);
 
-  // 4. 调用 html2canvas + jsPDF 导出 PDF 
-  const handleExportPdf = async () => {
+  // 4. 调用原生打印导出 PDF
+  const handleExportPdf = () => {
     const element = reportContainerRef.current;
     if (!element) return;
 
-    setIsExportingPdf(true);
-    try {
-      // 开启 useCORS 支持 Canvas 抓取
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false
-      });
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new jsPDF("p", "pt", "a4");
-
-      const imgWidth = 595.28; // A4 宽度 (pt)
-      const pageHeight = 841.89; // A4 高度 (pt)
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      // 第一页
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // 分页写入
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+    // Create print stylesheet
+    const styleEl = document.createElement("style");
+    styleEl.innerHTML = `
+      @media print {
+        body > * {
+          display: none !important;
+        }
+        #print-temp-container {
+          display: block !important;
+          width: 100% !important;
+          height: auto !important;
+          background: white !important;
+          color: black !important;
+          padding: 24px !important;
+          font-family: system-ui, -apple-system, sans-serif !important;
+        }
+        #print-temp-container h1, 
+        #print-temp-container h2, 
+        #print-temp-container h3, 
+        #print-temp-container h4, 
+        #print-temp-container h5 {
+          color: #111827 !important;
+          margin-top: 12px !important;
+          margin-bottom: 6px !important;
+          font-weight: bold !important;
+        }
+        #print-temp-container p {
+          margin-bottom: 8px !important;
+          line-height: 1.5 !important;
+        }
+        #print-temp-container img {
+          max-width: 100% !important;
+          height: auto !important;
+          page-break-inside: avoid !important;
+          border: 1px solid #e5e7eb !important;
+          border-radius: 6px !important;
+          margin-top: 6px !important;
+          margin-bottom: 12px !important;
+        }
+        .grid {
+          display: grid !important;
+        }
+        .grid-cols-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+        .flex {
+          display: flex !important;
+        }
+        .flex-col {
+          flex-direction: column !important;
+        }
+        .gap-4 {
+          gap: 16px !important;
+        }
+        .gap-3 {
+          gap: 12px !important;
+        }
+        .page-break-avoid {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
       }
+    `;
+    document.head.appendChild(styleEl);
 
-      const todayStr = new Date().toISOString().split("T")[0];
-      const filename = reviewMode === "ai"
-        ? `TradeFlow_AI智能诊断报告_${periodLabel}_${todayStr}.pdf`
-        : `TradeFlow_交易复盘清单_${periodLabel}_${todayStr}.pdf`;
-      pdf.save(filename);
-    } catch (err) {
-      console.error("Failed to generate PDF:", err);
-      alert("生成 PDF 出错，请检查截图或重试。");
-    } finally {
-      setIsExportingPdf(false);
-    }
+    // Create temporary wrapper and duplicate elements inside
+    const tempContainer = document.createElement("div");
+    tempContainer.id = "print-temp-container";
+    tempContainer.innerHTML = element.innerHTML;
+    
+    // Add page-break-avoid class to cards to prevent printing cuts
+    const cards = tempContainer.querySelectorAll(".border.rounded-xl");
+    cards.forEach(c => c.classList.add("page-break-avoid"));
+
+    document.body.appendChild(tempContainer);
+
+    // Set document title temporarily to naming format
+    const oldTitle = document.title;
+    const todayStr = new Date().toISOString().split("T")[0];
+    document.title = reviewMode === "ai"
+      ? `TradeFlow_AI智能诊断报告_${periodLabel}_${todayStr}`
+      : `TradeFlow_交易复盘清单_${periodLabel}_${todayStr}`;
+
+    // Trigger print
+    window.print();
+
+    // Clean up
+    document.title = oldTitle;
+    document.body.removeChild(tempContainer);
+    document.head.removeChild(styleEl);
   };
 
   return (
@@ -733,19 +778,10 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
 
               {/* Action Buttons */}
               <div className="flex items-center gap-3 mt-2 pb-4 shrink-0">
-                <button onClick={handleExportPdf} disabled={isExportingPdf}
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-trade-green hover:bg-green-600 text-white font-bold text-xs shadow-md transition-all cursor-pointer disabled:opacity-50">
-                  {isExportingPdf ? (
-                    <>
-                      <RefreshCw className="animate-spin" size={14} />
-                      正在导出 PDF...
-                    </>
-                  ) : (
-                    <>
-                      <Download size={14} />
-                      导出 PDF 总结文档
-                    </>
-                  )}
+                <button onClick={handleExportPdf}
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-trade-green hover:bg-green-600 text-white font-bold text-xs shadow-md transition-all cursor-pointer">
+                  <Download size={14} />
+                  导出 PDF / 打印报告
                 </button>
                 <button onClick={() => {
                   setReviewMode(null);
