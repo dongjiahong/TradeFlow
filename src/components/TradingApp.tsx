@@ -288,21 +288,35 @@ export default function TradingApp({
   const totalStats = getPeriodStats(() => true);
 
   // --- CHART DATA ---
-  let currentCap = 0;
+  let currentRr = 0;
   const capitalCurveData = trades.map((t, idx) => {
-    currentCap += t.pnl;
-    return { index: idx + 1, date: new Date(t.date).toLocaleDateString("zh-CN", { month: "short", day: "numeric" }), pnl: parseFloat(currentCap.toFixed(2)), tradePnl: parseFloat(t.pnl.toFixed(2)) };
+    if (t.rr !== null) {
+      currentRr += t.rr;
+    }
+    return { 
+      index: idx + 1, 
+      date: new Date(t.date).toLocaleDateString("zh-CN", { month: "short", day: "numeric" }), 
+      rr: parseFloat(currentRr.toFixed(2)), 
+      tradeRr: t.rr !== null ? parseFloat(t.rr.toFixed(2)) : 0 
+    };
   });
 
-  const setupPerformanceMap = new Map<string, { pnl: number; count: number; wins: number }>();
+  const setupPerformanceMap = new Map<string, { pnl: number; rr: number; count: number; wins: number }>();
   trades.forEach(t => {
-    const stats = setupPerformanceMap.get(t.setup) || { pnl: 0, count: 0, wins: 0 };
-    stats.pnl += t.pnl; stats.count += 1; if (t.status === "win") stats.wins += 1;
+    const stats = setupPerformanceMap.get(t.setup) || { pnl: 0, rr: 0, count: 0, wins: 0 };
+    stats.pnl += t.pnl; 
+    if (t.rr !== null) stats.rr += t.rr;
+    stats.count += 1; 
+    if (t.status === "win") stats.wins += 1;
     setupPerformanceMap.set(t.setup, stats);
   });
   const setupChartData = Array.from(setupPerformanceMap.entries()).map(([name, stats]) => ({
-    name, pnl: parseFloat(stats.pnl.toFixed(2)), winRate: parseFloat(((stats.wins / stats.count) * 100).toFixed(1)), count: stats.count
-  })).sort((a, b) => b.pnl - a.pnl);
+    name, 
+    pnl: parseFloat(stats.pnl.toFixed(2)), 
+    rr: parseFloat(stats.rr.toFixed(2)),
+    winRate: parseFloat(((stats.wins / stats.count) * 100).toFixed(1)), 
+    count: stats.count
+  })).sort((a, b) => b.rr - a.rr);
 
   const errorMap = new Map<string, number>();
   trades.forEach(t => { if (t.errorReason) errorMap.set(t.errorReason, (errorMap.get(t.errorReason) || 0) + 1); });

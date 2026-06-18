@@ -18,6 +18,8 @@ interface StatRow {
   totalPnl: number;
   winRate: number;
   avgPnl: number;
+  totalRr: number;
+  avgRr: number;
 }
 
 export default function Analysis({
@@ -37,92 +39,108 @@ export default function Analysis({
     s.count++; s.totalPnl += t.pnl;
     if (t.status === "win") s.wins++;
     if (t.direction === "Long") s.dirLong++; else s.dirShort++;
-    if (t.rr !== null && t.rr > 0) { s.totalRr += t.rr; s.rrCount++; }
+    if (t.rr !== null) { s.totalRr += t.rr; s.rrCount++; }
     setupMap.set(t.setup, s);
   });
   const setupStats = Array.from(setupMap.entries()).map(([name, s]) => ({
     name, count: s.count, totalPnl: parseFloat(s.totalPnl.toFixed(2)),
     winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
     avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
+    totalRr: parseFloat(s.totalRr.toFixed(2)),
     avgRr: s.rrCount > 0 ? parseFloat((s.totalRr / s.rrCount).toFixed(2)) : 0,
     wins: s.wins, losses: s.count - s.wins,
     dirLong: s.dirLong, dirShort: s.dirShort
   })).sort((a, b) => b.count - a.count);
 
   // Error analysis
-  const errorMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+  const errorMap = new Map<string, { count: number; wins: number; totalPnl: number; totalRr: number; rrCount: number }>();
   filtered.forEach(t => {
     if (!t.errorReason) return;
-    const s = errorMap.get(t.errorReason) || { count: 0, wins: 0, totalPnl: 0 };
+    const s = errorMap.get(t.errorReason) || { count: 0, wins: 0, totalPnl: 0, totalRr: 0, rrCount: 0 };
     s.count++; s.totalPnl += t.pnl;
     if (t.status === "win") s.wins++;
+    if (t.rr !== null) { s.totalRr += t.rr; s.rrCount++; }
     errorMap.set(t.errorReason, s);
   });
   const errorStats = Array.from(errorMap.entries()).map(([name, s]) => ({
     name, count: s.count,
     winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
     avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
-    totalPnl: parseFloat(s.totalPnl.toFixed(2))
+    totalPnl: parseFloat(s.totalPnl.toFixed(2)),
+    totalRr: parseFloat(s.totalRr.toFixed(2)),
+    avgRr: s.rrCount > 0 ? parseFloat((s.totalRr / s.rrCount).toFixed(2)) : 0
   })).sort((a, b) => b.count - a.count);
 
   // Exit analysis
-  const exitMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+  const exitMap = new Map<string, { count: number; wins: number; totalPnl: number; totalRr: number; rrCount: number }>();
   filtered.forEach(t => {
-    const s = exitMap.get(t.exitReason) || { count: 0, wins: 0, totalPnl: 0 };
+    const s = exitMap.get(t.exitReason) || { count: 0, wins: 0, totalPnl: 0, totalRr: 0, rrCount: 0 };
     s.count++; s.totalPnl += t.pnl;
     if (t.status === "win") s.wins++;
+    if (t.rr !== null) { s.totalRr += t.rr; s.rrCount++; }
     exitMap.set(t.exitReason, s);
   });
   const exitStats: StatRow[] = Array.from(exitMap.entries()).map(([name, s]) => ({
     name, count: s.count,
     winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
     avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
-    totalPnl: parseFloat(s.totalPnl.toFixed(2))
+    totalPnl: parseFloat(s.totalPnl.toFixed(2)),
+    totalRr: parseFloat(s.totalRr.toFixed(2)),
+    avgRr: s.rrCount > 0 ? parseFloat((s.totalRr / s.rrCount).toFixed(2)) : 0
   })).sort((a, b) => b.count - a.count);
 
   // Type analysis
-  const typeMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+  const typeMap = new Map<string, { count: number; wins: number; totalPnl: number; totalRr: number; rrCount: number }>();
   filtered.forEach(t => {
-    const s = typeMap.get(t.type) || { count: 0, wins: 0, totalPnl: 0 };
+    const s = typeMap.get(t.type) || { count: 0, wins: 0, totalPnl: 0, totalRr: 0, rrCount: 0 };
     s.count++; s.totalPnl += t.pnl;
     if (t.status === "win") s.wins++;
+    if (t.rr !== null) { s.totalRr += t.rr; s.rrCount++; }
     typeMap.set(t.type, s);
   });
   const typeStats: StatRow[] = Array.from(typeMap.entries()).map(([name, s]) => ({
     name, count: s.count,
     winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
     avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
-    totalPnl: parseFloat(s.totalPnl.toFixed(2))
+    totalPnl: parseFloat(s.totalPnl.toFixed(2)),
+    totalRr: parseFloat(s.totalRr.toFixed(2)),
+    avgRr: s.rrCount > 0 ? parseFloat((s.totalRr / s.rrCount).toFixed(2)) : 0
   })).sort((a, b) => b.count - a.count);
 
   // Symbol analysis
-  const symbolMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+  const symbolMap = new Map<string, { count: number; wins: number; totalPnl: number; totalRr: number; rrCount: number }>();
   filtered.forEach(t => {
-    const s = symbolMap.get(t.symbol) || { count: 0, wins: 0, totalPnl: 0 };
+    const s = symbolMap.get(t.symbol) || { count: 0, wins: 0, totalPnl: 0, totalRr: 0, rrCount: 0 };
     s.count++; s.totalPnl += t.pnl;
     if (t.status === "win") s.wins++;
+    if (t.rr !== null) { s.totalRr += t.rr; s.rrCount++; }
     symbolMap.set(t.symbol, s);
   });
   const symbolStats: StatRow[] = Array.from(symbolMap.entries()).map(([name, s]) => ({
     name, count: s.count,
     winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
     avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
-    totalPnl: parseFloat(s.totalPnl.toFixed(2))
+    totalPnl: parseFloat(s.totalPnl.toFixed(2)),
+    totalRr: parseFloat(s.totalRr.toFixed(2)),
+    avgRr: s.rrCount > 0 ? parseFloat((s.totalRr / s.rrCount).toFixed(2)) : 0
   })).sort((a, b) => b.count - a.count);
 
   // Direction analysis
-  const dirMap = new Map<string, { count: number; wins: number; totalPnl: number }>();
+  const dirMap = new Map<string, { count: number; wins: number; totalPnl: number; totalRr: number; rrCount: number }>();
   filtered.forEach(t => {
-    const s = dirMap.get(t.direction) || { count: 0, wins: 0, totalPnl: 0 };
+    const s = dirMap.get(t.direction) || { count: 0, wins: 0, totalPnl: 0, totalRr: 0, rrCount: 0 };
     s.count++; s.totalPnl += t.pnl;
     if (t.status === "win") s.wins++;
+    if (t.rr !== null) { s.totalRr += t.rr; s.rrCount++; }
     dirMap.set(t.direction, s);
   });
   const dirStats = Array.from(dirMap.entries()).map(([name, s]) => ({
     name, count: s.count,
     winRate: parseFloat(((s.wins / s.count) * 100).toFixed(1)),
     avgPnl: parseFloat((s.totalPnl / s.count).toFixed(2)),
-    totalPnl: parseFloat(s.totalPnl.toFixed(2))
+    totalPnl: parseFloat(s.totalPnl.toFixed(2)),
+    totalRr: parseFloat(s.totalRr.toFixed(2)),
+    avgRr: s.rrCount > 0 ? parseFloat((s.totalRr / s.rrCount).toFixed(2)) : 0
   }));
 
   const COLORS = ["#22c55e", "#ef4444", "#fb923c", "#38bdf8", "#818cf8", "#c084fc", "#facc15", "#a7f3d0"];
@@ -137,6 +155,8 @@ export default function Analysis({
             <th className="text-right py-2 px-3 font-semibold">总盈亏</th>
             <th className="text-right py-2 px-3 font-semibold">胜率</th>
             <th className="text-right py-2 px-3 font-semibold">均盈亏</th>
+            <th className="text-right py-2 px-3 font-semibold">累计 RR</th>
+            <th className="text-right py-2 px-3 font-semibold">平均 RR</th>
           </tr>
         </thead>
         <tbody>
@@ -150,6 +170,12 @@ export default function Analysis({
               <td className="text-right py-2 px-3 font-mono font-bold text-[var(--text-secondary)] tabular-nums">{row.winRate}%</td>
               <td className={`text-right py-2 px-3 font-mono font-bold tabular-nums ${row.avgPnl > 0 ? "text-trade-green" : row.avgPnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>
                 {row.avgPnl > 0 ? "+" : ""}{row.avgPnl.toFixed(2)}
+              </td>
+              <td className={`text-right py-2 px-3 font-mono font-bold tabular-nums ${row.totalRr > 0 ? "text-trade-green" : row.totalRr < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>
+                {row.totalRr > 0 ? "+" : ""}{row.totalRr.toFixed(2)}R
+              </td>
+              <td className={`text-right py-2 px-3 font-mono font-bold tabular-nums ${row.avgRr > 0 ? "text-trade-green" : row.avgRr < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>
+                {row.avgRr > 0 ? "+" : ""}{row.avgRr.toFixed(2)}R
               </td>
             </tr>
           ))}
@@ -234,18 +260,18 @@ export default function Analysis({
           <TrendingUp size={16} className="text-trade-green" />,
           setupStats.length > 0 ? (
             <div className="flex flex-row gap-4 items-start">
-              <div className="flex-1 min-w-0">{renderStatTable(setupStats.map(s => ({ name: s.name, count: s.count, totalPnl: s.totalPnl, winRate: s.winRate, avgPnl: s.avgPnl })))}</div>
+              <div className="flex-1 min-w-0">{renderStatTable(setupStats)}</div>
               {analysisReady && (
                 <div className="h-52 w-64 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={setupStats.slice(0, 8)} layout="vertical" margin={{ left: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
-                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
+                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}R`} />
                       <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={90}
                         tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
-                      <Bar dataKey="totalPnl" name="总盈亏">
+                      <Bar dataKey="totalRr" name="累计 RR">
                         {setupStats.map((entry, idx) => (
-                          <Cell key={idx} fill={entry.totalPnl >= 0 ? "#22c55e" : "#ef4444"} />
+                          <Cell key={idx} fill={entry.totalRr >= 0 ? "#22c55e" : "#ef4444"} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -293,10 +319,14 @@ export default function Analysis({
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={exitStats.slice(0, 8)} layout="vertical" margin={{ left: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
-                      <XAxis type="number" stroke="#52525b" fontSize={10} />
+                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}R`} />
                       <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={90}
                         tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
-                      <Bar dataKey="count" name="次数" fill="#38bdf8" />
+                      <Bar dataKey="totalRr" name="累计 RR">
+                        {exitStats.map((entry, idx) => (
+                          <Cell key={idx} fill={entry.totalRr >= 0 ? "#22c55e" : "#ef4444"} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -316,12 +346,12 @@ export default function Analysis({
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={typeStats} layout="vertical" margin={{ left: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
-                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
+                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}R`} />
                       <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={100}
                         tickFormatter={(v) => v.length > 8 ? v.substring(0, 8) + "..." : v} />
-                      <Bar dataKey="totalPnl" name="总盈亏">
+                      <Bar dataKey="totalRr" name="累计 RR">
                         {typeStats.map((entry, idx) => (
-                          <Cell key={idx} fill={entry.totalPnl >= 0 ? "#22c55e" : "#ef4444"} />
+                          <Cell key={idx} fill={entry.totalRr >= 0 ? "#22c55e" : "#ef4444"} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -346,12 +376,12 @@ export default function Analysis({
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={symbolStats.slice(0, 8)} layout="vertical" margin={{ left: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
-                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
+                      <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}R`} />
                       <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={60}
                         tickFormatter={(v) => v.length > 6 ? v.substring(0, 6) + "..." : v} />
-                      <Bar dataKey="totalPnl" name="总盈亏">
+                      <Bar dataKey="totalRr" name="累计 RR">
                         {symbolStats.map((entry, idx) => (
-                          <Cell key={idx} fill={entry.totalPnl >= 0 ? "#22c55e" : "#ef4444"} />
+                          <Cell key={idx} fill={entry.totalRr >= 0 ? "#22c55e" : "#ef4444"} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -373,14 +403,14 @@ export default function Analysis({
                     <span className={`text-sm font-bold ${dir.name === "Long" ? "text-trade-green" : "text-trade-red"}`}>
                       {dir.name === "Long" ? "做多 (Long)" : "做空 (Short)"}
                     </span>
-                    <span className={`text-xl font-bold font-mono tabular-nums ${dir.totalPnl > 0 ? "text-trade-green" : dir.totalPnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>
-                      {dir.totalPnl > 0 ? "+" : ""}{dir.totalPnl.toFixed(2)}
+                    <span className={`text-xl font-bold font-mono tabular-nums ${dir.totalRr > 0 ? "text-trade-green" : dir.totalRr < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>
+                      {dir.totalRr > 0 ? "+" : ""}{dir.totalRr.toFixed(2)}R
                     </span>
                   </div>
                   <div className="flex gap-5 text-xs">
                     <div><span className="text-[var(--text-muted)]">次数</span> <span className="font-bold text-[var(--text-primary)] tabular-nums ml-1">{dir.count}</span></div>
                     <div><span className="text-[var(--text-muted)]">胜率</span> <span className="font-bold text-[var(--text-primary)] tabular-nums ml-1">{dir.winRate}%</span></div>
-                    <div><span className="text-[var(--text-muted)]">均盈亏</span> <span className={`font-bold tabular-nums ml-1 ${dir.avgPnl > 0 ? "text-trade-green" : dir.avgPnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>{dir.avgPnl > 0 ? "+" : ""}{dir.avgPnl.toFixed(2)}</span></div>
+                    <div><span className="text-[var(--text-muted)]">均 RR</span> <span className={`font-bold tabular-nums ml-1 ${dir.avgRr > 0 ? "text-trade-green" : dir.avgRr < 0 ? "text-trade-red" : "text-[var(--text-muted)]"}`}>{dir.avgRr > 0 ? "+" : ""}{dir.avgRr.toFixed(2)}R</span></div>
                   </div>
                 </div>
               ))}

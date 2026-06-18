@@ -13,8 +13,8 @@ interface DashboardProps {
   avgWin: number;
   avgLoss: number;
   pnlRatio: number;
-  capitalCurveData: { index: number; date: string; pnl: number; tradePnl: number }[];
-  setupChartData: { name: string; pnl: number; winRate: number; count: number }[];
+  capitalCurveData: { index: number; date: string; rr: number; tradeRr: number }[];
+  setupChartData: { name: string; pnl: number; rr: number; winRate: number; count: number }[];
   errorPieData: { name: string; value: number }[];
   COLORS: string[];
   dashboardReady: boolean;
@@ -58,7 +58,7 @@ export default function Dashboard({
 
       {/* Capital Curve */}
       <div className="p-5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] transition-colors">
-        <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">资金曲线</h3>
+        <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">R 乘数资金曲线</h3>
         <div className="h-72 w-full">
           {capitalCurveData.length > 0 ? (
             dashboardReady ? (
@@ -72,8 +72,8 @@ export default function Dashboard({
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
                 <XAxis dataKey="date" stroke="#52525b" fontSize={11} tickLine={false} />
-                <YAxis stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
-                <Area type="monotone" dataKey="pnl" name="累计盈亏" stroke="#22c55e" strokeWidth={2} fillOpacity={1} fill="url(#colorPnl)" />
+                <YAxis stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}R`} />
+                <Area type="monotone" dataKey="rr" name="累计 RR" stroke="#22c55e" strokeWidth={2} fillOpacity={1} fill="url(#colorPnl)" />
               </AreaChart>
             </ResponsiveContainer>
             ) : <div className="flex h-full items-center justify-center text-[var(--text-muted)]">加载图表中...</div>
@@ -85,19 +85,19 @@ export default function Dashboard({
       {/* Bottom row: setups + errors */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="p-5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] transition-colors">
-          <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">入场理由盈利</h3>
+          <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">入场理由 RR 贡献</h3>
           <div className="h-72 w-full">
             {setupChartData.length > 0 ? (
               dashboardReady ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={setupChartData.slice(0, 10)} layout="vertical" margin={{ left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.04)" />
-                  <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}`} />
+                  <XAxis type="number" stroke="#52525b" fontSize={10} tickFormatter={(v) => `${v >= 0 ? "+" : ""}${v}R`} />
                   <YAxis type="category" dataKey="name" stroke="#52525b" fontSize={10} width={100}
                     tickFormatter={(v) => v.length > 10 ? v.substring(0, 10) + "..." : v} />
-                  <Bar dataKey="pnl" name="总盈亏" radius={[0, 4, 4, 0]}>
+                  <Bar dataKey="rr" name="累计 RR" radius={[0, 4, 4, 0]}>
                     {setupChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? "#22c55e" : "#ef4444"} />
+                      <Cell key={`cell-${index}`} fill={entry.rr >= 0 ? "#22c55e" : "#ef4444"} />
                     ))}
                   </Bar>
                 </BarChart>

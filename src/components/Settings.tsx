@@ -444,7 +444,7 @@ export default function Settings({
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {/* 做单原则管理 */}
         <div className="p-5 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] flex flex-col gap-4 shadow-sm justify-between">
-          <div className="flex flex-col gap-3">
+          <div className="flex-1 flex flex-col gap-3">
             <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
               <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <ScrollText size={16} className="text-trade-green animate-pulse" />
@@ -472,7 +472,7 @@ export default function Settings({
               </button>
             </div>
 
-            <div className="flex flex-col gap-1.5 h-[148px] overflow-y-auto pr-1">
+            <div className="flex-1 flex flex-col gap-1.5 min-h-[148px] max-h-[360px] overflow-y-auto pr-1">
               {rules.map((rule, idx) => {
                 const style = getRuleStyle(rule.content);
                 return (
