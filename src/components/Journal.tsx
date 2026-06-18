@@ -326,8 +326,9 @@ export default function Journal({
   );
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4 animate-fade-in relative">
-      {/* Header & Filters Container */}
+    <>
+      <div className="flex flex-col flex-1 min-h-0 gap-4 animate-fade-in relative">
+        {/* Header & Filters Container */}
       <div className="flex-shrink-0 bg-[var(--color-bg-canvas)] pb-4 -mt-4 -mx-4 px-4 md:-mt-6 md:-mx-6 md:px-6 flex flex-col gap-4 border-b border-[var(--color-border-subtle)]">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -534,8 +535,9 @@ export default function Journal({
           </div>
         )}
       </div>
+    </div>
 
-      {/* Drawer Backdrop Overlay */}
+    {/* Drawer Backdrop Overlay */}
       {inlineEditingId !== null && (
         <div 
           className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity duration-300"
@@ -981,6 +983,6 @@ export default function Journal({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

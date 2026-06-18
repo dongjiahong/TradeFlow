@@ -881,7 +881,7 @@ export default function TradingApp({
         </aside>
 
         {/* Content */}
-        <main className={`flex-1 transition-all duration-300 ${
+        <main className={`flex-1 h-full transition-all duration-300 ${
           isSidebarCollapsed ? "ml-16" : "ml-64"
         } ${activeTab === "journal" ? "flex flex-col min-h-0 overflow-hidden" : "overflow-y-auto"} p-4 md:p-6`}>
           {activeTab === "dashboard" && (
