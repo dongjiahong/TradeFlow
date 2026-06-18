@@ -109,6 +109,7 @@ export default function Settings({
   const [aiApiKey, setAiApiKey] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("tf_ai_api_key") || "" : ""));
   const [aiBaseUrl, setAiBaseUrl] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("tf_ai_base_url") || "https://api.openai.com/v1" : "https://api.openai.com/v1"));
   const [aiModelName, setAiModelName] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("tf_ai_model_name") || "gpt-4o" : "gpt-4o"));
+  const [aiThinkMode, setAiThinkMode] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("tf_ai_think_mode") || "think-high" : "think-high"));
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
 
@@ -124,6 +125,7 @@ export default function Settings({
     localStorage.setItem("tf_ai_api_key", aiApiKey.trim());
     localStorage.setItem("tf_ai_base_url", aiBaseUrl.trim());
     localStorage.setItem("tf_ai_model_name", aiModelName.trim());
+    localStorage.setItem("tf_ai_think_mode", aiThinkMode);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2000);
   };
@@ -552,6 +554,107 @@ export default function Settings({
                   onChange={(e) => setAiModelName(e.target.value)}
                   className="w-full text-xs bg-[var(--color-bg-canvas)] border border-[var(--color-border-standard)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] focus:border-trade-green outline-none transition-all placeholder:text-[var(--text-muted)] font-mono"
                 />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-[var(--text-secondary)]">推理思考模式 (Thinking Mode)</label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Non-think */}
+                  <div
+                    onClick={() => setAiThinkMode("non-think")}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 flex flex-col justify-between h-full group ${
+                      aiThinkMode === "non-think"
+                        ? "border-trade-green bg-trade-green/5 ring-1 ring-trade-green"
+                        : "border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-hover)]"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-[var(--text-primary)]">Non-think</span>
+                        {aiThinkMode === "non-think" ? (
+                          <span className="text-[10px] text-trade-green font-bold">✓ 已选</span>
+                        ) : (
+                          <span className="w-2.5 h-2.5 rounded-full border border-[var(--color-border-standard)] group-hover:border-[var(--text-muted)]"></span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-1">
+                        <span className="font-semibold text-[var(--text-muted)]">特点：</span>快速、直观的响应
+                      </p>
+                      <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-2">
+                        <span className="font-semibold text-[var(--text-muted)]">场景：</span>日常例行任务、低风险决策
+                      </p>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)]/40">
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[9px] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] font-mono text-[var(--text-muted)]">
+                        &lt;/think&gt; 总结
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Think High */}
+                  <div
+                    onClick={() => setAiThinkMode("think-high")}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 flex flex-col justify-between h-full group ${
+                      aiThinkMode === "think-high"
+                        ? "border-trade-green bg-trade-green/5 ring-1 ring-trade-green"
+                        : "border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-hover)]"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-[var(--text-primary)]">Think High</span>
+                        {aiThinkMode === "think-high" ? (
+                          <span className="text-[10px] text-trade-green font-bold">✓ 已选</span>
+                        ) : (
+                          <span className="w-2.5 h-2.5 rounded-full border border-[var(--color-border-standard)] group-hover:border-[var(--text-muted)]"></span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-1">
+                        <span className="font-semibold text-[var(--text-muted)]">特点：</span>有意识的逻辑分析，慢但更准
+                      </p>
+                      <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-2">
+                        <span className="font-semibold text-[var(--text-muted)]">场景：</span>复杂问题求解、规划
+                      </p>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)]/40">
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[9px] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] font-mono text-[var(--text-muted)]">
+                        &lt;think&gt; 思考 &lt;/think&gt; 总结
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Think Max */}
+                  <div
+                    onClick={() => setAiThinkMode("think-max")}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 flex flex-col justify-between h-full group ${
+                      aiThinkMode === "think-max"
+                        ? "border-trade-green bg-trade-green/5 ring-1 ring-trade-green"
+                        : "border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] hover:border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-hover)]"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-[var(--text-primary)]">Think Max</span>
+                        {aiThinkMode === "think-max" ? (
+                          <span className="text-[10px] text-trade-green font-bold">✓ 已选</span>
+                        ) : (
+                          <span className="w-2.5 h-2.5 rounded-full border border-[var(--color-border-standard)] group-hover:border-[var(--text-muted)]"></span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-1">
+                        <span className="font-semibold text-[var(--text-muted)]">特点：</span>将推理能力发挥到极致
+                      </p>
+                      <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-2">
+                        <span className="font-semibold text-[var(--text-muted)]">场景：</span>探索模型推理能力的边界
+                      </p>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)]/40">
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[9px] bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] font-mono text-[var(--text-muted)]">
+                        &lt;think&gt; 思考 &lt;/think&gt; 总结
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

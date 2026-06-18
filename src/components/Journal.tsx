@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Plus, Trash, Edit, Check, X,
-  Upload, Camera, Image as ImageIcon, RefreshCw
+  Upload, Camera, Image as ImageIcon, RefreshCw, Sparkles
 } from "lucide-react";
 import ScreenshotImage from "./ScreenshotImage";
 import type { Trade, OptionItem } from "./types";
@@ -108,6 +108,40 @@ const formatDisplayDate = (dateStr: string | Date | undefined | null): string =>
   return cleaned;
 };
 
+// Helper: Parse <think>...</think> block from text
+const parseThinkContent = (text: string) => {
+  if (!text) return { think: "", content: "" };
+  
+  // 支持大小写不敏感匹配
+  const lowerText = text.toLowerCase();
+  
+  // 查找 <think> 和 </think> 的位置
+  const startIdx = lowerText.indexOf("<think>");
+  const endIdx = lowerText.indexOf("</think>");
+  
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    const think = text.substring(startIdx + 7, endIdx).trim();
+    const content = text.substring(endIdx + 8).trim();
+    return { think, content };
+  }
+  
+  if (startIdx !== -1 && endIdx === -1) {
+    const think = text.substring(startIdx + 7).trim();
+    return { think, content: "" };
+  }
+  
+  // 正则兜底匹配（支持跨行修饰符 s）
+  const thinkRegex = /<think>([\s\S]*?)<\/think>/i;
+  const match = text.match(thinkRegex);
+  if (match) {
+    const think = match[1].trim();
+    const content = text.replace(thinkRegex, "").trim();
+    return { think, content };
+  }
+  
+  return { think: "", content: text };
+};
+
 
 export default function Journal({
   trades, filteredTrades, setups, errors, exits, symbols, processes,
@@ -129,6 +163,80 @@ export default function Journal({
   const [remarksTab, setRemarksTab] = useState<"edit" | "preview">("edit");
   const [notesTab, setNotesTab] = useState<"edit" | "preview">("edit");
   const pageSize = 30;
+
+  // AI 美化状态与方法
+  const [showBeautifyModal, setShowBeautifyModal] = useState(false);
+  const [beautifyOriginalText, setBeautifyOriginalText] = useState("");
+  const [beautifyResultText, setBeautifyResultText] = useState("");
+  const [isBeautifying, setIsBeautifying] = useState(false);
+
+  const handleAiBeautify = async () => {
+    const originalText = tradeForm.notes.trim();
+    if (!originalText) {
+      alert("请先在「自我复盘总结」中输入内容，AI 才能为您进行美化。");
+      return;
+    }
+
+    const apiKey = localStorage.getItem("tf_ai_api_key") || "";
+    const baseUrl = localStorage.getItem("tf_ai_base_url") || "https://api.openai.com/v1";
+    const modelName = localStorage.getItem("tf_ai_model_name") || "gpt-4o";
+    const thinkMode = localStorage.getItem("tf_ai_think_mode") || "think-high";
+
+    if (!apiKey) {
+      alert("未配置 AI 接口密钥。请前往「设置」页面最下方，填写并保存您的 AI API Key 配置。");
+      return;
+    }
+
+    setBeautifyOriginalText(originalText);
+    setBeautifyResultText("");
+    setShowBeautifyModal(true);
+    setIsBeautifying(true);
+
+    try {
+      let systemPrompt = "";
+      if (thinkMode === "non-think") {
+        systemPrompt = "你的任务是将交易员提供的复盘内容重新整理，使其足够清晰明了和结构化（使用 Markdown 格式）。请直接输出最终的整理结果，不要输出任何 <think> 标签或你的思考过程，也不要附带任何解释或前言。";
+      } else {
+        // think-high 和 think-max 统一使用同一套核心提示词与格式规则
+        systemPrompt = "你的任务是将交易员提供的复盘内容重新整理，使其足够清晰明了和结构化（使用 Markdown 格式）。请首先在 <think>...</think> 标签中输出你的思考和重组逻辑，然后再给出正式的整理结果。只输出 <think>思考过程</think>正式回答，不要附带其他前言。";
+      }
+
+      const userPrompt = `这是交易员输入的原始复盘内容：\n\n${originalText}`;
+
+      const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.5
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API 请求失败 (HTTP ${response.status})。请检查 Base URL 或 API Key。`);
+      }
+
+      const data = await response.json();
+      const polished = data?.choices?.[0]?.message?.content || "";
+      if (!polished) {
+        throw new Error("AI 返回了空数据。");
+      }
+
+      setBeautifyResultText(polished);
+    } catch (err: any) {
+      alert(`AI 美化失败: ${err.message || err}`);
+      setShowBeautifyModal(false);
+    } finally {
+      setIsBeautifying(false);
+    }
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -219,108 +327,111 @@ export default function Journal({
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in relative min-h-full">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-bold tracking-tight text-[var(--text-primary)]">交易日志</h2>
-          <p className="text-sm text-[var(--text-muted)]">记录每一笔交易，复盘每一次决策</p>
-        </div>
-        <button
-          onClick={() => {
-            const getLocalISOString = () => {
-              const d = new Date();
-              const pad = (n: number) => String(n).padStart(2, '0');
-              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-            };
-            setInlineEditingId("__new__");
-            setTradeForm({
-              date: getLocalISOString(),
-              remarks: "", setup: setups[0]?.name || "", type: "趋势延续",
-              exitReason: exits[0]?.name || "", notes: "", positionSize: 1,
-              direction: "Long", entryPrice: 0, stopLoss: "", takeProfit: "",
-              exitPrice1: 0, exitPrice2: "", errorReason: "",
-              symbol: symbols[0]?.name || "", process: processes[0]?.name || "",
-              marketEnv: ""
-            });
-          }}
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-trade-green text-white font-bold text-sm hover:bg-green-600 transition-colors">
-          <Plus size={16} />新建
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="p-3 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] w-full sm:w-64">
-          <input type="text" placeholder="搜索备注/笔记/理由..." value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]" />
-        </div>
-        <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value as any)}
-          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
-          <option value="30">最近 30 条</option>
-          <option value="today">今天</option>
-          <option value="week">本周</option>
-          <option value="month">本月</option>
-          <option value="all">全部</option>
-          <option value="custom">自定义范围</option>
-        </select>
-        {dateFilter === "custom" && (
-          <div className="flex items-center gap-1.5">
-            <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)}
-              className="px-2 py-1 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] focus:outline-none" />
-            <span className="text-xs text-[var(--text-muted)]">至</span>
-            <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)}
-              className="px-2 py-1 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] focus:outline-none" />
+      {/* Sticky Header & Filters Container */}
+      <div className="sticky top-0 z-30 bg-[var(--color-bg-canvas)] pb-4 -mt-4 -mx-4 px-4 md:-mt-6 md:-mx-6 md:px-6 flex flex-col gap-4 border-b border-[var(--color-border-subtle)]">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-[var(--text-primary)]">交易日志</h2>
+            <p className="text-sm text-[var(--text-muted)]">记录每一笔交易，复盘每一次决策</p>
           </div>
-        )}
-        <select value={symbolFilter} onChange={(e) => setSymbolFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
-          <option value="all">所有品类</option>
-          {symbols.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-        </select>
-        <select value={directionFilter} onChange={(e) => setDirectionFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
-          <option value="all">所有方向</option>
-          <option value="Long">Long</option>
-          <option value="Short">Short</option>
-        </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
-          <option value="all">所有状态</option>
-          <option value="win">盈利</option>
-          <option value="lose">亏损</option>
-          <option value="BE">保本</option>
-        </select>
-        <select value={marketEnvFilter} onChange={(e) => setMarketEnvFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
-          <option value="all">所有环境</option>
-          <option value="突破">突破</option>
-          <option value="窄通道">窄通道</option>
-          <option value="宽通道">宽通道</option>
-          <option value="震荡区间">震荡区间</option>
-        </select>
-        <select value={setupFilter} onChange={(e) => setSetupFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] max-w-xs focus:outline-none">
-          <option value="all">所有入场</option>
-          {setups.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-        </select>
-        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
-          <option value="all">所有类型</option>
-          <option value="趋势延续">趋势延续</option>
-          <option value="反转（Reversal）">反转</option>
-          <option value="突破（BO）">突破</option>
-          <option value="假突破（fBO）">假突破</option>
-        </select>
-        <select value={processFilter} onChange={(e) => setProcessFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
-          <option value="all">所有过程</option>
-          {processes.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-        </select>
-        {(searchQuery || directionFilter !== "all" || statusFilter !== "all" || setupFilter !== "all" || typeFilter !== "all" || symbolFilter !== "all" || processFilter !== "all" || marketEnvFilter !== "all" || dateFilter !== "30" || customStartDate || customEndDate) && (
-          <button onClick={() => { setSearchQuery(""); setDirectionFilter("all"); setStatusFilter("all"); setSetupFilter("all"); setTypeFilter("all"); setSymbolFilter("all"); setProcessFilter("all"); setMarketEnvFilter("all"); setDateFilter("30"); setCustomStartDate(""); setCustomEndDate(""); }}
-            className="text-xs text-trade-red hover:underline ml-auto">重置</button>
-        )}
+          <button
+            onClick={() => {
+              const getLocalISOString = () => {
+                const d = new Date();
+                const pad = (n: number) => String(n).padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+              };
+              setInlineEditingId("__new__");
+              setTradeForm({
+                date: getLocalISOString(),
+                remarks: "", setup: setups[0]?.name || "", type: "趋势延续",
+                exitReason: exits[0]?.name || "", notes: "", positionSize: 1,
+                direction: "Long", entryPrice: 0, stopLoss: "", takeProfit: "",
+                exitPrice1: 0, exitPrice2: "", errorReason: "",
+                symbol: symbols[0]?.name || "", process: processes[0]?.name || "",
+                marketEnv: ""
+              });
+            }}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-trade-green text-white font-bold text-sm hover:bg-green-600 transition-colors">
+            <Plus size={16} />新建
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="p-3 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] flex flex-wrap gap-3 items-center">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] w-full sm:w-64">
+            <input type="text" placeholder="搜索思路/笔记/理由..." value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]" />
+          </div>
+          <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value as any)}
+            className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
+            <option value="30">最近 30 条</option>
+            <option value="today">今天</option>
+            <option value="week">本周</option>
+            <option value="month">本月</option>
+            <option value="all">全部</option>
+            <option value="custom">自定义范围</option>
+          </select>
+          {dateFilter === "custom" && (
+            <div className="flex items-center gap-1.5">
+              <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)}
+                className="px-2 py-1 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] focus:outline-none" />
+              <span className="text-xs text-[var(--text-muted)]">至</span>
+              <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)}
+                className="px-2 py-1 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-xs text-[var(--text-primary)] focus:outline-none" />
+            </div>
+          )}
+          <select value={symbolFilter} onChange={(e) => setSymbolFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
+            <option value="all">所有品类</option>
+            {symbols.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+          </select>
+          <select value={directionFilter} onChange={(e) => setDirectionFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
+            <option value="all">所有方向</option>
+            <option value="Long">Long</option>
+            <option value="Short">Short</option>
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
+            <option value="all">所有状态</option>
+            <option value="win">盈利</option>
+            <option value="lose">亏损</option>
+            <option value="BE">保本</option>
+          </select>
+          <select value={marketEnvFilter} onChange={(e) => setMarketEnvFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
+            <option value="all">所有环境</option>
+            <option value="突破">突破</option>
+            <option value="窄通道">窄通道</option>
+            <option value="宽通道">宽通道</option>
+            <option value="震荡区间">震荡区间</option>
+          </select>
+          <select value={setupFilter} onChange={(e) => setSetupFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] max-w-xs focus:outline-none">
+            <option value="all">所有入场</option>
+            {setups.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+          </select>
+          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
+            <option value="all">所有类型</option>
+            <option value="趋势延续">趋势延续</option>
+            <option value="反转（Reversal）">反转</option>
+            <option value="突破（BO）">突破</option>
+            <option value="假突破（fBO）">假突破</option>
+          </select>
+          <select value={processFilter} onChange={(e) => setProcessFilter(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-sm text-[var(--text-primary)] focus:outline-none">
+            <option value="all">所有过程</option>
+            {processes.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+          </select>
+          {(searchQuery || directionFilter !== "all" || statusFilter !== "all" || setupFilter !== "all" || typeFilter !== "all" || symbolFilter !== "all" || processFilter !== "all" || marketEnvFilter !== "all" || dateFilter !== "30" || customStartDate || customEndDate) && (
+            <button onClick={() => { setSearchQuery(""); setDirectionFilter("all"); setStatusFilter("all"); setSetupFilter("all"); setTypeFilter("all"); setSymbolFilter("all"); setProcessFilter("all"); setMarketEnvFilter("all"); setDateFilter("30"); setCustomStartDate(""); setCustomEndDate(""); }}
+              className="text-xs text-trade-red hover:underline ml-auto">重置</button>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -642,12 +753,12 @@ export default function Journal({
 
             {/* Remarks & Notes */}
             <div className="border-t border-[var(--color-border-subtle)] pt-4 mt-2 flex flex-col gap-3">
-              <h4 className="text-xs font-bold text-[var(--text-secondary)]">备注与复盘</h4>
+              <h4 className="text-xs font-bold text-[var(--text-secondary)]">下单思路与复盘</h4>
               
               {/* 备注信息 */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-[var(--text-secondary)]">备注信息</label>
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">下单思路 (入场理由)</label>
                   <div className="flex rounded-md bg-[var(--color-bg-elevated)] p-0.5 border border-[var(--color-border-subtle)]">
                     <button
                       type="button"
@@ -675,7 +786,7 @@ export default function Journal({
                 </div>
                 {remarksTab === "edit" ? (
                   <textarea
-                    placeholder="输入交易备注（支持 Markdown 结构化输入，选填）..."
+                    placeholder="输入下单思路（下单环境、入场理由、逻辑规划等，支持 Markdown，选填）..."
                     value={tradeForm.remarks}
                     rows={4}
                     onChange={(e) => setTradeForm(prev => ({ ...prev, remarks: e.target.value }))}
@@ -684,7 +795,7 @@ export default function Journal({
                 ) : (
                   <div
                     className="w-full px-3 py-2 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] min-h-[96px] text-xs text-[var(--text-primary)] overflow-y-auto leading-relaxed markdown-body"
-                    dangerouslySetInnerHTML={{ __html: tradeForm.remarks ? (marked.parse(tradeForm.remarks) as string) : '<p class="text-[var(--text-muted)] italic">无备注预览内容</p>' }}
+                    dangerouslySetInnerHTML={{ __html: tradeForm.remarks ? (marked.parse(tradeForm.remarks) as string) : '<p class="text-[var(--text-muted)] italic">无思路预览内容</p>' }}
                   />
                 )}
               </div>
@@ -693,29 +804,40 @@ export default function Journal({
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-[var(--text-secondary)]">自我复盘总结</label>
-                  <div className="flex rounded-md bg-[var(--color-bg-elevated)] p-0.5 border border-[var(--color-border-subtle)]">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setNotesTab("edit")}
-                      className={`px-2 py-0.5 text-[10px] font-bold rounded-sm transition-all cursor-pointer ${
-                        notesTab === "edit"
-                          ? "bg-[var(--color-bg-surface)] text-trade-green shadow-xs"
-                          : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                      }`}
+                      onClick={handleAiBeautify}
+                      disabled={isBeautifying}
+                      className="px-2 py-0.5 text-[10px] font-bold rounded border border-trade-green/30 bg-trade-green-dim/10 text-trade-green hover:bg-trade-green hover:text-white transition-all cursor-pointer flex items-center gap-1"
                     >
-                      ✍️ 编辑
+                      <Sparkles size={10} />
+                      {isBeautifying ? "美化中..." : "AI 美化"}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setNotesTab("preview")}
-                      className={`px-2 py-0.5 text-[10px] font-bold rounded-sm transition-all cursor-pointer ${
-                        notesTab === "preview"
-                          ? "bg-[var(--color-bg-surface)] text-trade-green shadow-xs"
-                          : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                      }`}
-                    >
-                      👁️ 预览
-                    </button>
+                    <div className="flex rounded-md bg-[var(--color-bg-elevated)] p-0.5 border border-[var(--color-border-subtle)]">
+                      <button
+                        type="button"
+                        onClick={() => setNotesTab("edit")}
+                        className={`px-2 py-0.5 text-[10px] font-bold rounded-sm transition-all cursor-pointer ${
+                          notesTab === "edit"
+                            ? "bg-[var(--color-bg-surface)] text-trade-green shadow-xs"
+                            : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                        }`}
+                      >
+                        ✍️ 编辑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNotesTab("preview")}
+                        className={`px-2 py-0.5 text-[10px] font-bold rounded-sm transition-all cursor-pointer ${
+                          notesTab === "preview"
+                            ? "bg-[var(--color-bg-surface)] text-trade-green shadow-xs"
+                            : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                        }`}
+                      >
+                        👁️ 预览
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {notesTab === "edit" ? (
@@ -770,6 +892,90 @@ export default function Journal({
                 className="px-4 py-1.5 rounded-lg bg-trade-green text-white text-xs font-bold hover:bg-green-600 transition-colors cursor-pointer"
               >
                 保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Beautification Compare Modal */}
+      {showBeautifyModal && (
+        <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-5xl bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded-xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
+              <div className="flex items-center gap-2 text-trade-green">
+                <Sparkles size={18} className="animate-pulse" />
+                <h3 className="font-bold text-sm text-[var(--color-text-primary)]">AI 复盘美化润色</h3>
+              </div>
+              <button onClick={() => setShowBeautifyModal(false)} className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-1 rounded-lg hover:bg-[var(--color-bg-hover)]">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Body: Split Columns */}
+            <div className="flex-1 overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left Column: Original */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-bold text-[var(--text-secondary)] flex items-center gap-1">
+                  <span>📝 您的原始复盘</span>
+                </span>
+                <textarea
+                  readOnly
+                  value={beautifyOriginalText}
+                  className="flex-1 min-h-[200px] md:min-h-full w-full p-3 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-xs text-[var(--text-secondary)] resize-none focus:outline-none leading-relaxed"
+                />
+              </div>
+
+              {/* Right Column: AI Polished */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-bold text-trade-green flex items-center gap-1">
+                  <Sparkles size={12} />
+                  <span>✨ AI 结构化美化</span>
+                </span>
+                {(() => {
+                  const thinkMode = localStorage.getItem("tf_ai_think_mode") || "think-high";
+                  const { think, content } = parseThinkContent(beautifyResultText);
+                  return (
+                    <div
+                      className="flex-1 min-h-[200px] md:min-h-full w-full p-3 rounded-lg border border-trade-green/30 bg-trade-green-dim/10 text-xs text-[var(--text-primary)] overflow-y-auto leading-relaxed markdown-body flex flex-col"
+                    >
+                      {thinkMode !== "non-think" && think && (
+                        <details className="p-2 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[10px] text-[var(--color-text-secondary)] mb-3 cursor-pointer outline-none" open>
+                          <summary className="font-bold outline-none select-none flex items-center gap-1.5 text-trade-green text-xxs">
+                            <Sparkles size={10} className="animate-pulse" />
+                            <span>AI 思考路径</span>
+                          </summary>
+                          <div className="mt-1.5 leading-relaxed whitespace-pre-wrap font-mono border-t border-[var(--color-border-subtle)]/50 pt-1.5 opacity-80">
+                            {think}
+                          </div>
+                        </details>
+                      )}
+                      <div dangerouslySetInnerHTML={{ __html: content ? (marked.parse(content) as string) : (beautifyResultText ? '' : '<p class="text-[var(--text-muted)] italic">AI 润色中...</p>') }} />
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
+              <button
+                onClick={() => setShowBeautifyModal(false)}
+                className="px-4 py-2 border border-[var(--color-border-standard)] rounded-lg text-xs font-bold hover:bg-[var(--color-bg-hover)] text-[var(--text-secondary)] transition-colors cursor-pointer"
+              >
+                保留原始内容
+              </button>
+              <button
+                onClick={() => {
+                  const { content } = parseThinkContent(beautifyResultText);
+                  setTradeForm(prev => ({ ...prev, notes: content }));
+                  setShowBeautifyModal(false);
+                }}
+                disabled={!beautifyResultText}
+                className="px-4 py-2 bg-trade-green hover:bg-green-600 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-40 disabled:hover:bg-trade-green cursor-pointer flex items-center gap-1.5"
+              >
+                <Check size={14} />使用美化结果
               </button>
             </div>
           </div>

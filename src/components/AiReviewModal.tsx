@@ -738,7 +738,7 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>离场理由:</span> {trade.exitReason}</div>
                           <div><span className="font-semibold" style={{ color: "#1f2937" }}>离场错误:</span> {trade.errorReason || "无"}</div>
                           <div className="col-span-2 mt-1.5 leading-relaxed">
-                            <span className="font-semibold block mb-1" style={{ color: "#1f2937" }}>交易备注:</span>
+                            <span className="font-semibold block mb-1" style={{ color: "#1f2937" }}>下单思路:</span>
                             {trade.remarks ? (
                               <div className="markdown-body p-2.5 rounded text-xs bg-white border border-gray-100" style={{ color: "#374151" }} dangerouslySetInnerHTML={{ __html: marked.parse(trade.remarks) as string }} />
                             ) : (
