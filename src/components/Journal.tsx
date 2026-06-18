@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import ScreenshotImage from "./ScreenshotImage";
 import type { Trade, OptionItem } from "./types";
+import { marked } from "marked";
 
 interface JournalProps {
   trades: Trade[];
@@ -125,6 +126,8 @@ export default function Journal({
 }: JournalProps) {
   // 分页状态与计算
   const [currentPage, setCurrentPage] = useState(1);
+  const [remarksTab, setRemarksTab] = useState<"edit" | "preview">("edit");
+  const [notesTab, setNotesTab] = useState<"edit" | "preview">("edit");
   const pageSize = 30;
 
   useEffect(() => {
@@ -133,6 +136,11 @@ export default function Journal({
     filteredTrades.length, searchQuery, directionFilter, statusFilter,
     setupFilter, typeFilter, symbolFilter, processFilter, dateFilter
   ]);
+
+  useEffect(() => {
+    setRemarksTab("edit");
+    setNotesTab("edit");
+  }, [inlineEditingId]);
 
   const totalPages = Math.ceil(filteredTrades.length / pageSize) || 1;
   const activePage = Math.min(currentPage, totalPages);
@@ -426,7 +434,7 @@ export default function Journal({
 
       {/* Drawer Panel */}
       {inlineEditingId !== null && (
-        <div className="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-[var(--color-bg-surface)] border-l border-[var(--color-border-subtle)] shadow-2xl z-50 flex flex-col overflow-hidden animate-slide-in">
+        <div className="fixed right-0 top-0 h-screen w-full sm:w-[600px] bg-[var(--color-bg-surface)] border-l border-[var(--color-border-subtle)] shadow-2xl z-50 flex flex-col overflow-hidden animate-slide-in">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
             <h3 className="text-sm font-bold text-[var(--text-primary)]">
@@ -635,17 +643,95 @@ export default function Journal({
             {/* Remarks & Notes */}
             <div className="border-t border-[var(--color-border-subtle)] pt-4 mt-2 flex flex-col gap-3">
               <h4 className="text-xs font-bold text-[var(--text-secondary)]">备注与复盘</h4>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-[var(--text-secondary)]">备注信息</label>
-                <textarea placeholder="输入交易备注（选填）..." value={tradeForm.remarks} rows={2}
-                  onChange={(e) => setTradeForm(prev => ({ ...prev, remarks: e.target.value }))}
-                  className="w-full px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none resize-y" />
+              
+              {/* 备注信息 */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">备注信息</label>
+                  <div className="flex rounded-md bg-[var(--color-bg-elevated)] p-0.5 border border-[var(--color-border-subtle)]">
+                    <button
+                      type="button"
+                      onClick={() => setRemarksTab("edit")}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-sm transition-all cursor-pointer ${
+                        remarksTab === "edit"
+                          ? "bg-[var(--color-bg-surface)] text-trade-green shadow-xs"
+                          : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                      }`}
+                    >
+                      ✍️ 编辑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRemarksTab("preview")}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-sm transition-all cursor-pointer ${
+                        remarksTab === "preview"
+                          ? "bg-[var(--color-bg-surface)] text-trade-green shadow-xs"
+                          : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                      }`}
+                    >
+                      👁️ 预览
+                    </button>
+                  </div>
+                </div>
+                {remarksTab === "edit" ? (
+                  <textarea
+                    placeholder="输入交易备注（支持 Markdown 结构化输入，选填）..."
+                    value={tradeForm.remarks}
+                    rows={4}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, remarks: e.target.value }))}
+                    className="w-full px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm font-mono text-[var(--text-primary)] focus:border-trade-green outline-none resize-y leading-relaxed"
+                  />
+                ) : (
+                  <div
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] min-h-[96px] text-xs text-[var(--text-primary)] overflow-y-auto leading-relaxed markdown-body"
+                    dangerouslySetInnerHTML={{ __html: tradeForm.remarks ? (marked.parse(tradeForm.remarks) as string) : '<p class="text-[var(--text-muted)] italic">无备注预览内容</p>' }}
+                  />
+                )}
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-[var(--text-secondary)]">自我复盘总结</label>
-                <textarea placeholder="输入自我复盘总结（选填）..." value={tradeForm.notes} rows={3}
-                  onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] focus:border-trade-green outline-none resize-y" />
+
+              {/* 自我复盘总结 */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">自我复盘总结</label>
+                  <div className="flex rounded-md bg-[var(--color-bg-elevated)] p-0.5 border border-[var(--color-border-subtle)]">
+                    <button
+                      type="button"
+                      onClick={() => setNotesTab("edit")}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-sm transition-all cursor-pointer ${
+                        notesTab === "edit"
+                          ? "bg-[var(--color-bg-surface)] text-trade-green shadow-xs"
+                          : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                      }`}
+                    >
+                      ✍️ 编辑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotesTab("preview")}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-sm transition-all cursor-pointer ${
+                        notesTab === "preview"
+                          ? "bg-[var(--color-bg-surface)] text-trade-green shadow-xs"
+                          : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                      }`}
+                    >
+                      👁️ 预览
+                    </button>
+                  </div>
+                </div>
+                {notesTab === "edit" ? (
+                  <textarea
+                    placeholder="输入自我复盘总结（支持 Markdown 结构化输入，选填）..."
+                    value={tradeForm.notes}
+                    rows={6}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="w-full px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm font-mono text-[var(--text-primary)] focus:border-trade-green outline-none resize-y leading-relaxed"
+                  />
+                ) : (
+                  <div
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] min-h-[128px] text-xs text-[var(--text-primary)] overflow-y-auto leading-relaxed markdown-body"
+                    dangerouslySetInnerHTML={{ __html: tradeForm.notes ? (marked.parse(tradeForm.notes) as string) : '<p class="text-[var(--text-muted)] italic">无复盘预览内容</p>' }}
+                  />
+                )}
               </div>
             </div>
 

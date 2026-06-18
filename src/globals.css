@@ -189,3 +189,17 @@ select {
 .animate-slide-in {
   animation: slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Markdown rendering styles */
+.markdown-body h1 { font-size: 1.25rem; font-weight: 700; margin-top: 0.75rem; margin-bottom: 0.4rem; color: var(--color-text-primary); }
+.markdown-body h2 { font-size: 1.125rem; font-weight: 700; margin-top: 0.6rem; margin-bottom: 0.3rem; color: var(--color-text-primary); }
+.markdown-body h3 { font-size: 1rem; font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.25rem; color: var(--color-text-primary); }
+.markdown-body p { margin-bottom: 0.5rem; line-height: 1.6; color: var(--color-text-secondary); }
+.markdown-body ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.5rem; color: var(--color-text-secondary); }
+.markdown-body ol { list-style-type: decimal; padding-left: 1.25rem; margin-bottom: 0.5rem; color: var(--color-text-secondary); }
+.markdown-body li { margin-bottom: 0.25rem; }
+.markdown-body strong { font-weight: 700; color: var(--color-text-primary); }
+.markdown-body blockquote { border-left: 3px solid var(--color-border-strong); padding-left: 0.75rem; margin-left: 0; margin-bottom: 0.5rem; color: var(--color-text-muted); font-style: italic; }
+.markdown-body code { font-family: var(--font-mono); font-size: 0.85em; background: var(--color-bg-elevated); padding: 0.15rem 0.3rem; border-radius: 4px; color: var(--color-text-primary); }
+.markdown-body pre { background: var(--color-bg-elevated); padding: 0.75rem; border-radius: 8px; overflow-x: auto; margin-bottom: 0.5rem; }
+.markdown-body pre code { background: transparent; padding: 0; border-radius: 0; }
