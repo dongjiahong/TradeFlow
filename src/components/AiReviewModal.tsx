@@ -250,6 +250,11 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
     const styleEl = document.createElement("style");
     styleEl.innerHTML = `
       @media print {
+        html, body {
+          overflow: visible !important;
+          height: auto !important;
+          min-height: auto !important;
+        }
         body > * {
           display: none !important;
         }
@@ -329,10 +334,15 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
       ? `TradeFlow_AI智能诊断报告_${periodLabel}_${todayStr}`
       : `TradeFlow_交易复盘清单_${periodLabel}_${todayStr}`;
 
+    // Temporarily revert body overflow limit so that window.print() prints all pages
+    const originalBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "visible";
+
     // Trigger print
     window.print();
 
     // Clean up
+    document.body.style.overflow = originalBodyOverflow;
     document.title = oldTitle;
     document.body.removeChild(tempContainer);
     document.head.removeChild(styleEl);
