@@ -241,111 +241,192 @@ ${rulesStr ? "- " + rulesStr : "暂无"}
     return () => { active = false; };
   }, [period, reviewMode]);
 
-  // 4. 调用原生打印导出 PDF
+  // 4. 使用隔离的 iframe 打印方案，彻底解决全局样式（如 overflow: hidden）污染以及内容重复/截断问题
   const handleExportPdf = () => {
     const element = reportContainerRef.current;
     if (!element) return;
 
-    // Create print stylesheet
-    const styleEl = document.createElement("style");
-    styleEl.innerHTML = `
-      @media print {
-        html, body {
-          overflow: visible !important;
-          height: auto !important;
-          min-height: auto !important;
-        }
-        body > * {
-          display: none !important;
-        }
-        #print-temp-container {
-          display: block !important;
-          width: 100% !important;
-          height: auto !important;
-          background: white !important;
-          color: black !important;
-          padding: 24px !important;
-          font-family: system-ui, -apple-system, sans-serif !important;
-        }
-        #print-temp-container h1, 
-        #print-temp-container h2, 
-        #print-temp-container h3, 
-        #print-temp-container h4, 
-        #print-temp-container h5 {
-          color: #111827 !important;
-          margin-top: 12px !important;
-          margin-bottom: 6px !important;
-          font-weight: bold !important;
-        }
-        #print-temp-container p {
-          margin-bottom: 8px !important;
-          line-height: 1.5 !important;
-        }
-        #print-temp-container img {
-          max-width: 100% !important;
-          height: auto !important;
-          page-break-inside: avoid !important;
-          border: 1px solid #e5e7eb !important;
-          border-radius: 6px !important;
-          margin-top: 6px !important;
-          margin-bottom: 12px !important;
-        }
-        .grid {
-          display: grid !important;
-        }
-        .grid-cols-2 {
-          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        }
-        .flex {
-          display: flex !important;
-        }
-        .flex-col {
-          flex-direction: column !important;
-        }
-        .gap-4 {
-          gap: 16px !important;
-        }
-        .gap-3 {
-          gap: 12px !important;
-        }
-        .page-break-avoid {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-        }
-      }
-    `;
-    document.head.appendChild(styleEl);
+    // 1. 动态创建一个隐藏的 iframe，用于打印沙箱环境
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
 
-    // Create temporary wrapper and duplicate elements inside
-    const tempContainer = document.createElement("div");
-    tempContainer.id = "print-temp-container";
-    tempContainer.innerHTML = element.innerHTML;
-    
-    // Add page-break-avoid class to cards to prevent printing cuts
-    const cards = tempContainer.querySelectorAll(".border.rounded-xl");
-    cards.forEach(c => c.classList.add("page-break-avoid"));
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
 
-    document.body.appendChild(tempContainer);
-
-    // Set document title temporarily to naming format
-    const oldTitle = document.title;
     const todayStr = new Date().toISOString().split("T")[0];
-    document.title = reviewMode === "ai"
+    const docTitle = reviewMode === "ai"
       ? `TradeFlow_AI智能诊断报告_${periodLabel}_${todayStr}`
       : `TradeFlow_交易复盘清单_${periodLabel}_${todayStr}`;
 
-    // Temporarily revert body overflow limit so that window.print() prints all pages
-    const originalBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "visible";
+    // 2. 写入独立的 HTML 结构与精简的打印样式（避开 flex/grid 跨页 bug）
+    doc.open();
+    doc.write(`
+      <html>
+        <head>
+          <title>${docTitle}</title>
+          <style>
+            /* 页面基础排版 */
+            html, body {
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+              color: #000000;
+              font-family: system-ui, -apple-system, sans-serif;
+              font-size: 12px;
+              line-height: 1.5;
+              overflow: visible !important;
+              height: auto !important;
+            }
+            body {
+              padding: 24px;
+            }
+            /* 块级元素和文本间距 */
+            h1, h2, h3, h4, h5 {
+              color: #111827;
+              margin-top: 12px;
+              margin-bottom: 6px;
+              font-weight: bold;
+            }
+            p {
+              margin-bottom: 8px;
+              line-height: 1.5;
+            }
+            /* 打印防截断避让 */
+            .page-break-avoid,
+            .border.rounded-xl,
+            [class*="rounded-lg"] {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            /* 图片排版 */
+            img {
+              max-width: 100%;
+              height: auto;
+              border: 1px solid #e5e7eb;
+              border-radius: 6px;
+              margin-top: 6px;
+              margin-bottom: 12px;
+              display: block;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            
+            /* 跨页列表与大卡片必须使用 block 布局，防止 Flex/Grid 造成打印引擎重复绘制同一个内容的 Chromium bug */
+            .flex.flex-col.gap-4,
+            .flex-col {
+              display: block !important;
+            }
+            .p-4.rounded-lg.flex.flex-col.gap-3 {
+              display: block !important;
+              margin-bottom: 16px !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
 
-    // Trigger print
-    window.print();
+            /* 基础布局辅助类（局部的 flex/grid 打印） */
+            .flex { display: flex; }
+            .grid { display: grid; }
+            .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            .col-span-2 { grid-column: span 2 / span 2; }
+            .items-center { align-items: center; }
+            .justify-between { justify-content: space-between; }
+            .justify-center { justify-content: center; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .text-xs { font-size: 11px; }
+            .text-sm { font-size: 13px; }
+            .text-lg { font-size: 18px; }
+            .font-bold { font-weight: bold; }
+            .font-semibold { font-weight: 600; }
+            .w-full { width: 100%; }
+            .gap-4 { gap: 16px; }
+            .gap-3 { gap: 12px; }
+            .gap-2 { gap: 8px; }
+            .p-4 { padding: 16px; }
+            .p-3 { padding: 12px; }
+            .p-2.5 { padding: 10px; }
+            .pb-3 { padding-bottom: 12px; }
+            .pb-2 { padding-bottom: 8px; }
+            .pb-1 { padding-bottom: 4px; }
+            .pt-5 { padding-top: 20px; }
+            .mt-4 { margin-top: 16px; }
+            .mt-2 { margin-top: 8px; }
+            .mt-1.5 { margin-top: 6px; }
+            .mb-4 { margin-bottom: 16px; }
+            .rounded-lg { border-radius: 8px; }
+            .rounded { border-radius: 4px; }
+            .border { border: 1px solid #e5e7eb; }
+            .list-disc { list-style-type: disc; }
+            .pl-4 { padding-left: 16px; }
+            .leading-relaxed { line-height: 1.625; }
 
-    // Clean up
-    document.body.style.overflow = originalBodyOverflow;
-    document.title = oldTitle;
-    document.body.removeChild(tempContainer);
-    document.head.removeChild(styleEl);
+            /* 原本 PDF Scoped Style 的复刻与补充 */
+            h1 { font-size: 16px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; text-align: left; }
+            h2 { font-size: 14px; text-align: left; display: flex; align-items: center; gap: 6px; }
+            h2::before { content: ''; display: inline-block; width: 4px; height: 12px; background-color: #22c55e; border-radius: 9999px; }
+            h3 { font-size: 12px; padding-left: 4px; border-left: 2px solid #4b5563; text-align: left; }
+            h4 { font-size: 12px; padding-left: 4px; text-align: left; }
+            ul, ol { margin-left: 8px; text-align: left; }
+            li { font-size: 12px; color: #374151; text-align: left; }
+            table { width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 12px; font-size: 11px; text-align: left; }
+            th { background-color: #f3f4f6; color: #111827; font-weight: bold; border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; }
+            td { border: 1px solid #e5e7eb; padding: 6px 8px; background-color: #ffffff; text-align: left; }
+            tr:nth-child(even) td { background-color: #f9fafb; }
+          </style>
+        </head>
+        <body>
+          <div style="width: 100%; max-width: 800px; margin: 0 auto;">
+            ${element.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    // 3. 定义真正的打印触发逻辑
+    const executePrint = () => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      // 延时清理 iframe，防止过快销毁导致打印中断
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    };
+
+    // 4. 等待所有图片完全加载（尤其是来自 IndexedDB 的本地 Blob 截图），防止 PDF 里图片显示为空白
+    const images = doc.getElementsByTagName("img");
+    let loadedCount = 0;
+    const totalImages = images.length;
+
+    if (totalImages === 0) {
+      executePrint();
+    } else {
+      const onImageLoad = () => {
+        loadedCount++;
+        if (loadedCount === totalImages) {
+          executePrint();
+        }
+      };
+
+      for (let i = 0; i < totalImages; i++) {
+        const img = images[i];
+        if (img.complete) {
+          onImageLoad();
+        } else {
+          img.addEventListener("load", onImageLoad);
+          img.addEventListener("error", onImageLoad); // 即使有图挂了也触发打印，不卡死流程
+        }
+      }
+    }
   };
 
   return (
