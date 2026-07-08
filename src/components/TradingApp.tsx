@@ -362,8 +362,19 @@ export default function TradingApp({
     if (!sl || !entry || !size || size <= 0) return null;
     const riskAmount = Math.abs(entry - sl) * size;
     if (riskAmount <= 0) return null;
-    const pnl = calculateLivePnl();
-    return parseFloat((pnl / riskAmount).toFixed(2));
+    
+    // 计算毛盈亏（不包含手续费）用于策略盈亏比（Actual RR）的纯净计算
+    const exit1 = Number(tradeForm.exitPrice1) || 0;
+    const exit2 = tradeForm.exitPrice2 ? Number(tradeForm.exitPrice2) : null;
+    const dir = tradeForm.direction;
+    let grossPnl = 0;
+    if (exit2 === null || isNaN(exit2) || exit2 === 0) {
+      grossPnl = dir === "Long" ? (exit1 - entry) * size : (entry - exit1) * size;
+    } else {
+      grossPnl = dir === "Long" ? (exit1 - entry) * (size / 2) + (exit2 - entry) * (size / 2) : (entry - exit1) * (size / 2) + (entry - exit2) * (size / 2);
+    }
+    
+    return parseFloat((grossPnl / riskAmount).toFixed(2));
   };
 
   const handlePendingFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

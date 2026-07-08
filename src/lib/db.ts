@@ -346,16 +346,17 @@ export async function createTrade(data: {
 }) {
   try {
     const fee = data.fee ?? 0;
-    const pnl = calculateTradePnl(
+    const grossPnl = calculateTradePnl(
       data.direction,
       data.positionSize,
       data.entryPrice,
       data.exitPrice1,
       data.exitPrice2,
-      fee
+      0
     );
+    const pnl = grossPnl - fee;
     const status = getTradeStatus(pnl);
-    const rr = calculateRR(data.entryPrice, data.stopLoss, data.positionSize, pnl);
+    const rr = calculateRR(data.entryPrice, data.stopLoss, data.positionSize, grossPnl);
     const id = self.crypto.randomUUID();
 
     const trade: Trade = {
@@ -416,16 +417,17 @@ export async function updateTrade(
 ) {
   try {
     const fee = data.fee ?? 0;
-    const pnl = calculateTradePnl(
+    const grossPnl = calculateTradePnl(
       data.direction,
       data.positionSize,
       data.entryPrice,
       data.exitPrice1,
       data.exitPrice2,
-      fee
+      0
     );
+    const pnl = grossPnl - fee;
     const status = getTradeStatus(pnl);
-    const rr = calculateRR(data.entryPrice, data.stopLoss, data.positionSize, pnl);
+    const rr = calculateRR(data.entryPrice, data.stopLoss, data.positionSize, grossPnl);
 
     const updateData: Partial<Trade> = {
       date: data.date,
@@ -786,14 +788,20 @@ export async function importExcelData(base64Data: string) {
       let pnl = parseFloat(getVal(row, ["盈亏", "盈亏情况"])) || 0;
       let status = getVal(row, ["状态", "盈亏状态"]);
 
+      let grossPnl = pnl;
       if (pnl === 0 && entryPrice > 0 && positionSize > 0) {
-        pnl = calculateTradePnl(direction, positionSize, entryPrice, exitPrice1, exitPrice2, fee);
+        grossPnl = calculateTradePnl(direction, positionSize, entryPrice, exitPrice1, exitPrice2, 0);
+        pnl = grossPnl - fee;
+      } else {
+        // If Excel already has PnL, we assume it's net PnL if fee is provided, so grossPnl is pnl + fee
+        grossPnl = pnl + fee;
       }
+
       if (!status || (status !== "win" && status !== "lose" && status !== "BE")) {
         status = getTradeStatus(pnl);
       }
 
-      let rr = calculateRR(entryPrice, stopLoss, positionSize, pnl);
+      let rr = calculateRR(entryPrice, stopLoss, positionSize, grossPnl);
       if (rr === null) {
         const excelRr = getVal(row, ["RR", "盈亏比"]) !== null ? parseFloat(getVal(row, ["RR", "盈亏比"])) : null;
         if (excelRr !== null && !isNaN(excelRr)) {
