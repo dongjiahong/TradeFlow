@@ -24,14 +24,14 @@ interface JournalProps {
     notes: string; positionSize: string; direction: string; entryPrice: string;
     stopLoss: string; takeProfit: string; exitPrice1: string; exitPrice2: string;
     errorReason: string; symbol: string; process: string; marketEnv: string;
-    fee: string;
+    fee: string; pnl: string;
   };
   setTradeForm: React.Dispatch<React.SetStateAction<{
     date: string; remarks: string; setup: string; type: string; exitReason: string;
     notes: string; positionSize: string; direction: string; entryPrice: string;
     stopLoss: string; takeProfit: string; exitPrice1: string; exitPrice2: string;
     errorReason: string; symbol: string; process: string; marketEnv: string;
-    fee: string;
+    fee: string; pnl: string;
   }>>;
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
@@ -278,7 +278,8 @@ export default function Journal({
       symbol: trade.symbol,
       process: trade.process || "",
       marketEnv: trade.marketEnv || "",
-      fee: trade.fee !== undefined ? String(trade.fee) : "0"
+      fee: trade.fee !== undefined ? String(trade.fee) : "0",
+      pnl: trade.pnl !== undefined ? String(trade.pnl) : ""
     });
   };
 
@@ -354,7 +355,7 @@ export default function Journal({
                 direction: "Long", entryPrice: "", stopLoss: "", takeProfit: "",
                 exitPrice1: "", exitPrice2: "", errorReason: "",
                 symbol: symbols[0]?.name || "", process: processes[0]?.name || "",
-                marketEnv: "", fee: "0"
+                marketEnv: "", fee: "0", pnl: ""
               });
             }}
             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-trade-green text-white font-bold text-sm hover:bg-green-600 transition-colors">
@@ -731,9 +732,17 @@ export default function Journal({
                   </select>
                 </div>
 
+                <div className="flex flex-col gap-1 col-span-2">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">实际盈亏 PnL (选填，留空则自动计算)</label>
+                  <input type="number" step="any" placeholder={`自动计算值: ${calculateLivePnl().toFixed(2)}`} value={tradeForm.pnl}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, pnl: e.target.value }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
+                </div>
+
                 {/* Real-time calculated PnL & Status */}
                 {(() => {
-                  const livePnl = calculateLivePnl();
+                  const autoLivePnl = calculateLivePnl();
+                  const livePnl = tradeForm.pnl !== "" ? (parseFloat(tradeForm.pnl) || 0) : autoLivePnl;
                   const liveStatus = livePnl > 0 ? "win" : livePnl < 0 ? "lose" : "BE";
                   return (
                     <>
@@ -743,6 +752,7 @@ export default function Journal({
                           livePnl > 0 ? "text-trade-green" : livePnl < 0 ? "text-trade-red" : "text-[var(--text-muted)]"
                         }`}>
                           {livePnl > 0 ? "+" : ""}{livePnl.toFixed(2)}
+                          {tradeForm.pnl !== "" && <span className="text-[10px] text-[var(--text-muted)] font-normal ml-1">(手动输入)</span>}
                         </span>
                       </div>
                       <div className="flex flex-col gap-1">

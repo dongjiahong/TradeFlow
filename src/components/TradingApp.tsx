@@ -124,7 +124,7 @@ export default function TradingApp({
     positionSize: "1", direction: "Long", entryPrice: "",
     stopLoss: "", takeProfit: "", exitPrice1: "", exitPrice2: "",
     errorReason: "", symbol: "", process: "", marketEnv: "",
-    fee: "0"
+    fee: "0", pnl: ""
   });
 
   // Settings custom items
@@ -417,7 +417,8 @@ export default function TradingApp({
       symbol: tradeForm.symbol, errorReason: tradeForm.errorReason || undefined,
       process: tradeForm.process || undefined,
       marketEnv: tradeForm.marketEnv || undefined,
-      fee: Number(tradeForm.fee) || 0
+      fee: Number(tradeForm.fee) || 0,
+      pnl: tradeForm.pnl !== "" ? (Number(tradeForm.pnl) || 0) : undefined
     };
 
     const sortTradesAsc = (a: Trade, b: Trade) => new Date(a.date).getTime() - new Date(b.date).getTime();
