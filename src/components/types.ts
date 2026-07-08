@@ -20,6 +20,7 @@ export interface Trade {
   errorReason: string | null;
   process: string | null;
   marketEnv: string | null;
+  fee?: number;
   screenshots?: { id: string; filename: string }[];
 }
 

@@ -24,6 +24,7 @@ export interface Trade {
   errorReason: string | null;
   process: string | null;
   marketEnv: string | null;
+  fee: number;
   screenshots?: { id: string; filename: string }[];
 }
 
@@ -125,6 +126,22 @@ class TradingLogDatabase extends Dexie {
         );
       });
     });
+    this.version(6).stores({
+      trades: "id, date",
+      setupOptions: "++id, &name",
+      errorOptions: "++id, &name",
+      exitOptions: "++id, &name",
+      symbolOptions: "++id, &name",
+      processOptions: "++id, &name",
+      screenshots: "id, tradeId",
+      tradingRules: "++id, createdAt"
+    }).upgrade(async tx => {
+      await tx.table("trades").toCollection().modify(trade => {
+        if (trade.fee === undefined) {
+          trade.fee = 0;
+        }
+      });
+    });
   }
 }
 
@@ -215,27 +232,30 @@ const calculateTradePnl = (
   positionSize: number,
   entryPrice: number,
   exitPrice1: number,
-  exitPrice2?: number | null
+  exitPrice2?: number | null,
+  fee: number = 0
 ): number => {
+  let grossPnl = 0;
   if (exitPrice2 === undefined || exitPrice2 === null || isNaN(exitPrice2) || exitPrice2 === 0) {
     if (direction === "Long") {
-      return (exitPrice1 - entryPrice) * positionSize;
+      grossPnl = (exitPrice1 - entryPrice) * positionSize;
     } else {
-      return (entryPrice - exitPrice1) * positionSize;
+      grossPnl = (entryPrice - exitPrice1) * positionSize;
     }
   } else {
     if (direction === "Long") {
-      return (
+      grossPnl = (
         (exitPrice1 - entryPrice) * (positionSize / 2) +
         (exitPrice2 - entryPrice) * (positionSize / 2)
       );
     } else {
-      return (
+      grossPnl = (
         (entryPrice - exitPrice1) * (positionSize / 2) +
         (entryPrice - exitPrice2) * (positionSize / 2)
       );
     }
   }
+  return grossPnl - fee;
 };
 
 const getTradeStatus = (pnl: number): "win" | "lose" | "BE" => {
@@ -322,14 +342,17 @@ export async function createTrade(data: {
   symbol?: string;
   process?: string;
   marketEnv?: string;
+  fee?: number;
 }) {
   try {
+    const fee = data.fee ?? 0;
     const pnl = calculateTradePnl(
       data.direction,
       data.positionSize,
       data.entryPrice,
       data.exitPrice1,
-      data.exitPrice2
+      data.exitPrice2,
+      fee
     );
     const status = getTradeStatus(pnl);
     const rr = calculateRR(data.entryPrice, data.stopLoss, data.positionSize, pnl);
@@ -357,6 +380,7 @@ export async function createTrade(data: {
       process: data.process || null,
       marketEnv: data.marketEnv || null,
       symbol: data.symbol || "",
+      fee,
     };
 
     await db.trades.add(trade);
@@ -387,15 +411,18 @@ export async function updateTrade(
     symbol?: string;
     process?: string;
     marketEnv?: string;
+    fee?: number;
   }
 ) {
   try {
+    const fee = data.fee ?? 0;
     const pnl = calculateTradePnl(
       data.direction,
       data.positionSize,
       data.entryPrice,
       data.exitPrice1,
-      data.exitPrice2
+      data.exitPrice2,
+      fee
     );
     const status = getTradeStatus(pnl);
     const rr = calculateRR(data.entryPrice, data.stopLoss, data.positionSize, pnl);
@@ -418,6 +445,7 @@ export async function updateTrade(
       remarks: data.remarks || null,
       notes: data.notes || null,
       errorReason: data.errorReason || null,
+      fee,
     };
 
     if (data.symbol !== undefined) {
@@ -747,6 +775,7 @@ export async function importExcelData(base64Data: string) {
       const symbol = String(getVal(row, ["品类"], "")).trim();
       const errorReason = getVal(row, ["错误原因", "离场错误"]) ? String(getVal(row, ["错误原因", "离场错误"])) : null;
       const process = getVal(row, ["过程"]) ? String(getVal(row, ["过程"])).trim() : null;
+      const fee = parseFloat(getVal(row, ["手续费", "佣金", "Fee", "fee"], 0)) || 0;
 
       const rawMarketEnv = getVal(row, ["市场环境", "环境"]);
       const marketEnv = rawMarketEnv && ["突破", "窄通道", "宽通道", "震荡区间"].includes(String(rawMarketEnv).trim())
@@ -758,7 +787,7 @@ export async function importExcelData(base64Data: string) {
       let status = getVal(row, ["状态", "盈亏状态"]);
 
       if (pnl === 0 && entryPrice > 0 && positionSize > 0) {
-        pnl = calculateTradePnl(direction, positionSize, entryPrice, exitPrice1, exitPrice2);
+        pnl = calculateTradePnl(direction, positionSize, entryPrice, exitPrice1, exitPrice2, fee);
       }
       if (!status || (status !== "win" && status !== "lose" && status !== "BE")) {
         status = getTradeStatus(pnl);
@@ -804,6 +833,7 @@ export async function importExcelData(base64Data: string) {
         errorReason: errorReason || null,
         process: process || null,
         marketEnv: marketEnv || null,
+        fee,
       });
     }
 
@@ -894,7 +924,7 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("日志");
 
-    // Base column headers (18 columns)
+    // Base column headers (20 columns)
     const columnsDef = [
       { header: "日期", key: "date", width: 15 },
       { header: "品类", key: "symbol", width: 12 },
@@ -909,6 +939,7 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
       { header: "止盈", key: "takeProfit", width: 12 },
       { header: "止损", key: "stopLoss", width: 12 },
       { header: "RR", key: "rr", width: 10 },
+      { header: "手续费", key: "fee", width: 10 },
       { header: "盈亏", key: "pnl", width: 12 },
       { header: "状态", key: "status", width: 10 },
       { header: "过程", key: "process", width: 15 },
@@ -950,6 +981,7 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
         takeProfit: trade.takeProfit ?? "",
         stopLoss: trade.stopLoss ?? "",
         rr: trade.rr ?? "",
+        fee: trade.fee ?? 0,
         pnl: trade.pnl,
         status: trade.status || "",
         process: trade.process || "",
@@ -986,11 +1018,11 @@ export async function exportExcelData(startDate?: string, endDate?: string) {
               extension: ext,
             });
 
-            // Insert each image in its respective column (Col 20+ is index 19+j)
+            // Insert each image in its respective column (Col 21+ is index 20+j)
             const rIdx = row.number - 1; // 0-indexed row number
             ws.addImage(imageId, {
-              tl: { col: 19 + j, row: rIdx + 0.05 },
-              br: { col: 20 + j, row: rIdx + 0.95 },
+              tl: { col: 20 + j, row: rIdx + 0.05 },
+              br: { col: 21 + j, row: rIdx + 0.95 },
               editAs: 'oneCell'
             } as any);
           } catch (imgError) {

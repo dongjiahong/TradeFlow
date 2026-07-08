@@ -21,15 +21,17 @@ interface JournalProps {
   setInlineEditingId: React.Dispatch<React.SetStateAction<string | null>>;
   tradeForm: {
     date: string; remarks: string; setup: string; type: string; exitReason: string;
-    notes: string; positionSize: number; direction: string; entryPrice: number;
-    stopLoss: string; takeProfit: string; exitPrice1: number; exitPrice2: string;
+    notes: string; positionSize: string; direction: string; entryPrice: string;
+    stopLoss: string; takeProfit: string; exitPrice1: string; exitPrice2: string;
     errorReason: string; symbol: string; process: string; marketEnv: string;
+    fee: string;
   };
   setTradeForm: React.Dispatch<React.SetStateAction<{
     date: string; remarks: string; setup: string; type: string; exitReason: string;
-    notes: string; positionSize: number; direction: string; entryPrice: number;
-    stopLoss: string; takeProfit: string; exitPrice1: number; exitPrice2: string;
+    notes: string; positionSize: string; direction: string; entryPrice: string;
+    stopLoss: string; takeProfit: string; exitPrice1: string; exitPrice2: string;
     errorReason: string; symbol: string; process: string; marketEnv: string;
+    fee: string;
   }>>;
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
@@ -265,17 +267,18 @@ export default function Journal({
       type: trade.type,
       exitReason: trade.exitReason,
       notes: trade.notes || "",
-      positionSize: trade.positionSize,
+      positionSize: String(trade.positionSize),
       direction: trade.direction,
-      entryPrice: trade.entryPrice,
+      entryPrice: String(trade.entryPrice),
       stopLoss: trade.stopLoss !== null ? String(trade.stopLoss) : "",
       takeProfit: trade.takeProfit !== null ? String(trade.takeProfit) : "",
-      exitPrice1: trade.exitPrice1,
+      exitPrice1: String(trade.exitPrice1),
       exitPrice2: trade.exitPrice2 !== null ? String(trade.exitPrice2) : "",
       errorReason: trade.errorReason || "",
       symbol: trade.symbol,
       process: trade.process || "",
-      marketEnv: trade.marketEnv || ""
+      marketEnv: trade.marketEnv || "",
+      fee: trade.fee !== undefined ? String(trade.fee) : "0"
     });
   };
 
@@ -347,11 +350,11 @@ export default function Journal({
               setTradeForm({
                 date: getLocalISOString(),
                 remarks: "", setup: setups[0]?.name || "", type: "趋势延续",
-                exitReason: exits[0]?.name || "", notes: "", positionSize: 1,
-                direction: "Long", entryPrice: 0, stopLoss: "", takeProfit: "",
-                exitPrice1: 0, exitPrice2: "", errorReason: "",
+                exitReason: exits[0]?.name || "", notes: "", positionSize: "1",
+                direction: "Long", entryPrice: "", stopLoss: "", takeProfit: "",
+                exitPrice1: "", exitPrice2: "", errorReason: "",
                 symbol: symbols[0]?.name || "", process: processes[0]?.name || "",
-                marketEnv: ""
+                marketEnv: "", fee: "0"
               });
             }}
             className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-trade-green text-white font-bold text-sm hover:bg-green-600 transition-colors">
@@ -624,7 +627,7 @@ export default function Journal({
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-[var(--text-secondary)]">仓位大小 *</label>
                 <input type="number" step="any" required value={tradeForm.positionSize}
-                  onChange={(e) => setTradeForm(prev => ({ ...prev, positionSize: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setTradeForm(prev => ({ ...prev, positionSize: e.target.value }))}
                   className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
               </div>
             </div>
@@ -636,13 +639,13 @@ export default function Journal({
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-semibold text-[var(--text-secondary)]">入场价格 *</label>
                   <input type="number" step="any" required value={tradeForm.entryPrice}
-                    onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: parseFloat(e.target.value) || 0 }))}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))}
                     className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-semibold text-[var(--text-secondary)]">离场价格1 *</label>
                   <input type="number" step="any" required value={tradeForm.exitPrice1}
-                    onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice1: parseFloat(e.target.value) || 0 }))}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice1: e.target.value }))}
                     className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -661,6 +664,12 @@ export default function Journal({
                   <label className="text-xs font-semibold text-[var(--text-secondary)]">止盈价 (TP)</label>
                   <input type="number" step="any" value={tradeForm.takeProfit}
                     onChange={(e) => setTradeForm(prev => ({ ...prev, takeProfit: e.target.value }))}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-[var(--text-secondary)]">手续费 (Fee)</label>
+                  <input type="number" step="any" value={tradeForm.fee}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, fee: e.target.value }))}
                     className="px-3 py-1.5 rounded-lg border border-[var(--color-border-standard)] bg-[var(--color-bg-canvas)] text-sm text-[var(--text-primary)] font-mono focus:border-trade-green outline-none" />
                 </div>
                 

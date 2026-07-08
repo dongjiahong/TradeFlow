@@ -121,9 +121,10 @@ export default function TradingApp({
   const [tradeForm, setTradeForm] = useState({
     date: getLocalISOString(),
     remarks: "", setup: "", type: "趋势延续", exitReason: "", notes: "",
-    positionSize: 1, direction: "Long", entryPrice: 0,
-    stopLoss: "", takeProfit: "", exitPrice1: 0, exitPrice2: "",
-    errorReason: "", symbol: "", process: "", marketEnv: ""
+    positionSize: "1", direction: "Long", entryPrice: "",
+    stopLoss: "", takeProfit: "", exitPrice1: "", exitPrice2: "",
+    errorReason: "", symbol: "", process: "", marketEnv: "",
+    fee: "0"
   });
 
   // Settings custom items
@@ -332,8 +333,14 @@ export default function TradingApp({
     const exit2 = tradeForm.exitPrice2 ? Number(tradeForm.exitPrice2) : null;
     const size = Number(tradeForm.positionSize) || 0;
     const dir = tradeForm.direction;
-    if (exit2 === null || isNaN(exit2) || exit2 === 0) return dir === "Long" ? (exit1 - entry) * size : (entry - exit1) * size;
-    return dir === "Long" ? (exit1 - entry) * (size / 2) + (exit2 - entry) * (size / 2) : (entry - exit1) * (size / 2) + (entry - exit2) * (size / 2);
+    const fee = Number(tradeForm.fee) || 0;
+    let grossPnl = 0;
+    if (exit2 === null || isNaN(exit2) || exit2 === 0) {
+      grossPnl = dir === "Long" ? (exit1 - entry) * size : (entry - exit1) * size;
+    } else {
+      grossPnl = dir === "Long" ? (exit1 - entry) * (size / 2) + (exit2 - entry) * (size / 2) : (entry - exit1) * (size / 2) + (entry - exit2) * (size / 2);
+    }
+    return grossPnl - fee;
   };
 
   const calculateLiveRR = (): number | null => {
@@ -392,13 +399,14 @@ export default function TradingApp({
     const parsedTakeProfit = tradeForm.takeProfit ? parseFloat(tradeForm.takeProfit) : null;
     const payload = {
       date: tradeForm.date, remarks: tradeForm.remarks, setup: tradeForm.setup, type: tradeForm.type,
-      exitReason: tradeForm.exitReason, notes: tradeForm.notes, positionSize: Number(tradeForm.positionSize),
-      direction: tradeForm.direction, entryPrice: Number(tradeForm.entryPrice),
+      exitReason: tradeForm.exitReason, notes: tradeForm.notes, positionSize: Number(tradeForm.positionSize) || 0,
+      direction: tradeForm.direction, entryPrice: Number(tradeForm.entryPrice) || 0,
       stopLoss: parsedStopLoss, takeProfit: parsedTakeProfit,
-      exitPrice1: Number(tradeForm.exitPrice1), exitPrice2: parsedExit2,
+      exitPrice1: Number(tradeForm.exitPrice1) || 0, exitPrice2: parsedExit2,
       symbol: tradeForm.symbol, errorReason: tradeForm.errorReason || undefined,
       process: tradeForm.process || undefined,
-      marketEnv: tradeForm.marketEnv || undefined
+      marketEnv: tradeForm.marketEnv || undefined,
+      fee: Number(tradeForm.fee) || 0
     };
 
     const sortTradesAsc = (a: Trade, b: Trade) => new Date(a.date).getTime() - new Date(b.date).getTime();
